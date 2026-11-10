@@ -444,7 +444,7 @@ async function pool(fns,n){let i=0;const run=async()=>{while(i<fns.length){const
 const syncing={};
 async function sync(v){if(syncing[v.fin])return syncing[v.fin];
  const p=(async()=>{const want=planFor(v),keys=new Set(want.map(x=>x.k)),mine=S.tasks.filter(t=>t.fin===v.fin),ops=[];let add=0,del=0;
-  for(const t of mine)if(t.status==='Offen'&&!keys.has(t.k)){del++;ops.push(()=>db.doc('tasks/'+t._id).delete())}
+  for(const t of mine)if(t.status==='Offen'&&!t.manual&&!keys.has(t.k)){del++;ops.push(()=>db.doc('tasks/'+t._id).delete())}
   for(const x of want){const id=v.fin+'_'+x.k,cur=mine.find(t=>t._id===id);
    if(!cur){add++;ops.push(()=>db.doc('tasks/'+id).set({fin:v.fin,k:x.k,cat:x.cat,title:x.t,when:x.w,due:x.due,status:'Offen',done:'',who:'',val:'',note:''}))}
    else if(cur.status!=='Erledigt'&&(cur.due!==x.due||cur.title!==x.t||cur.when!==x.w||cur.cat!==x.cat))ops.push(()=>db.doc('tasks/'+id).update({due:x.due,title:x.t,when:x.w,cat:x.cat}))}
@@ -553,7 +553,7 @@ function taskModal(id){const t=S.tasks.find(x=>x._id===id);if(!t)return;const v=
   <label class="f full">Mitarbeiter:in<input id="tw" value="${E(t.who||me())}"></label>
   <label class="f full">Bemerkung<textarea id="tn" rows="2">${E(t.note)}</textarea></label></div>
  </div>
- <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" onclick="saveTask('${t._id}')">Speichern</button></footer>`);
+ <footer>${t.manual?`<button class="btn" style="margin-right:auto;color:var(--ba)" onclick="delManual('${t._id}')">Löschen</button>`:''}<button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" onclick="saveTask('${t._id}')">Speichern</button></footer>`);
  if(bat){const chk=()=>{const n=pnum($('tv').value);$('tvw').textContent=n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv)?'Wert unter der Ladegrenze: Bitte Laden!':''};$('tv').addEventListener('input',chk);chk()}}
 async function saveTask(id){const t=S.tasks.find(x=>x._id===id),c=catOf(t),bat=c==='b12'||c==='hv',s=$('ts').value;let d=$('td').value;if(s==='Erledigt'&&!d)d=TD();
  let val='';if(bat){const raw=$('tv').value.trim();if(raw){const n=pnum(raw);if(n==null||n<0||(c==='hv'&&n>100)||(c==='b12'&&n>20)){$('tvw').textContent=c==='b12'?'Bitte eine Spannung in Volt eingeben, z. B. 12,6.':'Bitte einen Prozentwert zwischen 0 und 100 eingeben.';return}val=String(n)}}
@@ -561,6 +561,41 @@ async function saveTask(id){const t=S.tasks.find(x=>x._id===id),c=catOf(t),bat=c
  log(t.fin,`${t.title}: ${s}${val?' ('+(c==='b12'?nf(val,2)+' V':nf(val)+' %')+')':''}`);
  $('mod').hidden=true;$('mb').innerHTML='';
  const n=pnum(val);if(n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv))chargeAlert(c,n,t.fin);else{toast('Gespeichert.');render()}}
+
+/* ---------- Eigene Maßnahme (außerhalb des TQS-Intervalls) ---------- */
+const MANUAL=[['reinigung','Fahrzeugwäsche'],['b12','12V-Batterie prüfen / laden'],['hv','HV-Batterie prüfen / laden'],['reifen','Reifendruck kontrollieren'],['bremse','Bremsen freibremsen'],['folie','Folie applizieren'],['sonst','Sonstige Maßnahme']];
+function manualModal(fin){const v=veh(fin);if(!v.fin)return;
+ const hv=v.hyb||v.ev,opts=MANUAL.filter(o=>o[0]!=='hv'||hv);
+ modal(`<header><div style="flex:1"><h3>Maßnahme hinzufügen</h3><span class="muted">${vname(v)} · <span class="mono">${E(fin)}</span></span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><div class="fg">
+  <label class="f full">Art der Maßnahme<select id="mc">${opts.map((o,i)=>`<option value="${i}">${o[1]}</option>`).join('')}</select></label>
+  <label class="f full">Bezeichnung<input id="mt" value="${E(opts[0][1])}"></label>
+  <label class="f">Status<select id="ms"><option>Erledigt</option><option value="Offen">Geplant (offen)</option></select></label>
+  <label class="f"><span id="mdl">Durchgeführt am</span><input type="date" id="md" value="${TD()}"></label>
+  <label class="f full" id="mvw" hidden><span id="mvl"></span><input id="mv" inputmode="decimal"></label>
+  <span class="warn" id="mvx"></span>
+  <label class="f full">Mitarbeiter:in<input id="mw" value="${E(me())}"></label>
+  <label class="f full">Bemerkung<textarea id="mn" rows="2"></textarea></label>
+ </div><span class="hint">Eigene Maßnahmen ändern den TQS-Pflegeplan nicht und werden bei einer Neuberechnung nicht gelöscht.</span></div>
+ <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" onclick="saveManual('${fin}')">Hinzufügen</button></footer>`);
+ let last=opts[0][1];
+ const upd=()=>{const o=opts[+$('mc').value],c=o[0],bat=c==='b12'||c==='hv',done=$('ms').value==='Erledigt';
+  if($('mt').value===last||!$('mt').value.trim())$('mt').value=o[1];last=o[1];
+  $('mdl').textContent=done?'Durchgeführt am':'Geplant für';
+  $('mvw').hidden=!(bat&&done);$('mvl').textContent=c==='b12'?'Gemessene Spannung (Volt, optional)':'Ladezustand HV-Batterie (%, optional)';$('mv').placeholder=c==='b12'?'z. B. 12,6':'z. B. 68'};
+ $('mc').addEventListener('change',upd);$('ms').addEventListener('change',upd);upd();
+ manualModal.opts=opts}
+async function saveManual(fin){const o=manualModal.opts[+$('mc').value],c=o[0],bat=c==='b12'||c==='hv',done=$('ms').value==='Erledigt',d=$('md').value||TD(),title=$('mt').value.trim()||o[1];
+ let val='';if(bat&&done){const raw=$('mv').value.trim();if(raw){const n=pnum(raw);if(n==null||n<0||(c==='hv'&&n>100)||(c==='b12'&&n>20)){$('mvx').textContent=c==='b12'?'Bitte eine Spannung in Volt eingeben, z. B. 12,6.':'Bitte einen Prozentwert zwischen 0 und 100 eingeben.';return}val=String(n)}}
+ const k='m'+Date.now().toString(36),id=fin+'_'+k;
+ try{await db.doc('tasks/'+id).set({fin,k,cat:c,title,when:'Eigene Maßnahme',manual:true,due:d,status:done?'Erledigt':'Offen',done:done?d:'',who:$('mw').value,val,note:$('mn').value,by:me(),created:new Date().toISOString()})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}
+ log(fin,`Eigene Maßnahme ${done?'durchgeführt':'geplant'}: ${title}${val?' ('+(c==='b12'?nf(val,2)+' V':nf(val)+' %')+')':''}`);
+ if(done)S.showDone=true;
+ $('mod').hidden=true;$('mb').innerHTML='';
+ const n=pnum(val);if(n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv))chargeAlert(c,n,fin);else{toast('Maßnahme hinzugefügt.');render()}}
+async function delManual(id){const t=S.tasks.find(x=>x._id===id);if(!t||!t.manual)return;if(!confirm('Diese eigene Maßnahme wirklich löschen?'))return;
+ try{await db.doc('tasks/'+id).delete()}catch(e){return toast('Löschen nicht möglich: keine Schreibrechte.')}
+ log(t.fin,'Eigene Maßnahme gelöscht: '+t.title);closeM();toast('Gelöscht.')}
 
 /* ---------- Fahrzeug-Modal ---------- */
 const BRANDS=['Volkswagen','VW Nutzfahrzeuge','Audi','Škoda','Seat','Cupra','Porsche','Bentley'];
@@ -682,7 +717,7 @@ function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug ni
  const ts=S.tasks.filter(t=>t.fin===v.fin).sort((a,b)=>a.due<b.due?-1:1),ps=S.prob.filter(p=>p.fin===v.fin),lg=S.log.filter(l=>l.fin===v.fin).sort((a,b)=>a.at<b.at?1:-1),op=ts.filter(t=>t.status!=='Erledigt'),rs=readings(v.fin);
  const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['log','Historie']];
  let body='';
- if(S.tab==='plan'){const shown=S.showDone?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd)"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(addM(v.deliv||TD(),24))}</span><label class="chk"><input type="checkbox" id="sd" ${S.showDone?'checked':''}>Erledigte anzeigen</label></div>${shown.length?`<ul class="tl">${shown.map(taskLi).join('')}</ul>`:'<p class="empty">Keine Termine.</p>'}`}
+ if(S.tab==='plan'){const shown=S.showDone?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(addM(v.deliv||TD(),24))}</span><label class="chk"><input type="checkbox" id="sd" ${S.showDone?'checked':''}>Erledigte anzeigen</label><button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(taskLi).join('')}</ul>`:'<p class="empty">Keine Termine.</p>'}`}
  else if(S.tab==='batt')body=battTab(v);
  else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',v.loc],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
  else if(S.tab==='prob')body=`<div class="ph"><span style="flex:1"></span><button class="btn sm" onclick="probModal('${v.fin}')">${IC.plus} Problem melden</button></div>${probTbl(ps)}`;
