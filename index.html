@@ -159,6 +159,10 @@ main{min-width:0;padding-block:24px 48px;padding-left:28px;padding-right:max(28p
 .tl li{border-left:4px solid transparent}
 .tl li[data-c="b12"]{border-left-color:#e0a12a}.tl li[data-c="hv"]{border-left-color:#1aa6cc}.tl li[data-c="reifen"]{border-left-color:#7d8a98}.tl li[data-c="bremse"]{border-left-color:#c4573a}.tl li[data-c="folie"]{border-left-color:#7b65c8}.tl li[data-c="reinigung"]{border-left-color:#22a389}.tl li[data-c="sonst"]{border-left-color:var(--ac)}
 .vc{border-top:3px solid var(--ac)}.vc:hover{background:var(--sf2)}
+.pf-seg{display:inline-grid;grid-auto-flow:column;gap:4px;background:var(--grb);border-radius:9px;padding:3px}
+.pf-seg button{border:0;background:transparent;padding:6px 11px;border-radius:7px;font-weight:600;font-size:13px;color:var(--mu);display:flex;align-items:center;gap:6px}
+.pf-seg button .c{font-size:11px;background:var(--sf);border-radius:999px;padding:0 6px;color:var(--mu)}
+.pf-seg button.on{background:var(--sf);color:var(--ac);box-shadow:0 1px 3px var(--shadow)}.pf-seg button.on .c{background:var(--acs);color:var(--ac)}
 .th-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--grb);border-radius:10px;padding:4px;max-width:420px}
 .th-seg button{border:0;background:transparent;padding:9px;border-radius:7px;font-weight:600;color:var(--mu);display:flex;align-items:center;justify-content:center;gap:6px}
 .th-seg button.on{background:var(--sf);color:var(--ac);box-shadow:0 1px 3px var(--shadow)}
@@ -440,7 +444,7 @@ function carSVG(v,cls){const t=BODIES[bodyOf(v)],c=colHex(v),wy=82;
 
 /* ---------- Zustand ---------- */
 const DEF={wk:42,v12:12.5,hv:25};
-const S={veh:[],tasks:[],prob:[],log:[],cfg:{...DEF},view:'dash',cv:'month',cd:TD(),q:'',fl:'',sel:null,tab:'plan',showDone:false,acct:null,uid:null,ready:{veh:0,tasks:0},migrated:false};
+const S={veh:[],tasks:[],prob:[],log:[],cfg:{...DEF},view:'dash',cv:'month',cd:TD(),q:'',fl:'',sel:null,tab:'plan',planF:'open',acct:null,uid:null,ready:{veh:0,tasks:0},migrated:false};
 let db=null;
 const me=()=>S.acct?S.acct.name:'unbekannt';
 
@@ -608,7 +612,7 @@ async function saveManual(fin){const o=manualModal.opts[+$('mc').value],c=o[0],b
  const k='m'+Date.now().toString(36),id=fin+'_'+k;
  try{await db.doc('tasks/'+id).set({fin,k,cat:c,title,when:'Eigene Maßnahme',manual:true,due:d,status:done?'Erledigt':'Offen',done:done?d:'',who:$('mw').value,val,note:$('mn').value,by:me(),created:new Date().toISOString()})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}
  log(fin,`Eigene Maßnahme ${done?'durchgeführt':'geplant'}: ${title}${val?' ('+(c==='b12'?nf(val,2)+' V':nf(val)+' %')+')':''}`);
- if(done)S.showDone=true;
+ if(done&&S.planF==='open')S.planF='all';
  $('mod').hidden=true;$('mb').innerHTML='';
  const n=pnum(val);if(n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv))chargeAlert(c,n,fin);else{toast('Maßnahme hinzugefügt.');render()}}
 async function delManual(id){const t=S.tasks.find(x=>x._id===id);if(!t||!t.manual)return;if(!confirm('Diese eigene Maßnahme wirklich löschen?'))return;
@@ -690,7 +694,7 @@ function probTbl(ps,showV){return ps.length?`<div class="scroll"><table><tr>${sh
 /* ---------- Ansichten ---------- */
 function taskLi(t){const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t);return`<li data-c="${c}" onclick="taskModal('${t._id}')" style="--carbg:var(--sf)">${carSVG(v,'thumb')}
  <div style="min-width:0"><div class="t1">${icon(c)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${E(t.title)}</span></div><div class="t2"><span><b style="color:var(--tx);font-weight:500">${vname(v)}</b></span><span class="mono">${E(t.fin)}</span>${t.when?`<span>${E(t.when)}</span>`:''}</div></div>
- <div class="due"><b>${fmt(t.due)}</b><span class="pill ${sc}">${t.due<TD()&&t.status!=='Erledigt'?rel(t.due):sl==='Geplant'?rel(t.due):sl}</span></div></li>`}
+ <div class="due"><b ${t.status==='Erledigt'&&t.done?`title="geplant ${fmt(t.due)}"`:''}>${fmt(t.status==='Erledigt'&&t.done?t.done:t.due)}</b><span class="pill ${sc}">${t.due<TD()&&t.status!=='Erledigt'?rel(t.due):sl==='Geplant'?rel(t.due):sl}</span></div></li>`}
 function vCard(v){const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0],late=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt'&&t.due<TD()).length;
  return`<button class="vc" onclick="openVeh('${v.fin}')">${carSVG(v)}<span class="meta"><b>${vname(v)}</b><span><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color||'Farbe offen')} · <span class="mono">…${v.fin.slice(-6)}</span></span>
  ${nx?`<span class="nx">${icon(catOf(nx))} ${fmt(nx.due)} · ${E(nx.title)}</span>`:'<span>Keine offenen Termine</span>'}
@@ -752,7 +756,7 @@ function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug ni
  const ts=S.tasks.filter(t=>t.fin===v.fin).sort((a,b)=>a.due<b.due?-1:1),ps=S.prob.filter(p=>p.fin===v.fin),lg=S.log.filter(l=>l.fin===v.fin).sort((a,b)=>a.at<b.at?1:-1),op=ts.filter(t=>t.status!=='Erledigt'),rs=readings(v.fin);
  const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['log','Historie']];
  let body='';
- if(S.tab==='plan'){const shown=S.showDone?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(addM(v.deliv||TD(),24))}</span><label class="chk"><input type="checkbox" id="sd" ${S.showDone?'checked':''}>Erledigte anzeigen</label><button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(taskLi).join('')}</ul>`:'<p class="empty">Keine Termine.</p>'}`}
+ if(S.tab==='plan'){const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(addM(v.deliv||TD(),24))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length]].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div><button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(taskLi).join('')}</ul>`:`<p class="empty">${S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
  else if(S.tab==='batt')body=battTab(v);
  else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',v.loc],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Transportmodus',v.transp?'an':offTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
  else if(S.tab==='prob')body=`<div class="ph"><span style="flex:1"></span><button class="btn sm" onclick="probModal('${v.fin}')">${IC.plus} Problem melden</button></div>${probTbl(ps)}`;
@@ -821,7 +825,7 @@ function render(){if(!db||!S.acct||$('app').hidden)return;if(!$('mod').hidden||!
  const a=document.activeElement&&document.activeElement.id;$('main').innerHTML=f();
  if(a&&$(a)&&a==='q'){const e=$(a);e.focus();try{e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}
 document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;render()}});
-document.addEventListener('change',e=>{if(e.target.id==='fl'){S.fl=e.target.value;render()}if(e.target.id==='sd'){S.showDone=e.target.checked;render()}});
+document.addEventListener('change',e=>{if(e.target.id==='fl'){S.fl=e.target.value;render()}});
 
 let subscribed=false,unsubs=[];
 function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=false;
