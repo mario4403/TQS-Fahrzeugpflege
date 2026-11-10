@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* Firebase-Zugangsdaten (nicht geheim, Zugriff wird durch die Firestore-Regeln geschützt) */
+const firebaseConfig = {
+  apiKey: "AIzaSyCfbiMenh87BfKZ61q9Fx3TDGRTjIHBmaY",
+  authDomain: "tqs-fahrzeugpflege.firebaseapp.com",
+  projectId: "tqs-fahrzeugpflege",
+  storageBucket: "tqs-fahrzeugpflege.firebasestorage.app",
+  messagingSenderId: "1019266871180",
+  appId: "1:1019266871180:web:112a639c968f0ff30ab0a9"
+};
+</script>
+<title>TQS Fahrzeugpflege</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: dunkle Werkstatt-Seitenleiste + helle Arbeitsfläche; Status als Streifen/Pillen, Fahrzeuge als Seitenriss-Skizzen */
+:root{
+ --bg:#eceff3;--sf:#ffffff;--sf2:#f5f7f9;--tx:#14202b;--mu:#5b6877;--bd:#d6dde4;
+ --ac:#0b6a96;--acs:#e1eef5;--on-ac:#ffffff;
+ --nav:#132029;--navtx:#b9c6d1;--navhi:#ffffff;--navac:#f0a92e;
+ --ok:#1b8a4c;--okb:#e0f3e8;--wa:#9a6a00;--wab:#fdf0cc;--ba:#c42b2b;--bab:#fbe3e1;--gr:#5f6c7a;--grb:#e8ecf0;
+ --glass:#2b3a48;--carline:rgba(15,25,35,.45);--shadow:rgba(20,32,43,.12);
+ --f-disp:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+ --f-body:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+ --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+ --bg:#0d141a;--sf:#152029;--sf2:#1a2732;--tx:#e3e9ef;--mu:#93a1af;--bd:#263542;
+ --ac:#4cb0e0;--acs:#173444;--on-ac:#06141c;
+ --nav:#091016;--navtx:#9fb0be;--navhi:#ffffff;--navac:#f0a92e;
+ --ok:#4cc483;--okb:#11301f;--wa:#e8b84a;--wab:#352a0c;--ba:#ff7f78;--bab:#3d1a19;--gr:#9eabb8;--grb:#22303c;
+ --glass:#0f1820;--carline:rgba(0,0,0,.55);--shadow:rgba(0,0,0,.35);color-scheme:dark}}
+:root[data-theme="dark"]{
+ --bg:#0d141a;--sf:#152029;--sf2:#1a2732;--tx:#e3e9ef;--mu:#93a1af;--bd:#263542;
+ --ac:#4cb0e0;--acs:#173444;--on-ac:#06141c;
+ --nav:#091016;--navtx:#9fb0be;--navhi:#ffffff;--navac:#f0a92e;
+ --ok:#4cc483;--okb:#11301f;--wa:#e8b84a;--wab:#352a0c;--ba:#ff7f78;--bab:#3d1a19;--gr:#9eabb8;--grb:#22303c;
+ --glass:#0f1820;--carline:rgba(0,0,0,.55);--shadow:rgba(0,0,0,.35);color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;font:14px/1.45 var(--f-body);background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--f-disp);font-weight:600;letter-spacing:.01em;text-wrap:balance;margin:0}
+h2{font-size:26px}h3{font-size:18px}
+.mono{font-family:var(--f-mono);font-size:12px;letter-spacing:.02em}
+.muted{color:var(--mu)}
+.num{font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:var(--tx)}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--bd);background:var(--sf);border-radius:8px;padding:8px 13px;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--mu)}
+.btn.p{background:var(--ac);border-color:var(--ac);color:var(--on-ac)}
+.btn.p:hover{filter:brightness(1.07)}
+.btn.d{color:var(--ba)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn svg{width:16px;height:16px}
+input,select,textarea{width:100%;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:9px 11px}
+input:focus,select:focus,textarea:focus{border-color:var(--ac);outline:none;box-shadow:0 0 0 3px var(--acs)}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:500;color:var(--mu)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg .full{grid-column:1/-1}
+.chk{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--tx);cursor:pointer}
+.chk input{width:16px;height:16px;accent-color:var(--ac)}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:500;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.s-ok{background:var(--okb);color:var(--ok)}.s-wa{background:var(--wab);color:var(--wa)}.s-ba{background:var(--bab);color:var(--ba)}.s-gr{background:var(--grb);color:var(--gr)}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--grb);color:var(--gr)}
+.tag.ac{background:var(--acs);color:var(--ac)}
+.ic{width:18px;height:18px;flex-shrink:0}
+
+/* Boot + Auth */
+#boot{display:grid;place-items:center;height:100%;color:var(--mu);padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));text-align:center}
+#auth:not([hidden]){display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);min-height:100%}
+.a-side{background:var(--nav);color:var(--navtx);padding-block:48px;padding-left:max(40px,env(safe-area-inset-left,0px));padding-right:40px;display:flex;flex-direction:column;justify-content:space-between;gap:32px;position:relative;overflow:hidden}
+.a-side::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:repeating-linear-gradient(-45deg,var(--navac) 0 14px,transparent 14px 28px);opacity:.85}
+.brand{display:flex;align-items:center;gap:10px;color:var(--navhi)}
+.brand .mk{width:34px;height:34px;border-radius:8px;background:var(--navac);color:#1a1300;display:grid;place-items:center;font:700 14px var(--f-disp);letter-spacing:.04em}
+.brand b{font:600 18px var(--f-disp);letter-spacing:.02em}
+.brand small{display:block;font-size:11px;color:var(--navtx);letter-spacing:.06em;text-transform:uppercase}
+.a-side h1{color:var(--navhi);font-size:clamp(30px,4vw,46px);line-height:1.05;max-width:14ch}
+.a-side p{max-width:46ch;margin:14px 0 0}
+.track{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;max-width:520px}
+.track div{border-top:3px solid #2c3d4b;padding-top:8px;font-size:12px}
+.track div b{display:block;color:var(--navhi);font:600 17px var(--f-disp)}
+.track div.on{border-top-color:var(--navac)}
+.a-main{display:grid;place-items:center;padding-block:40px;padding-left:24px;padding-right:max(24px,env(safe-area-inset-right,0px))}
+.a-card{width:100%;max-width:400px;display:flex;flex-direction:column;gap:18px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--grb);border-radius:10px;padding:4px}
+.seg button{border:0;background:transparent;padding:9px;border-radius:7px;font-weight:600;color:var(--mu)}
+.seg button.on{background:var(--sf);color:var(--tx);box-shadow:0 1px 2px var(--shadow)}
+.a-card form{display:flex;flex-direction:column;gap:14px}
+.a-card h2{font-size:28px}
+.pw{position:relative}
+.pw input{padding-right:64px}
+.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:var(--ac);font-size:12px;font-weight:600;padding:6px}
+.meter{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:2px}
+.meter i{height:4px;border-radius:2px;background:var(--grb)}
+.msg{margin:0;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:500}
+.msg:empty{display:none}
+.msg.err{background:var(--bab);color:var(--ba)}
+.msg.okm{background:var(--okb);color:var(--ok)}
+.hint{font-size:12px;color:var(--mu);margin:0}
+.link{border:0;background:none;color:var(--ac);padding:0;font-weight:500}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+/* App shell */
+#app:not([hidden]){display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+nav{background:var(--nav);color:var(--navtx);display:flex;flex-direction:column;gap:22px;padding-block:20px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:14px;position:sticky;top:0;height:100vh;height:100dvh}
+nav .brand{padding:0 6px}
+.nl{display:flex;flex-direction:column;gap:2px}
+.nl a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--navtx);cursor:pointer;font-weight:500;text-decoration:none;position:relative}
+.nl a:hover{background:rgba(255,255,255,.06);color:var(--navhi)}
+.nl a.on{background:rgba(255,255,255,.09);color:var(--navhi)}
+.nl a.on::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--navac)}
+.nl .cnt{margin-left:auto;font-size:11px;background:var(--ba);color:#fff;border-radius:999px;padding:0 7px;font-weight:600}
+.me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.05);cursor:pointer;border:0;color:inherit;text-align:left;width:100%}
+.me:hover{background:rgba(255,255,255,.09)}
+.av{width:34px;height:34px;border-radius:50%;background:var(--navac);color:#1a1300;display:grid;place-items:center;font:700 13px var(--f-disp);flex-shrink:0}
+.me b{display:block;color:var(--navhi);font-weight:600;font-size:13px}
+.me small{display:block;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+main{min-width:0;padding-block:24px 48px;padding-left:28px;padding-right:max(28px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+.head{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.head h2{flex:1;min-width:0}
+.head .eye{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);font-family:var(--f-body);margin-bottom:2px}
+.panel{background:var(--sf);border:1px solid var(--bd);border-radius:12px;min-width:0}
+.panel>.ph{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.panel>.ph h3{flex:1}
+.pb{padding:16px}
+.scroll{overflow-x:auto}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.kpi{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden}
+.kpi b{font:600 32px/1.1 var(--f-disp);font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--mu)}
+.kpi::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--bd)}
+.kpi.ba::after{background:var(--ba)}.kpi.wa::after{background:var(--wa)}.kpi.ok::after{background:var(--ok)}.kpi.ac::after{background:var(--ac)}
+.kpi.ba b{color:var(--ba)}
+
+.dash{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;align-items:start}
+
+/* Aufgabenliste */
+.tl{list-style:none;margin:0;padding:0}
+.tl li{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:14px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bd);cursor:pointer}
+.tl li:last-child{border-bottom:0}
+.tl li:hover{background:var(--sf2)}
+.tl .thumb{width:96px;height:44px}
+.tl .t1{display:flex;align-items:center;gap:7px;font-weight:600}
+.tl .t2{font-size:12px;color:var(--mu);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.tl .due{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.tl .due b{font-variant-numeric:tabular-nums;font-weight:600;font-size:13px}
+.cat-b12{color:#c27a00}.cat-hv{color:#0b8fb3}.cat-reifen{color:var(--gr)}.cat-bremse{color:#a5432b}.cat-folie{color:#6b56b5}.cat-reinigung{color:#1d8f7a}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .cat-b12{color:#f0b14a}:root:not([data-theme="light"]) .cat-hv{color:#5fd0ef}:root:not([data-theme="light"]) .cat-bremse{color:#ef8a6c}:root:not([data-theme="light"]) .cat-folie{color:#b4a3f0}:root:not([data-theme="light"]) .cat-reinigung{color:#5fd6bd}}
+:root[data-theme="dark"] .cat-b12{color:#f0b14a}:root[data-theme="dark"] .cat-hv{color:#5fd0ef}:root[data-theme="dark"] .cat-bremse{color:#ef8a6c}:root[data-theme="dark"] .cat-folie{color:#b4a3f0}:root[data-theme="dark"] .cat-reinigung{color:#5fd6bd}
+
+/* Fahrzeugkarten */
+.vg{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.dash .vg{grid-template-columns:1fr}
+.vc{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;cursor:pointer;display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;align-items:center;text-align:left;width:100%}
+.vc:hover{border-color:var(--ac)}
+.vc .car{width:120px;height:56px}
+.vc b{font-family:var(--f-disp);font-size:17px;font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vc .meta{font-size:12px;color:var(--mu);display:flex;flex-direction:column;gap:3px;min-width:0}
+.vc .nx{display:flex;align-items:center;gap:5px;color:var(--tx);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid var(--carline);vertical-align:-1px}
+
+/* Tabellen */
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--bd);white-space:nowrap;vertical-align:middle}
+th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);background:var(--sf2)}
+tr:last-child td{border-bottom:0}
+tr.cl{cursor:pointer}tr.cl:hover td{background:var(--sf2)}
+td .car{width:84px;height:38px;display:block}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tools input{flex:1;min-width:200px;width:auto}
+.tools select{width:auto}
+
+/* Fahrzeug-Detail */
+.vhero{display:grid;grid-template-columns:260px minmax(0,1fr) auto;gap:24px;align-items:center;padding:20px}
+.vhero .car{width:260px;height:120px}
+.vhero h2{font-size:30px}
+.vhero .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.vhero .acts{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.toggle{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--bd);border-radius:10px;background:var(--sf2);cursor:pointer;text-align:left;width:100%}
+.sw-t{width:42px;height:24px;border-radius:12px;background:var(--grb);border:1px solid var(--bd);position:relative;flex-shrink:0;transition:background .15s}
+.sw-t::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--sf);box-shadow:0 1px 2px var(--shadow);transition:left .15s}
+.toggle.on .sw-t{background:var(--ac);border-color:var(--ac)}
+.toggle.on .sw-t::after{left:20px}
+.toggle b{display:block;font-size:13px}
+.toggle small{display:block;font-size:12px;color:var(--mu)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--bd);padding:0 8px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:12px 12px 10px;font-weight:600;color:var(--mu);border-bottom:2px solid transparent;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.tabs button.on{color:var(--tx);border-bottom-color:var(--ac)}
+.tabs .c{font-size:11px;background:var(--grb);color:var(--gr);border-radius:999px;padding:0 6px}
+.dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px 20px}
+.dl div span{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mu)}
+.dl div b{font-weight:500}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.chart{border:1px solid var(--bd);border-radius:10px;padding:12px 12px 6px}
+.chart h4{margin:0 0 4px;font:600 15px var(--f-disp);display:flex;align-items:center;gap:6px}
+.chart svg{width:100%;height:auto;display:block}
+.chart svg.ic{width:18px;height:18px;display:inline}
+.chart svg text{fill:var(--mu);font:11px var(--f-body)}
+.bar{width:120px;height:8px;border-radius:4px;background:var(--grb);overflow:hidden;display:inline-block;vertical-align:middle}
+.bar i{display:block;height:100%;border-radius:4px}
+
+/* Kalender */
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:var(--bd);border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.cal>div{background:var(--sf);min-height:104px;padding:6px;min-width:0;display:flex;flex-direction:column;gap:3px}
+.cal .h{min-height:0;text-align:center;color:var(--mu);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:var(--sf2);padding:8px 4px}
+.cal .o{background:var(--sf2)}.cal .o small{opacity:.5}
+.cal small{font-size:12px;color:var(--mu);font-variant-numeric:tabular-nums}
+.cal .t small{background:var(--ac);color:var(--on-ac);border-radius:999px;padding:0 7px;align-self:flex-start;font-weight:600}
+.chip{display:flex;align-items:center;gap:4px;border:0;border-radius:5px;padding:3px 6px;font-size:11px;text-align:left;overflow:hidden;white-space:nowrap;width:100%;min-width:0}
+.chip span{overflow:hidden;text-overflow:ellipsis}
+.chip .ic{width:12px;height:12px}
+.more{font-size:11px;color:var(--mu);border:0;background:none;text-align:left;padding:0 4px}
+.calbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.calbar h3{min-width:180px;text-align:center;font-size:20px}
+.segs{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden;background:var(--sf)}
+.segs button{border:0;background:none;padding:7px 12px;font-weight:500;border-right:1px solid var(--bd)}
+.segs button:last-child{border-right:0}
+.segs button.on{background:var(--ac);color:var(--on-ac)}
+.yr{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.yr button{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:6px}
+.yr button:hover{border-color:var(--ac)}
+.yr b{font:600 17px var(--f-disp)}
+.agenda h4{margin:0;padding:10px 16px;background:var(--sf2);border-bottom:1px solid var(--bd);font:600 14px var(--f-disp);letter-spacing:.02em}
+
+/* Pflegeprogramm-Matrix */
+.mx th,.mx td{text-align:center}
+.mx td:first-child,.mx th:first-child{text-align:left}
+.mx .ic{width:20px;height:20px}
+
+/* Modal, Alert, Toast */
+#mod:not([hidden]){position:fixed;inset:0;background:rgba(8,14,20,.55);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px));z-index:30}
+.sheet{background:var(--sf);border-radius:14px;width:100%;max-width:620px;box-shadow:0 20px 50px rgba(0,0,0,.3);display:flex;flex-direction:column}
+.sheet>header{padding:18px 20px 14px;border-bottom:1px solid var(--bd);display:flex;gap:12px;align-items:flex-start}
+.sheet>header h3{font-size:21px;flex:1}
+.sheet>.sb{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.sheet>footer{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.x{border:0;background:none;font-size:22px;line-height:1;color:var(--mu);padding:2px 6px}
+.prev{display:flex;align-items:center;gap:14px;background:var(--sf2);border-radius:10px;padding:10px 14px;--carbg:var(--sf2)}
+.prev .car{width:170px;height:78px}
+.prev small{color:var(--mu)}
+.meas{border:1px solid var(--bd);border-radius:10px;padding:14px;background:var(--sf2);display:flex;flex-direction:column;gap:8px}
+.meas input{font:600 22px var(--f-disp);max-width:180px}
+.warn{font-size:13px;font-weight:600;color:var(--ba)}
+#alrt:not([hidden]){position:fixed;inset:0;background:rgba(8,14,20,.6);display:grid;place-items:center;z-index:40;padding:16px}
+.alert-box{background:var(--sf);border-radius:16px;max-width:380px;width:100%;overflow:hidden;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.alert-box .top{background:var(--ba);color:#fff;padding:22px 20px 18px}
+.alert-box .top svg{width:46px;height:46px}
+.alert-box .top h3{font-size:30px;margin-top:6px}
+.alert-box .bd{padding:18px 20px 20px;display:flex;flex-direction:column;gap:14px}
+.alert-box .val{font:600 34px var(--f-disp);color:var(--ba)}
+#toast:not([hidden]){position:fixed;left:50%;bottom:max(20px,calc(env(safe-area-inset-bottom,0px) + 12px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:500;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
+.empty{padding:28px 16px;text-align:center;color:var(--mu)}
+
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.dash{grid-template-columns:minmax(0,1fr)}.dash .vg{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}.vhero{grid-template-columns:200px minmax(0,1fr)}.vhero .car{width:200px;height:92px}.vhero .acts{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}.vhero .acts .toggle{flex:1 1 260px;width:auto}}
+@media(max-width:760px){
+ #auth:not([hidden]){grid-template-columns:minmax(0,1fr)}
+ .a-side{padding-block:28px 34px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+ .a-side h1{font-size:30px}.track{display:none}
+ .a-main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px}
+ #app:not([hidden]){grid-template-columns:minmax(0,1fr)}
+ nav{position:sticky;top:env(safe-area-inset-top,0px);height:auto;flex-direction:row;align-items:center;gap:8px;padding-block:8px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));z-index:20;overflow-x:auto}
+ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--nav)}
+ nav .brand b,nav .brand small{display:none}
+ .nl{flex-direction:row}.nl a{padding:8px 10px;white-space:nowrap}.nl a.on::before{display:none}.nl a span.lb{display:none}.nl a.on span.lb{display:inline}
+ .me{margin:0 0 0 auto;width:auto;padding:4px;background:none}.me div{display:none}
+ main{padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+ h2,.vhero h2{font-size:23px}
+ .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .tl li{grid-template-columns:64px minmax(0,1fr);row-gap:6px}.tl .thumb{width:64px;height:30px}.tl .due{grid-column:2;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px}
+ .vhero{grid-template-columns:minmax(0,1fr);padding:16px}.vhero .car{width:100%;max-width:260px;height:auto}
+ .fg{grid-template-columns:minmax(0,1fr)}
+ .cal>div{min-height:64px;padding:3px}.chip span{display:none}.chip{justify-content:center;padding:3px}
+ .calbar h3{min-width:0;flex:1 1 100%;text-align:left;order:-1}
+ .prev .car{width:120px;height:56px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div id="boot"><p>Wird geladen …</p></div>
+
+<div id="auth" hidden>
+ <aside class="a-side">
+  <div class="brand"><div class="mk">TQS</div><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
+  <div>
+   <h1>Pflegeprogramm für Neufahrzeuge</h1>
+   <p>Jedes Fahrzeug bekommt beim Anlegen automatisch seinen Pflegeplan für zwei Jahre: Batterie, Reifendruck, Bremsen, Folie und Säuberung, nach TQS Anlage 1, Abschnitt 3.2.</p>
+  </div>
+  <div class="track" aria-hidden="true">
+   <div class="on"><b>≤ 14 T</b>HV · Folie</div><div class="on"><b>30 T</b>Reifen</div><div><b>3 M</b>12V · HV · Bremse</div><div><b>6 M</b>+ Reifen</div><div><b>9 M</b>12V · HV · Bremse</div><div><b>12 M</b>+ Säuberung</div>
+  </div>
+ </aside>
+ <section class="a-main">
+  <div class="a-card">
+   <div class="seg" role="tablist"><button id="tbL" class="on" type="button" onclick="authTab('login')">Anmelden</button><button id="tbR" type="button" onclick="authTab('reg')">Registrieren</button></div>
+
+   <form id="fLogin" novalidate>
+    <div><h2>Willkommen zurück</h2><p class="hint">Melde dich mit deiner Firmen-E-Mail an.</p></div>
+    <p class="msg" id="mLogin" role="alert"></p>
+    <label class="f">E-Mail<input id="lEmail" type="email" autocomplete="username" placeholder="vorname.nachname@autohaus-reiser.at"></label>
+    <label class="f">Passwort<span class="pw"><input id="lPw" type="password" autocomplete="current-password"><button type="button" onclick="togglePw('lPw',this)">Zeigen</button></span></label>
+    <div class="row"><label class="chk"><input type="checkbox" id="lRem" checked>Angemeldet bleiben</label><button type="button" class="link" onclick="authTab('reset')">Passwort vergessen?</button></div>
+    <button class="btn p" type="submit" id="lBtn" style="justify-content:center;padding:11px">Anmelden</button>
+    <p class="hint">Noch kein Konto? <button type="button" class="link" onclick="authTab('reg')">Jetzt registrieren</button></p>
+   </form>
+
+   <form id="fReg" novalidate hidden>
+    <div><h2>Konto erstellen</h2><p class="hint">Nur mit einer E-Mail-Adresse <b>@autohaus-reiser.at</b>.</p></div>
+    <p class="msg" id="mReg" role="alert"></p>
+    <div class="fg"><label class="f">Vorname<input id="rFirst" autocomplete="given-name"></label><label class="f">Nachname<input id="rLast" autocomplete="family-name"></label></div>
+    <label class="f">Firmen-E-Mail<input id="rEmail" type="email" autocomplete="email" placeholder="vorname.nachname@autohaus-reiser.at"></label>
+    <label class="f">Passwort<span class="pw"><input id="rPw" type="password" autocomplete="new-password"><button type="button" onclick="togglePw('rPw',this)">Zeigen</button></span>
+     <span class="meter" id="rMeter"><i></i><i></i><i></i><i></i></span><span class="hint" id="rPwHint">Mindestens 8 Zeichen, mit Buchstaben und Ziffern.</span></label>
+    <label class="f">Passwort wiederholen<input id="rPw2" type="password" autocomplete="new-password"></label>
+    <label class="chk"><input type="checkbox" id="rAgree">Ich nutze das Konto nur für dienstliche Zwecke.</label>
+    <button class="btn p" type="submit" id="rBtn" style="justify-content:center;padding:11px">Registrieren</button>
+    <p class="hint">Schon registriert? <button type="button" class="link" onclick="authTab('login')">Anmelden</button></p>
+   </form>
+
+   <form id="fReset" novalidate hidden>
+    <div><h2>Passwort zurücksetzen</h2><p class="hint">Gib deine Firmen-E-Mail ein. Wir schicken dir einen Link, mit dem du ein neues Passwort festlegst.</p></div>
+    <p class="msg" id="mReset" role="alert"></p>
+    <label class="f">Firmen-E-Mail<input id="xEmail" type="email" autocomplete="username"></label>
+    <button class="btn p" type="submit" style="justify-content:center;padding:11px">Link senden</button>
+    <p class="hint"><button type="button" class="link" onclick="authTab('login')">← Zurück zur Anmeldung</button></p>
+   </form>
+  </div>
+ </section>
+</div>
+
+<div id="app" hidden><nav id="nav"></nav><main id="main"></main></div>
+<div id="mod" hidden><div class="sheet" id="mb"></div></div>
+<div id="alrt" hidden><div class="alert-box" id="ab"></div></div>
+<div id="toast" hidden></div>
+
+<script>
+/* ---------- Helfer ---------- */
+const E=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const TD=()=>iso(new Date());
+const addD=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return iso(d)};
+const addM=(s,n)=>{const d=new Date(s+'T12:00:00'),day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+n);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,last));return iso(d)};
+const fmt=s=>s?s.split('-').reverse().join('.'):'–';
+const dDiff=s=>Math.round((new Date(s+'T12:00:00')-new Date(TD()+'T12:00:00'))/864e5);
+const rel=s=>{const n=dDiff(s);return n===0?'heute':n===1?'morgen':n===-1?'seit gestern':n<0?`seit ${-n} Tagen`:`in ${n} Tagen`};
+const nf=(n,d)=>Number(n).toLocaleString('de-AT',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});
+const pnum=s=>{const n=parseFloat(String(s==null?'':s).replace(',','.'));return isNaN(n)?null:n};
+const $=id=>document.getElementById(id);
+const ls={get(k,s){try{return JSON.parse((s?sessionStorage:localStorage).getItem(k))}catch(e){return null}},set(k,v,s){try{(s?sessionStorage:localStorage).setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k);sessionStorage.removeItem(k)}catch(e){}}};
+
+/* ---------- Icons ---------- */
+const SV=(p,c)=>`<svg class="ic ${c||''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const IC={
+ b12:SV('<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h2v2M15 7V5h2v2M6.5 13h3M14.5 13h3M16 11.5v3"/>'),
+ hv:SV('<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h2v2M15 7V5h2v2M13 9.5l-2.5 3.5h3L11 16.5"/>'),
+ reifen:SV('<circle cx="10" cy="13" r="7"/><circle cx="10" cy="13" r="3"/><circle cx="18" cy="5" r="2.5"/><path d="M16.5 7l-2 2.5"/>'),
+ bremse:SV('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3"/><path d="M12 3a9 9 0 0 1 8.2 5.3"/>'),
+ folie:SV('<path d="M4 5h11l5 5v9H4z"/><path d="M15 5v5h5"/><path d="M8 14h6"/>'),
+ reinigung:SV('<path d="M12 3c3 4.2 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-6.8 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>'),
+ sonst:SV('<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/>'),
+ dash:SV('<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>'),
+ cal:SV('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
+ car:SV('<path d="M3 16v-3l2-5h11l3 4 2 1v3z"/><circle cx="7.5" cy="16.5" r="2"/><circle cx="16.5" cy="16.5" r="2"/>'),
+ warn:SV('<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>'),
+ set:SV('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'),
+ plus:SV('<path d="M12 5v14M5 12h14"/>'),
+ out:SV('<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>'),
+ bolt:SV('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
+};
+const CAT={b12:'12V-Batterie',hv:'HV-Batterie',reifen:'Reifendruck',bremse:'Bremsen',folie:'Folie',reinigung:'Säuberung',sonst:'Sonstiges'};
+const catOf=t=>t.cat||(t.k==='pflege'?'folie':(t.k==='hv0'||/^h\d/.test(t.k))?'hv':/^[bw]\d/.test(t.k)?'b12':/^f\d/.test(t.k)?'bremse':/^r\d/.test(t.k)?'reifen':/^s\d/.test(t.k)?'reinigung':'sonst');
+const icon=(c,cls)=>`<span class="cat-${c}" style="display:inline-flex">${IC[c]||IC.sonst}</span>`;
+
+/* ---------- Fahrzeugskizzen ---------- */
+const COLORS=[['Weiß','#f3f3f1'],['Schwarz','#1c1f23'],['Silber','#b8bec5'],['Grau','#6b727a'],['Blau','#1f5096'],['Dunkelblau','#1b2a4a'],['Rot','#b5202b'],['Grün','#2e6a46'],['Gelb','#e6b722'],['Orange','#e06e1c'],['Braun','#6a4a35'],['Beige','#cdbb94']];
+const BODIES={
+ kompakt:{l:'Kompakt / Kleinwagen',b:'M16,80 L16,58 Q18,48 30,44 L54,30 Q60,26 72,26 L140,26 Q150,26 160,34 L180,48 Q210,51 222,60 L224,80 Z',w:['M34,46 L58,32 L100,32 L100,47 Z','M106,32 L142,32 Q148,32 156,38 L170,47 L106,47 Z'],wh:[58,186],r:16,bl:[20,220,57],hl:[212,54]},
+ limousine:{l:'Limousine',b:'M10,80 L12,62 Q14,56 34,54 L64,50 L92,30 Q98,27 108,27 L160,27 Q168,27 176,33 L198,50 Q222,53 230,62 L230,80 Z',w:['M70,50 L94,33 L128,33 L128,50 Z','M134,33 L158,33 Q165,33 172,38 L188,50 L134,50 Z'],wh:[56,190],r:17,bl:[16,226,61],hl:[220,56]},
+ kombi:{l:'Kombi',b:'M10,80 L10,56 Q12,46 26,44 L40,30 Q44,27 54,27 L160,27 Q168,27 176,33 L198,50 Q222,53 230,62 L230,80 Z',w:['M30,46 L44,32 L90,32 L90,48 Z','M96,32 L128,32 L128,48 L96,48 Z','M134,32 L158,32 Q165,32 172,38 L186,48 L134,48 Z'],wh:[56,190],r:17,bl:[14,226,59],hl:[220,56]},
+ suv:{l:'SUV',b:'M12,82 L12,50 Q14,40 26,38 L40,22 Q44,18 54,18 L160,18 Q170,18 178,26 L196,42 Q222,45 230,56 L230,82 Z',w:['M28,40 L44,24 L92,24 L92,42 Z','M98,24 L134,24 L134,42 L98,42 Z','M140,24 L160,24 Q168,24 174,30 L186,42 L140,42 Z'],wh:[58,190],r:19,bl:[16,226,53],hl:[220,50]},
+ van:{l:'Bus / Transporter',b:'M10,84 L10,22 Q10,10 22,10 L176,10 Q186,10 192,20 L212,48 Q228,52 230,62 L230,84 Z',w:['M24,22 L80,22 L80,46 L24,46 Z','M88,22 L150,22 L150,46 L88,46 Z','M158,22 L178,22 Q184,22 188,28 L200,46 L158,46 Z'],wh:[52,192],r:18,bl:[14,226,58],hl:[220,58]},
+ coupe:{l:'Coupé / Sportwagen',b:'M10,80 L12,64 Q16,58 36,56 L70,50 L104,32 Q110,30 120,30 L156,30 Q166,30 176,38 L196,52 Q222,55 230,64 L230,80 Z',w:['M80,50 L106,35 L136,35 L136,50 Z','M142,35 L156,35 Q163,35 170,40 L182,50 L142,50 Z'],wh:[56,190],r:17,bl:[16,226,64],hl:[220,59]},
+ pickup:{l:'Pick-up',b:'M10,82 L10,54 L96,54 L96,30 Q96,22 106,22 L156,22 Q166,22 174,30 L194,48 Q222,51 230,60 L230,82 Z',w:['M104,28 L132,28 L132,48 L104,48 Z','M138,28 L156,28 Q163,28 170,34 L182,48 L138,48 Z'],wh:[56,192],r:19,bl:[14,226,62],hl:[220,55]}
+};
+const KW={
+ suv:['tiguan','t-roc','troc','t-cross','tcross','taigo','touareg','id.4','id4','id.5','id5','id.6','q2','q3','q4','q5','q6','q7','q8','e-tron','etron','kodiaq','karoq','kamiq','enyaq','elroq','epiq','ateca','arona','tarraco','formentor','terramar','cayenne','macan','bentayga','atlas','tayron','suv'],
+ van:['transporter','multivan','caravelle','crafter','caddy','buzz','california','touran','sharan','alhambra','bus','grand california','t6','t7'],
+ kombi:['variant','combi','avant','kombi','sportstourer','estate','sportwagen','sportsvan','shooting','alltrack','sportback'],
+ pickup:['amarok','pick-up','pickup'],
+ coupe:['arteon','tt','r8','a5','a7','taycan','911','cayman','boxster','continental','scirocco','e-tron gt','coupe','coupé','cabrio'],
+ limousine:['passat','jetta','a4','a6','a8','superb','octavia','id.7','id7','panamera','flying spur','limousine'],
+};
+function bodyOf(v){if(v.body&&BODIES[v.body])return v.body;const s=((v.model||'')+' '+(v.variant||'')+' '+(v.type||'')).toLowerCase();
+ for(const k of ['pickup','van','kombi','suv','coupe','limousine'])if(KW[k].some(w=>new RegExp('(^|[^a-z0-9])'+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])').test(s)))return k;return'kompakt'}
+const colHex=v=>v.colorHex||(COLORS.find(c=>c[0]===v.color)||[])[1]||'#9aa3ad';
+function carSVG(v,cls){const t=BODIES[bodyOf(v)],c=colHex(v),wy=82;
+ return`<svg class="${cls||'car'}" viewBox="0 0 240 110" role="img" aria-label="Skizze ${E(v.brand)} ${E(v.model)}${v.color?', '+E(v.color):''}">
+ <ellipse cx="121" cy="${wy+t.r+2}" rx="108" ry="4.5" fill="var(--shadow)"/>
+ <path d="${t.b}" fill="${c}" stroke="var(--carline)" stroke-width="1.6" stroke-linejoin="round"/>
+ <path d="M${t.bl[0]},${t.bl[2]} L${t.bl[1]},${t.bl[2]}" stroke="rgba(255,255,255,.38)" stroke-width="2"/>
+ <path d="M${t.bl[0]},${t.bl[2]+3} L${t.bl[1]},${t.bl[2]+3}" stroke="rgba(0,0,0,.14)" stroke-width="1.2"/>
+ ${t.w.map(p=>`<path d="${p}" fill="var(--glass)" stroke="var(--carline)" stroke-width="1"/>`).join('')}
+ <rect x="${t.hl[0]}" y="${t.hl[1]}" width="9" height="5" rx="2" fill="#fff6d8" stroke="var(--carline)" stroke-width=".8"/>
+ <rect x="${t.bl[0]-2}" y="${t.hl[1]+1}" width="6" height="5" rx="1.5" fill="#d13a2f" opacity=".9"/>
+ ${t.wh.map(x=>`<circle cx="${x}" cy="${wy}" r="${t.r+4}" fill="var(--carbg,var(--sf))"/><circle cx="${x}" cy="${wy}" r="${t.r}" fill="#1b2127"/><circle cx="${x}" cy="${wy}" r="${t.r*.56}" fill="#c4cbd2"/><circle cx="${x}" cy="${wy}" r="${t.r*.56}" fill="none" stroke="#8a949e" stroke-width="1.2" stroke-dasharray="2.4 2.6"/><circle cx="${x}" cy="${wy}" r="${t.r*.17}" fill="#58636e"/>`).join('')}
+ </svg>`}
+
+/* ---------- Zustand ---------- */
+const DEF={wk:42,v12:12.5,hv:25};
+const S={veh:[],tasks:[],prob:[],log:[],cfg:{...DEF},view:'dash',cv:'month',cd:TD(),q:'',fl:'',sel:null,tab:'plan',showDone:false,acct:null,uid:null,ready:{veh:0,tasks:0},migrated:false};
+let db=null;
+const me=()=>S.acct?S.acct.name:'unbekannt';
+
+/* ---------- Pflegeplan (TQS Anlage 1, 3.2) ---------- */
+function planFor(v){const out=[];if(!v.deliv||v.archived)return out;const d=v.deliv,hv=v.hyb||v.ev;
+ if(hv)out.push({k:'hv0',cat:'hv',t:'HV-Batterie prüfen',w:'≤ 14 Tage nach Eingang',due:addD(d,14)});
+ out.push({k:'pflege',cat:'folie',t:'Folie applizieren (falls erforderlich)',w:'≤ 14 Tage nach Eingang',due:addD(d,14)});
+ out.push({k:'r30',cat:'reifen',t:'Reifendruck kontrollieren',w:'30 Tage nach Eingang',due:addD(d,30)});
+ for(let m=3;m<=24;m+=3){const due=addM(d,m),w=`${m} Monate nach Eingang`;
+  if(v.transp)out.push({k:'b'+m,cat:'b12',t:'12V-Batterie prüfen / laden',w,due});
+  if(hv)out.push({k:'h'+m,cat:'hv',t:'HV-Batterie prüfen / laden',w,due});
+  out.push({k:'f'+m,cat:'bremse',t:'Bremsen freibremsen',w,due});
+  if(m%6===0)out.push({k:'r'+m,cat:'reifen',t:'Reifendruck kontrollieren',w,due});
+  if(m%12===0)out.push({k:'s'+m,cat:'reinigung',t:'Fahrzeugschmutz entfernen (Säuberung)',w,due});}
+ if(!v.transp){const end=addM(d,24),step=Math.max(7,+S.cfg.wk||42);for(let i=1;;i++){const due=addD(d,i*step);if(due>end)break;out.push({k:'w'+i,cat:'b12',t:'12V-Batterie pflegen',w:`alle ${Math.round(step/7)} Wochen (Transportmodus aus) · ${i}. Termin`,due})}}
+ return out}
+async function pool(fns,n){let i=0;const run=async()=>{while(i<fns.length){const f=fns[i++];await f()}};await Promise.all(Array.from({length:Math.min(n||6,fns.length)},run))}
+const syncing={};
+async function sync(v){if(syncing[v.fin])return syncing[v.fin];
+ const p=(async()=>{const want=planFor(v),keys=new Set(want.map(x=>x.k)),mine=S.tasks.filter(t=>t.fin===v.fin),ops=[];let add=0,del=0;
+  for(const t of mine)if(t.status==='Offen'&&!keys.has(t.k)){del++;ops.push(()=>db.doc('tasks/'+t._id).delete())}
+  for(const x of want){const id=v.fin+'_'+x.k,cur=mine.find(t=>t._id===id);
+   if(!cur){add++;ops.push(()=>db.doc('tasks/'+id).set({fin:v.fin,k:x.k,cat:x.cat,title:x.t,when:x.w,due:x.due,status:'Offen',done:'',who:'',val:'',note:''}))}
+   else if(cur.status!=='Erledigt'&&(cur.due!==x.due||cur.title!==x.t||cur.when!==x.w||cur.cat!==x.cat))ops.push(()=>db.doc('tasks/'+id).update({due:x.due,title:x.t,when:x.w,cat:x.cat}))}
+  await pool(ops,6);return{add,del,total:want.length}})();
+ syncing[v.fin]=p;try{return await p}finally{delete syncing[v.fin]}}
+
+/* ---------- Status ---------- */
+const st=t=>{if(t.status==='Erledigt')return['s-ok','Erledigt'];if(t.due<TD())return['s-ba','Überfällig'];if(t.status==='In Bearbeitung')return['s-wa','In Bearbeitung'];if(t.due<=addD(TD(),7))return['s-wa','Bald fällig'];return['s-gr','Geplant']};
+const veh=f=>S.veh.find(v=>v.fin===f)||{};
+const vname=v=>`${E(v.brand)} ${E(v.model)}`.trim()||'Fahrzeug';
+const activeTasks=()=>{const ids=new Set(S.veh.filter(v=>!v.archived).map(v=>v.fin));return S.tasks.filter(t=>ids.has(t.fin))};
+const log=(fin,text)=>db.collection('log').add({fin,text,by:me(),at:new Date().toISOString()}).catch(()=>{});
+function readings(fin){return S.tasks.filter(t=>(!fin||t.fin===fin)&&t.status==='Erledigt'&&['b12','hv'].includes(catOf(t))&&pnum(t.val)!=null).map(t=>({t,cat:catOf(t),v:pnum(t.val),d:t.done||t.due})).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0)}
+const low=r=>r.cat==='b12'?r.v<S.cfg.v12:r.v<S.cfg.hv;
+function battLow(){const last={};readings().forEach(r=>{if(!veh(r.t.fin).archived)last[r.t.fin+r.cat]=r});return[...new Set(Object.values(last).filter(low).map(r=>r.t.fin))]}
+
+/* ---------- Modal / Alert / Toast ---------- */
+function modal(h){$('mb').innerHTML=h;$('mod').hidden=false}
+function closeM(){$('mod').hidden=true;$('mb').innerHTML='';render()}
+$('mod').addEventListener('click',e=>{if(e.target.id==='mod')closeM()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('alrt').hidden)closeA();else if(!$('mod').hidden)closeM()}});
+function chargeAlert(cat,v,fin){const x=veh(fin);$('ab').innerHTML=`<div class="top">${IC.warn}<h3>Bitte Laden!</h3></div><div class="bd">
+ <div class="val num">${cat==='b12'?nf(v,2)+' V':nf(v)+' %'}</div>
+ <p style="margin:0">${cat==='b12'?`Die 12V-Batterie liegt unter <b>${nf(S.cfg.v12,1)} V</b>.`:`Die HV-Batterie liegt unter <b>${nf(S.cfg.hv)} %</b>.`}<br>${vname(x)} · <span class="mono">${E(fin)}</span></p>
+ <button class="btn p" style="justify-content:center" onclick="closeA()">Verstanden</button></div>`;$('alrt').hidden=false}
+function closeA(){$('alrt').hidden=true;render()}
+let tT;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tT);tT=setTimeout(()=>t.hidden=true,3600)}
+
+/* ---------- Konto (Firebase Authentication) ---------- */
+const DOMAIN='@autohaus-reiser.at';
+const okDomain=e=>/^[^\s@]+@autohaus-reiser\.at$/i.test(e.trim());
+const okMail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
+const pwOk=p=>p.length>=8&&/[A-Za-zÄÖÜäöüß]/.test(p)&&/\d/.test(p);
+function pwScore(p){let s=0;if(p.length>=8)s++;if(p.length>=12)s++;if(/[a-z]/.test(p)&&/[A-Z]/.test(p))s++;if(/\d/.test(p)&&/[^A-Za-z0-9]/.test(p))s++;return p?Math.max(1,s):0}
+function msg(id,t,ok){const m=$(id);if(!m)return;m.textContent=t||'';m.className='msg '+(ok?'okm':'err')}
+function authTab(t){$('fLogin').hidden=t!=='login';$('fReg').hidden=t!=='reg';$('fReset').hidden=t!=='reset';$('tbL').classList.toggle('on',t!=='reg');$('tbR').classList.toggle('on',t==='reg');['mLogin','mReg','mReset'].forEach(i=>msg(i,''))}
+function togglePw(id,b){const i=$(id);i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'Zeigen':'Verbergen'}
+function busy(id,on,txt){const b=$(id);if(!b)return;b.disabled=on;if(txt)b.textContent=txt}
+const ERR={'auth/invalid-credential':'E-Mail oder Passwort ist falsch.','auth/wrong-password':'E-Mail oder Passwort ist falsch.','auth/user-not-found':'Zu dieser E-Mail gibt es kein Konto. Bitte zuerst registrieren.','auth/invalid-email':'Bitte eine gültige E-Mail-Adresse eingeben.','auth/email-already-in-use':'Für diese E-Mail gibt es bereits ein Konto. Bitte melde dich an.','auth/weak-password':'Das Passwort ist zu schwach. Mindestens 8 Zeichen, mit Buchstaben und Ziffern.','auth/too-many-requests':'Zu viele Versuche. Bitte warte ein paar Minuten und versuche es dann erneut.','auth/network-request-failed':'Keine Internetverbindung. Bitte prüfen und erneut versuchen.','auth/requires-recent-login':'Aus Sicherheitsgründen bitte ab- und wieder anmelden, dann erneut versuchen.','auth/user-disabled':'Dieses Konto wurde deaktiviert.','auth/operation-not-allowed':'Die Anmeldung mit E-Mail und Passwort ist in Firebase noch nicht aktiviert.','auth/unauthorized-domain':'Diese Webadresse ist in Firebase noch nicht freigegeben (Authentication → Einstellungen → Autorisierte Domains).'};
+const errText=e=>ERR[e&&e.code]||('Das hat nicht geklappt'+(e&&e.code?' ('+e.code+')':'')+'. Bitte erneut versuchen.');
+let holdAuth=false;
+
+$('rPw').addEventListener('input',e=>{const s=pwScore(e.target.value),col=['var(--ba)','var(--ba)','var(--wa)','var(--ok)','var(--ok)'];[...$('rMeter').children].forEach((i,k)=>i.style.background=k<s?col[s]:'');$('rPwHint').textContent=e.target.value?(['','Sehr schwach','Schwach','Gut','Stark'][s]+(pwOk(e.target.value)?'':' · mindestens 8 Zeichen, Buchstaben und Ziffern')):'Mindestens 8 Zeichen, mit Buchstaben und Ziffern.'});
+$('rEmail').addEventListener('blur',e=>{const v=e.target.value.trim();if(v&&okMail(v)&&!okDomain(v))msg('mReg','Kein Firmenkonto! Registrierung nur mit einer E-Mail-Adresse '+DOMAIN+' möglich.')});
+
+$('fReg').addEventListener('submit',async e=>{e.preventDefault();msg('mReg','');
+ const first=$('rFirst').value.trim(),last=$('rLast').value.trim(),email=$('rEmail').value.trim().toLowerCase(),pw=$('rPw').value,pw2=$('rPw2').value;
+ if(!first||!last)return msg('mReg','Bitte Vor- und Nachnamen eingeben.');
+ if(!okMail(email))return msg('mReg','Bitte eine gültige E-Mail-Adresse eingeben.');
+ if(!okDomain(email))return msg('mReg','Kein Firmenkonto! Registrierung nur mit einer E-Mail-Adresse '+DOMAIN+' möglich.');
+ if(!pwOk(pw))return msg('mReg','Das Passwort braucht mindestens 8 Zeichen, mit Buchstaben und Ziffern.');
+ if(pw!==pw2)return msg('mReg','Die Passwörter stimmen nicht überein.');
+ if(!$('rAgree').checked)return msg('mReg','Bitte bestätige die dienstliche Nutzung.');
+ busy('rBtn',true,'Konto wird erstellt …');holdAuth=true;
+ try{const c=await auth.createUserWithEmailAndPassword(email,pw);await c.user.updateProfile({displayName:first+' '+last});await c.user.sendEmailVerification();await auth.signOut();
+  $('fReg').reset();authTab('login');$('lEmail').value=email;msg('mLogin','Fast geschafft! Wir haben dir eine Bestätigungs-E-Mail an '+email+' geschickt. Klicke auf den Link darin und melde dich dann hier an.',1)}
+ catch(err){msg('mReg',errText(err))}
+ finally{holdAuth=false;busy('rBtn',false,'Registrieren')}});
+
+$('fLogin').addEventListener('submit',async e=>{e.preventDefault();msg('mLogin','');
+ const email=$('lEmail').value.trim().toLowerCase(),pw=$('lPw').value;
+ if(!okMail(email))return msg('mLogin','Bitte eine gültige E-Mail-Adresse eingeben.');
+ if(!okDomain(email))return msg('mLogin','Kein Firmenkonto! Anmeldung nur mit einer E-Mail-Adresse '+DOMAIN+' möglich.');
+ if(!pw)return msg('mLogin','Bitte das Passwort eingeben.');
+ busy('lBtn',true,'Anmelden …');holdAuth=true;
+ try{await auth.setPersistence($('lRem').checked?firebase.auth.Auth.Persistence.LOCAL:firebase.auth.Auth.Persistence.SESSION);
+  const c=await auth.signInWithEmailAndPassword(email,pw);
+  if(!c.user.emailVerified){try{await c.user.sendEmailVerification()}catch(x){}await auth.signOut();msg('mLogin','Bitte bestätige zuerst deine E-Mail-Adresse. Wir haben dir den Bestätigungslink erneut geschickt (auch im Spam-Ordner nachsehen).');return}
+  $('lPw').value='';holdAuth=false;signedIn(c.user)}
+ catch(err){msg('mLogin',errText(err))}
+ finally{holdAuth=false;busy('lBtn',false,'Anmelden')}});
+
+$('fReset').addEventListener('submit',async e=>{e.preventDefault();msg('mReset','');
+ const email=$('xEmail').value.trim().toLowerCase();
+ if(!okDomain(email))return msg('mReset','Kein Firmenkonto! Nur E-Mail-Adressen '+DOMAIN+'.');
+ try{await auth.sendPasswordResetEmail(email);msg('mReset','Falls zu '+email+' ein Konto existiert, ist der Link zum Zurücksetzen jetzt unterwegs. Bitte Postfach prüfen.',1)}
+ catch(err){msg('mReset',err.code==='auth/user-not-found'?'Falls zu dieser E-Mail ein Konto existiert, ist der Link jetzt unterwegs.':errText(err))}});
+
+const initials=n=>(n||'?').split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+function logout(){auth.signOut()}
+function profileModal(){const a=S.acct;modal(`<header><div class="av" style="width:44px;height:44px;font-size:16px">${E(initials(a.name))}</div><div style="flex:1"><h3>${E(a.name)}</h3><span class="muted">${E(a.email)}</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><p class="msg" id="mP" role="alert"></p>
+ <label class="f">Anzeigename<input id="pName" value="${E(a.name)}"></label>
+ <div><button class="btn sm" onclick="saveName()">Namen speichern</button></div>
+ <hr style="border:0;border-top:1px solid var(--bd);width:100%;margin:4px 0">
+ <h3 style="font-size:16px">Passwort ändern oder Konto löschen</h3>
+ <div class="fg"><label class="f full">Aktuelles Passwort<input id="pOld" type="password" autocomplete="current-password"></label><label class="f">Neues Passwort<input id="pNew" type="password" autocomplete="new-password"></label><label class="f">Wiederholen<input id="pNew2" type="password" autocomplete="new-password"></label></div>
+ <div><button class="btn sm" onclick="changePw()">Passwort ändern</button></div></div>
+ <footer style="justify-content:space-between"><button class="btn d" id="delBtn" onclick="delAcct(this)">Konto löschen</button><button class="btn p" onclick="logout()">${IC.out} Abmelden</button></footer>`)}
+async function reauth(){const pw=$('pOld').value;if(!pw)throw{code:'need-pw'};const u=auth.currentUser;await u.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(u.email,pw))}
+async function saveName(){const n=$('pName').value.trim();if(!n)return msg('mP','Bitte einen Namen eingeben.');try{await auth.currentUser.updateProfile({displayName:n});S.acct.name=n;msg('mP','Name gespeichert.',1);renderNav()}catch(e){msg('mP',errText(e))}}
+async function changePw(){const n=$('pNew').value,n2=$('pNew2').value;if(!pwOk(n))return msg('mP','Das neue Passwort braucht mindestens 8 Zeichen, mit Buchstaben und Ziffern.');if(n!==n2)return msg('mP','Die neuen Passwörter stimmen nicht überein.');
+ try{await reauth();await auth.currentUser.updatePassword(n);['pOld','pNew','pNew2'].forEach(i=>$(i).value='');msg('mP','Passwort geändert.',1)}catch(e){msg('mP',e.code==='need-pw'?'Bitte das aktuelle Passwort eingeben.':errText(e))}}
+async function delAcct(b){if(!b.dataset.c){b.dataset.c=1;b.textContent='Wirklich löschen? Nochmal klicken';msg('mP','Zum Löschen bitte oben das aktuelle Passwort eingeben und nochmal auf den Knopf klicken.');return}
+ try{await reauth();await auth.currentUser.delete()}catch(e){msg('mP',e.code==='need-pw'?'Bitte das aktuelle Passwort eingeben.':errText(e))}}
+
+/* ---------- Aufgaben-Modal ---------- */
+function taskModal(id){const t=S.tasks.find(x=>x._id===id);if(!t)return;const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t),bat=c==='b12'||c==='hv';
+ modal(`<header><div style="flex:1"><span class="tag ac">${icon(c)} ${CAT[c]}</span><h3 style="margin-top:8px">${E(t.title)}</h3><span class="muted">${E(t.when||'')}</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb">
+  <div class="prev">${carSVG(v)}<div><b>${vname(v)}</b><br><span class="mono">${E(t.fin)}</span><br><small>Fällig ${fmt(t.due)} · ${rel(t.due)}</small> <span class="pill ${sc}">${sl}</span></div></div>
+  ${bat?`<div class="meas"><label class="f">${c==='b12'?'Gemessene Spannung 12V-Batterie (Volt)':'Ladezustand HV-Batterie (%)'}<input id="tv" inputmode="decimal" placeholder="${c==='b12'?'z. B. 12,6':'z. B. 68'}" value="${E(t.val)}"></label>
+   <span class="hint">${c==='b12'?`Unter ${nf(S.cfg.v12,1)} V muss die Batterie geladen werden.`:`Unter ${nf(S.cfg.hv)} % muss die HV-Batterie geladen werden.`}</span><span class="warn" id="tvw"></span></div>`:''}
+  <div class="fg"><label class="f">Status<select id="ts">${['Offen','In Bearbeitung','Erledigt'].map(s=>`<option ${(t.status==='Offen'?'Erledigt':t.status)===s?'selected':''}>${s}</option>`).join('')}</select></label>
+  <label class="f">Durchgeführt am<input type="date" id="td" value="${t.done||TD()}"></label>
+  <label class="f full">Mitarbeiter:in<input id="tw" value="${E(t.who||me())}"></label>
+  <label class="f full">Bemerkung<textarea id="tn" rows="2">${E(t.note)}</textarea></label></div>
+ </div>
+ <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" onclick="saveTask('${t._id}')">Speichern</button></footer>`);
+ if(bat){const chk=()=>{const n=pnum($('tv').value);$('tvw').textContent=n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv)?'Wert unter der Ladegrenze: Bitte Laden!':''};$('tv').addEventListener('input',chk);chk()}}
+async function saveTask(id){const t=S.tasks.find(x=>x._id===id),c=catOf(t),bat=c==='b12'||c==='hv',s=$('ts').value;let d=$('td').value;if(s==='Erledigt'&&!d)d=TD();
+ let val='';if(bat){const raw=$('tv').value.trim();if(raw){const n=pnum(raw);if(n==null||n<0||(c==='hv'&&n>100)||(c==='b12'&&n>20)){$('tvw').textContent=c==='b12'?'Bitte eine Spannung in Volt eingeben, z. B. 12,6.':'Bitte einen Prozentwert zwischen 0 und 100 eingeben.';return}val=String(n)}}
+ try{await db.doc('tasks/'+id).update({status:s,done:s==='Erledigt'?d:'',who:$('tw').value,val,note:$('tn').value,cat:c});}catch(e){toast('Speichern nicht möglich: keine Schreibrechte.');return}
+ log(t.fin,`${t.title}: ${s}${val?' ('+(c==='b12'?nf(val,2)+' V':nf(val)+' %')+')':''}`);
+ $('mod').hidden=true;$('mb').innerHTML='';
+ const n=pnum(val);if(n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv))chargeAlert(c,n,t.fin);else{toast('Gespeichert.');render()}}
+
+/* ---------- Fahrzeug-Modal ---------- */
+const BRANDS=['Volkswagen','VW Nutzfahrzeuge','Audi','Škoda','Seat','Cupra','Porsche','Bentley'];
+function vehModal(fin){const v=S.veh.find(x=>x.fin===fin)||{transp:true};const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
+ modal(`<header><h3>${fin?'Fahrzeug bearbeiten':'Neues Fahrzeug'}</h3><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><div class="prev" id="vprev"></div>
+ <div class="fg">
+  <label class="f full">FIN (17 Zeichen)<input id="vf" class="mono" maxlength="17" value="${E(v.fin)}" ${fin?'disabled':''} style="text-transform:uppercase"></label>
+  <label class="f">Marke<input id="vb" list="brands" value="${E(v.brand)}"><datalist id="brands">${BRANDS.map(b=>`<option value="${b}">`).join('')}</datalist></label>
+  <label class="f">Modell<input id="vm" value="${E(v.model)}" placeholder="z. B. Golf, Tiguan, ID.4"></label>
+  <label class="f">Ausstattung / Variante<input id="vv" value="${E(v.variant)}"></label>
+  <label class="f">Karosserie<select id="vbody"><option value="">Automatisch erkennen</option>${Object.entries(BODIES).map(([k,b])=>`<option value="${k}" ${v.body===k?'selected':''}>${b.l}</option>`).join('')}</select></label>
+  <label class="f">Farbe<select id="vcol"><option value="">Bitte wählen</option>${COLORS.map(c=>`<option ${cn===c[0]?'selected':''}>${c[0]}</option>`).join('')}<option value="__c" ${isC?'selected':''}>Andere Farbe …</option></select></label>
+  <label class="f" id="vcw" ${isC?'':'hidden'}>Eigene Farbe<span style="display:flex;gap:8px"><input id="vcn" placeholder="Name, z. B. Kings Red" value="${isC?E(cn):''}"><input id="vcc" type="color" value="${E(v.colorHex||'#7a8590')}" style="width:52px;padding:3px"></span></label>
+  <label class="f">Standort<input id="vl" value="${E(v.loc)}"></label>
+  <label class="f">Eingangsdatum<input type="date" id="vd" value="${v.deliv||TD()}"></label>
+  <label class="f">Kennzeichen<input id="vk" value="${E(v.plate)}"></label>
+  <label class="f">Interne Nr.<input id="vn" value="${E(v.nr)}"></label>
+ </div>
+ <div style="display:flex;gap:18px;flex-wrap:wrap"><label class="chk"><input type="checkbox" id="c1" ${v.transp?'checked':''}>Transportmodus aktiv</label><label class="chk"><input type="checkbox" id="c3" ${v.hyb?'checked':''}>Hybrid</label><label class="chk"><input type="checkbox" id="c4" ${v.ev?'checked':''}>Elektro</label><label class="chk"><input type="checkbox" id="c2" ${v.solar?'checked':''}>Solarpanel</label></div>
+ <p class="hint" id="vplan"></p><p class="msg err" id="verr"></p></div>
+ <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev()}
+function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{fin:$('vf').value.trim().toUpperCase(),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),transp:$('c1').checked,solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked}}
+function vPrev(){if(!$('vprev'))return;$('vcw').hidden=$('vcol').value!=='__c';const v=formVeh();$('vprev').innerHTML=carSVG(v)+`<div><b>${vname(v)}</b><br><small>${BODIES[bodyOf(v)].l}${v.color?' · '+E(v.color):''}</small></div>`;
+ const n=planFor({...v,archived:false}).length,b=planFor({...v,archived:false}).filter(x=>x.cat==='b12').length;$('vplan').textContent=v.deliv?`Pflegeplan: ${n} Termine bis ${fmt(addM(v.deliv,24))}, davon ${b}× 12V-Batterie (${v.transp?'Transportmodus an: vierteljährlich':'Transportmodus aus: alle 6 Wochen'}).`:'Ohne Eingangsdatum wird kein Pflegeplan erstellt.'}
+async function saveVeh(old){const f=formVeh(),fin=old||f.fin,err=t=>{$('verr').textContent=t};
+ if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(fin))return err('Die FIN muss 17 Zeichen haben (Buchstaben ohne I, O, Q und Ziffern).');
+ if(!old&&S.veh.some(v=>v.fin===fin))return err('Ein Fahrzeug mit dieser FIN gibt es bereits.');
+ if(!f.brand||!f.model)return err('Bitte Marke und Modell angeben.');
+ if(!f.deliv)return err('Bitte das Eingangsdatum angeben: daraus entsteht der Pflegeplan.');
+ const o=S.veh.find(v=>v.fin===old)||{},v={...o,...f,fin,archived:!!o.archived};delete v.zp8s;delete v.zp8i;delete v._id;
+ busy('vsave',true,'Speichern …');
+ try{await db.doc('vehicles/'+fin).set(v)}catch(e){busy('vsave',false,'Speichern');return err('Speichern nicht möglich: keine Schreibrechte.')}
+ if(old&&o.transp!==v.transp)log(fin,'Transportmodus '+(v.transp?'eingeschaltet':'ausgeschaltet'));
+ log(fin,old?'Stammdaten geändert':'Fahrzeug angelegt');const r=await sync(v);
+ $('mod').hidden=true;$('mb').innerHTML='';if(!old){S.sel=fin;S.view='veh';S.tab='plan'}render();
+ toast(old?`Gespeichert · Pflegeplan aktualisiert (+${r.add} / −${r.del})`:`Fahrzeug angelegt · ${r.total} Pflegetermine für 2 Jahre eingetragen`)}
+document.addEventListener('input',e=>{if(['vb','vm','vv','vbody','vcol','vcn','vcc','vd','c1','c3','c4'].includes(e.target.id))vPrev()});
+document.addEventListener('change',e=>{if(['vbody','vcol','c1','c3','c4','vd'].includes(e.target.id))vPrev()});
+async function toggleTransp(fin){const v=veh(fin);if(!v.fin)return;const on=!v.transp;
+ try{await db.doc('vehicles/'+fin).update({transp:on})}catch(e){return toast('Ändern nicht möglich: keine Schreibrechte.')}
+ v.transp=on;log(fin,'Transportmodus '+(on?'eingeschaltet':'ausgeschaltet'));render();const r=await sync(v);
+ toast(`Transportmodus ${on?'an':'aus'} · Batterietermine angepasst (+${r.add} / −${r.del})`)}
+async function archive(fin){const v=veh(fin);v.archived=!v.archived;await db.doc('vehicles/'+fin).update({archived:v.archived});log(fin,v.archived?'Archiviert':'Reaktiviert');await sync(v);toast(v.archived?'Archiviert. Offene Termine wurden entfernt.':'Reaktiviert. Pflegeplan neu erstellt.')}
+
+/* ---------- Probleme ---------- */
+function probModal(fin){modal(`<header><h3>Problem melden</h3><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header><div class="sb"><div class="fg">
+ <label class="f full">Fahrzeug<select id="pf">${S.veh.filter(v=>!v.archived).map(v=>`<option value="${v.fin}" ${v.fin===fin?'selected':''}>${vname(v)} · ${v.fin}</option>`).join('')}</select></label>
+ <label class="f">Art<select id="pt"><option>Fahrzeug nicht startfähig</option><option>Batterie tiefentladen</option><option>Schaden festgestellt</option><option>Sonstiges</option></select></label>
+ <label class="f">Festgestellt am<input type="date" id="pd" value="${TD()}"></label><label class="f full">Ort<input id="pl"></label>
+ <label class="f full">Beschreibung<textarea id="pb" rows="3"></textarea></label></div></div>
+ <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" onclick="saveProb()">Melden</button></footer>`)}
+async function saveProb(){const f=$('pf').value;if(!f)return;try{await db.collection('problems').add({fin:f,type:$('pt').value,date:$('pd').value,place:$('pl').value,desc:$('pb').value,status:'Offen',fixed:'',by:me()})}catch(e){return toast('Speichern nicht möglich.')}log(f,'Problem gemeldet: '+$('pt').value);closeM();toast('Problem gemeldet.')}
+async function fixProb(id){const p=S.prob.find(x=>x._id===id),o=p.status==='Offen';await db.doc('problems/'+id).update({status:o?'Behoben':'Offen',fixed:o?TD():''});log(p.fin,'Problem '+(o?'behoben':'wieder geöffnet'))}
+function probTbl(ps,showV){return ps.length?`<div class="scroll"><table><tr>${showV?'<th>Fahrzeug</th>':''}<th>Art</th><th>Festgestellt</th><th>Ort</th><th>Beschreibung</th><th>Status</th><th></th></tr>${ps.sort((a,b)=>a.date<b.date?1:-1).map(p=>`<tr>${showV?`<td><b>${vname(veh(p.fin))}</b><br><span class="mono muted">${p.fin}</span></td>`:''}<td>${E(p.type)}</td><td class="num">${fmt(p.date)}</td><td>${E(p.place)||'–'}</td><td style="white-space:normal;min-width:200px">${E(p.desc)||'–'}</td><td><span class="pill ${p.status==='Offen'?'s-ba':'s-ok'}">${p.status}${p.fixed?' '+fmt(p.fixed):''}</span></td><td><button class="btn sm" onclick="fixProb('${p._id}')">${p.status==='Offen'?'Als behoben markieren':'Wieder öffnen'}</button></td></tr>`).join('')}</table></div>`:'<p class="empty">Keine Probleme gemeldet.</p>'}
+
+/* ---------- Ansichten ---------- */
+function taskLi(t){const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t);return`<li onclick="taskModal('${t._id}')" style="--carbg:var(--sf)">${carSVG(v,'thumb')}
+ <div style="min-width:0"><div class="t1">${icon(c)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${E(t.title)}</span></div><div class="t2"><span><b style="color:var(--tx);font-weight:500">${vname(v)}</b></span><span class="mono">${E(t.fin)}</span>${t.when?`<span>${E(t.when)}</span>`:''}</div></div>
+ <div class="due"><b>${fmt(t.due)}</b><span class="pill ${sc}">${t.due<TD()&&t.status!=='Erledigt'?rel(t.due):sl==='Geplant'?rel(t.due):sl}</span></div></li>`}
+function vCard(v){const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0],late=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt'&&t.due<TD()).length;
+ return`<button class="vc" onclick="openVeh('${v.fin}')">${carSVG(v)}<span class="meta"><b>${vname(v)}</b><span><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color||'Farbe offen')} · <span class="mono">…${v.fin.slice(-6)}</span></span>
+ ${nx?`<span class="nx">${icon(catOf(nx))} ${fmt(nx.due)} · ${E(nx.title)}</span>`:'<span>Keine offenen Termine</span>'}
+ <span style="display:flex;gap:4px;flex-wrap:wrap">${late?`<span class="pill s-ba">${late} überfällig</span>`:''}${v.transp?'<span class="tag">Transportmodus</span>':''}${v.ev?'<span class="tag ac">Elektro</span>':v.hyb?'<span class="tag ac">Hybrid</span>':''}</span></span></button>`}
+function openVeh(f){S.sel=f;S.view='veh';S.tab='plan';render();window.scrollTo(0,0)}
+
+function dash(){const T=TD(),a=S.veh.filter(v=>!v.archived),op=activeTasks().filter(t=>t.status!=='Erledigt'),bl=battLow(),pr=S.prob.filter(p=>p.status==='Offen'&&!veh(p.fin).archived);
+ const nx=[...op].sort((x,y)=>x.due<y.due?-1:x.due>y.due?1:0).slice(0,10);
+ const K=(n,l,c,go)=>`<div class="kpi ${c}" ${go?`style="cursor:pointer" onclick="${go}"`:''}><b>${n}</b><span>${l}</span></div>`;
+ const hr=new Date().getHours(),greet=hr<11?'Guten Morgen':hr<18?'Servus':'Guten Abend';
+ return`<div class="head"><h2><span class="eye">${new Date().toLocaleDateString('de-AT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>${greet}, ${E(me().split(' ')[0])}</h2><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button></div>
+ <div class="kpis">${K(op.filter(t=>t.due<T).length,'Maßnahmen überfällig','ba',"S.view='cal';S.cv='agenda';render()")}${K(op.filter(t=>t.due>=T&&t.due<=addD(T,7)).length,'fällig in den nächsten 7 Tagen','wa')}${K(bl.length,'Fahrzeuge: Batterie laden','ba')}${K(pr.length,'offene Probleme','',"S.view='prob';render()")}${K(a.length,'Fahrzeuge im Bestand','ac',"S.view='veh_l';render()")}</div>
+ <div class="dash">
+  <section class="panel"><div class="ph"><h3>Nächste Maßnahmen</h3><span class="muted">die 10 frühesten offenen Termine</span><button class="btn sm" onclick="S.view='cal';render()">${IC.cal} Kalender</button></div>
+   ${nx.length?`<ul class="tl">${nx.map(taskLi).join('')}</ul>`:`<p class="empty">Keine offenen Maßnahmen. Lege ein Fahrzeug an, dann erscheint hier sein Pflegeplan.</p>`}</section>
+  <section class="panel"><div class="ph"><h3>Fahrzeuge</h3><button class="btn sm" onclick="S.view='veh_l';render()">Alle anzeigen</button></div>
+   <div class="pb">${a.length?`<div class="vg">${a.slice().sort((x,y)=>{const nx_=f=>(S.tasks.filter(t=>t.fin===f&&t.status!=='Erledigt').map(t=>t.due).sort()[0]||'9');return nx_(x.fin)<nx_(y.fin)?-1:1}).slice(0,6).map(vCard).join('')}</div>`:`<p class="empty">Noch keine Fahrzeuge.<br><button class="btn p" style="margin-top:10px" onclick="vehModal()">${IC.plus} Erstes Fahrzeug anlegen</button></p>`}</div></section>
+ </div>`}
+
+function vlist(){const q=S.q.toLowerCase(),T=TD();const l=S.veh.filter(v=>{const x=S.tasks.filter(t=>t.fin===v.fin),o=x.filter(t=>t.status!=='Erledigt');
+ if(S.fl==='arch')return v.archived;if(v.archived)return false;
+ if(q&&![v.fin,v.brand,v.model,v.nr,v.plate,v.color,v.loc].some(s=>(s||'').toLowerCase().includes(q)))return false;
+ return{'':1,late:o.some(t=>t.due<T),transp:v.transp,notransp:!v.transp,hv:v.hyb||v.ev,low:battLow().includes(v.fin),prob:S.prob.some(p=>p.fin===v.fin&&p.status==='Offen')}[S.fl]||0});
+ return`<div class="head"><h2>Fahrzeuge</h2><button class="btn" onclick="exportCsv()">CSV-Export</button><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button></div>
+ <div class="tools"><input id="q" placeholder="Suchen: FIN, Marke, Modell, Farbe, Kennzeichen …" value="${E(S.q)}"><select id="fl">${[['','Alle aktiven'],['late','Mit überfälligen Maßnahmen'],['low','Batterie laden'],['transp','Transportmodus an'],['notransp','Transportmodus aus'],['hv','Hybrid / Elektro'],['prob','Mit offenen Problemen'],['arch','Archiviert']].map(o=>`<option value="${o[0]}" ${S.fl===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></div>
+ <section class="panel"><div class="scroll"><table><tr><th></th><th>Fahrzeug</th><th>FIN</th><th>Farbe</th><th>Standort</th><th>Eingang</th><th>Transportmodus</th><th>Nächste Maßnahme</th></tr>
+ ${l.map(v=>{const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0];return`<tr class="cl" onclick="openVeh('${v.fin}')"><td style="--carbg:var(--sf)">${carSVG(v)}</td><td><b>${vname(v)}</b><br><span class="muted">${E(v.variant)}</span></td><td class="mono">${v.fin}</td><td><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}</td><td>${E(v.loc)||'–'}</td><td class="num">${fmt(v.deliv)}</td><td>${v.transp?'<span class="pill s-gr">an</span>':'<span class="pill s-wa">aus</span>'}</td><td>${nx?`<span class="pill ${st(nx)[0]}">${fmt(nx.due)}</span> ${E(nx.title)}`:'–'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Keine Fahrzeuge gefunden.</td></tr>'}</table></div></section>`}
+function exportCsv(){const r=[['FIN','Marke','Modell','Variante','Karosserie','Farbe','Standort','Eingang','Kennzeichen','Nr','Transportmodus','Hybrid','Elektro','Offene Maßnahmen','Nächste Fälligkeit']];
+ S.veh.forEach(v=>{const o=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1);r.push([v.fin,v.brand,v.model,v.variant,BODIES[bodyOf(v)].l,v.color,v.loc,fmt(v.deliv),v.plate,v.nr,v.transp?'an':'aus',v.hyb?'ja':'nein',v.ev?'ja':'nein',o.length,o[0]?fmt(o[0].due):''])});
+ const csv='﻿'+r.map(x=>x.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(';')).join('\n');
+ const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='fahrzeuge_'+TD()+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000)}
+
+function lineChart(pts,o){const W=600,H=210,L=46,R=16,T=16,B=30;if(!pts.length)return`<p class="empty">Noch keine Messwerte erfasst.</p>`;
+ const vs=pts.map(p=>p.v),mn=Math.min(o.min,...vs.map(x=>x-o.pad)),mx=Math.max(o.max,...vs.map(x=>x+o.pad));
+ const ts=pts.map(p=>new Date(p.d+'T12:00:00').getTime()),t0=Math.min(...ts),t1=Math.max(...ts);
+ const X=t=>t1===t0?(L+W-R)/2:L+(t-t0)/(t1-t0)*(W-L-R),Y=v=>T+(mx-v)/(mx-mn)*(H-T-B);
+ const tick=[];for(let i=0;i<=4;i++)tick.push(mn+(mx-mn)*i/4);
+ const line=pts.map((p,i)=>(i?'L':'M')+X(ts[i]).toFixed(1)+','+Y(p.v).toFixed(1)).join(' ');
+ const area=pts.length>1?line+` L${X(ts[ts.length-1]).toFixed(1)},${H-B} L${X(ts[0]).toFixed(1)},${H-B} Z`:'';
+ const thrY=Y(o.thr);
+ return`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${E(o.label)}">
+ ${tick.map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--bd)" stroke-width="1"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end">${nf(v,o.dec)}</text>`).join('')}
+ <rect x="${L}" y="${thrY}" width="${W-L-R}" height="${Math.max(0,H-B-thrY)}" fill="var(--ba)" opacity=".07"/>
+ <line x1="${L}" x2="${W-R}" y1="${thrY}" y2="${thrY}" stroke="var(--ba)" stroke-width="1.5" stroke-dasharray="5 4"/>
+ <text x="${W-R}" y="${thrY-6}" text-anchor="end" style="fill:var(--ba);font-weight:600">Ladegrenze ${nf(o.thr,o.dec)} ${o.unit}</text>
+ ${area?`<path d="${area}" fill="var(--ac)" opacity=".10"/>`:''}<path d="${line}" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linejoin="round"/>
+ ${pts.map((p,i)=>`<circle cx="${X(ts[i])}" cy="${Y(p.v)}" r="5" fill="${p.v<o.thr?'var(--ba)':'var(--ac)'}" stroke="var(--sf)" stroke-width="2"><title>${fmt(p.d)}: ${nf(p.v,o.dec)} ${o.unit}${p.v<o.thr?' (Bitte Laden!)':''}</title></circle>`).join('')}
+ <text x="${X(t0)}" y="${H-8}" text-anchor="${t1===t0?'middle':'start'}">${fmt(pts[0].d)}</text>${t1!==t0?`<text x="${X(t1)}" y="${H-8}" text-anchor="end">${fmt(pts[pts.length-1].d)}</text>`:''}
+ </svg>`}
+function battTab(v){const rs=readings(v.fin),r12=rs.filter(r=>r.cat==='b12'),rhv=rs.filter(r=>r.cat==='hv'),hv=v.hyb||v.ev;
+ const pts=a=>a.map(r=>({d:r.d,v:r.v}));
+ const last=(a,u,d)=>a.length?`<span class="pill ${low(a[a.length-1])?'s-ba':'s-ok'}">zuletzt ${nf(a[a.length-1].v,d)} ${u}</span>`:'';
+ return`<div class="pb" style="display:flex;flex-direction:column;gap:16px">
+ <div class="charts"><div class="chart"><h4>${icon('b12')} 12V-Batterie <span style="margin-left:auto">${last(r12,'V',2)}</span></h4>${lineChart(pts(r12),{min:11.8,max:13.2,pad:.1,thr:S.cfg.v12,unit:'V',dec:1,label:'Verlauf Spannung 12V-Batterie'})}</div>
+ ${hv||rhv.length?`<div class="chart"><h4>${icon('hv')} HV-Batterie <span style="margin-left:auto">${last(rhv,'%',0)}</span></h4>${lineChart(pts(rhv),{min:0,max:100,pad:0,thr:S.cfg.hv,unit:'%',dec:0,label:'Verlauf Ladezustand HV-Batterie'})}</div>`:''}</div>
+ ${rs.length?`<div class="scroll" style="border:1px solid var(--bd);border-radius:10px"><table><tr><th>Datum</th><th>Batterie</th><th>Messwert</th><th>Ladung</th><th>Bewertung</th><th>Mitarbeiter:in</th></tr>
+ ${rs.slice().reverse().map(r=>{const pct=r.cat==='hv'?r.v:Math.max(0,Math.min(100,(r.v-11.8)/(12.9-11.8)*100)),bad=low(r);return`<tr class="cl" onclick="taskModal('${r.t._id}')"><td class="num">${fmt(r.d)}</td><td>${icon(r.cat)} ${CAT[r.cat]}</td><td class="num"><b>${r.cat==='b12'?nf(r.v,2)+' V':nf(r.v)+' %'}</b></td><td><span class="bar"><i style="width:${pct}%;background:${bad?'var(--ba)':'var(--ok)'}"></i></span></td><td><span class="pill ${bad?'s-ba':'s-ok'}">${bad?'Bitte Laden!':'In Ordnung'}</span></td><td>${E(r.t.who)||'–'}</td></tr>`}).join('')}</table></div>`:`<p class="hint">Messwerte erscheinen hier, sobald eine Batterie-Maßnahme mit Spannung oder Ladezustand erledigt wurde.</p>`}</div>`}
+function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug nicht gefunden.</p>';
+ const ts=S.tasks.filter(t=>t.fin===v.fin).sort((a,b)=>a.due<b.due?-1:1),ps=S.prob.filter(p=>p.fin===v.fin),lg=S.log.filter(l=>l.fin===v.fin).sort((a,b)=>a.at<b.at?1:-1),op=ts.filter(t=>t.status!=='Erledigt'),rs=readings(v.fin);
+ const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['log','Historie']];
+ let body='';
+ if(S.tab==='plan'){const shown=S.showDone?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd)"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(addM(v.deliv||TD(),24))}</span><label class="chk"><input type="checkbox" id="sd" ${S.showDone?'checked':''}>Erledigte anzeigen</label></div>${shown.length?`<ul class="tl">${shown.map(taskLi).join('')}</ul>`:'<p class="empty">Keine Termine.</p>'}`}
+ else if(S.tab==='batt')body=battTab(v);
+ else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',v.loc],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
+ else if(S.tab==='prob')body=`<div class="ph"><span style="flex:1"></span><button class="btn sm" onclick="probModal('${v.fin}')">${IC.plus} Problem melden</button></div>${probTbl(ps)}`;
+ else body=lg.length?`<div class="scroll"><table><tr><th>Zeitpunkt</th><th>Mitarbeiter:in</th><th>Änderung</th></tr>${lg.map(l=>`<tr><td class="num">${new Date(l.at).toLocaleString('de-AT',{dateStyle:'short',timeStyle:'short'})}</td><td>${E(l.by)}</td><td style="white-space:normal">${E(l.text)}</td></tr>`).join('')}</table></div>`:'<p class="empty">Noch keine Einträge.</p>';
+ return`<div><button class="link" onclick="S.view='veh_l';render()">← Alle Fahrzeuge</button></div>
+ <section class="panel"><div class="vhero" style="--carbg:var(--sf)">${carSVG(v)}<div style="min-width:0"><span class="mono muted">${v.fin}</span><h2>${vname(v)}</h2><span class="muted">${E(v.variant)}${v.variant?' · ':''}${E(v.color||'')}${v.loc?' · '+E(v.loc):''} · Eingang ${fmt(v.deliv)}</span>
+  <div class="chips">${v.archived?'<span class="pill s-gr">Archiviert</span>':''}${v.ev?'<span class="tag ac">Elektro</span>':v.hyb?'<span class="tag ac">Hybrid</span>':''}${v.solar?'<span class="tag">Solarpanel</span>':''}${battLow().includes(v.fin)?'<span class="pill s-ba">Batterie laden</span>':''}${op.some(t=>t.due<TD())?`<span class="pill s-ba">${op.filter(t=>t.due<TD()).length} überfällig</span>`:''}</div></div>
+  <div class="acts"><button class="toggle ${v.transp?'on':''}" onclick="toggleTransp('${v.fin}')" aria-pressed="${!!v.transp}"><span class="sw-t"></span><span><b>Transportmodus ${v.transp?'an':'aus'}</b><small>${v.transp?'12V-Batterie vierteljährlich':'12V-Batterie alle 6 Wochen'}</small></span></button>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="vehModal('${v.fin}')">Bearbeiten</button><button class="btn sm" onclick="probModal('${v.fin}')">Problem melden</button><button class="btn sm d" onclick="archive('${v.fin}')">${v.archived?'Reaktivieren':'Archivieren'}</button></div></div></div>
+  <div class="tabs" role="tablist">${tabs.map(t=>`<button class="${S.tab===t[0]?'on':''}" onclick="S.tab='${t[0]}';render()">${t[1]}${t[2]?` <span class="c">${t[2]}</span>`:''}</button>`).join('')}</div>${body}</section>`}
+
+function chip(t){const[c]=st(t),v=veh(t.fin);return`<button class="chip ${c}" title="${E(vname(v)+' · '+t.title)}" onclick="taskModal('${t._id}')">${icon(catOf(t))}<span>${E(v.model||t.fin.slice(-6))}: ${E(t.title)}</span></button>`}
+function cal(){const ts=activeTasks(),D=new Date(S.cd+'T12:00:00'),V=S.cv,on=d=>ts.filter(t=>t.due===d);
+ const step=n=>{const d=new Date(D);if(V==='day')d.setDate(d.getDate()+n);else if(V==='week')d.setDate(d.getDate()+7*n);else if(V==='year')d.setFullYear(d.getFullYear()+n);else{d.setDate(1);d.setMonth(d.getMonth()+n)}return iso(d)};
+ const ti=D.toLocaleDateString('de-AT',V==='year'?{year:'numeric'}:(V==='month'||V==='agenda')?{month:'long',year:'numeric'}:V==='week'?{day:'numeric',month:'short',year:'numeric'}:{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ const mon=d=>{const x=new Date(d);x.setDate(x.getDate()-(x.getDay()+6)%7);return x};
+ let b='';
+ if(V==='day'){const x=on(S.cd);b=`<section class="panel">${x.length?`<ul class="tl">${x.map(taskLi).join('')}</ul>`:'<p class="empty">Keine Termine an diesem Tag.</p>'}</section>`}
+ else if(V==='agenda'){const p=S.cd.slice(0,7),x=ts.filter(t=>t.due.startsWith(p)||(t.due<TD()&&t.status!=='Erledigt'&&p===TD().slice(0,7))).sort((a,b)=>a.due<b.due?-1:1),g={};x.forEach(t=>(g[t.due]=g[t.due]||[]).push(t));
+  b=`<section class="panel agenda">${Object.keys(g).length?Object.keys(g).sort().map(d=>`<h4>${new Date(d+'T12:00:00').toLocaleDateString('de-AT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} <span class="muted" style="font-weight:500">· ${rel(d)}</span></h4><ul class="tl">${g[d].map(taskLi).join('')}</ul>`).join(''):'<p class="empty">Keine Termine in diesem Monat.</p>'}</section>`}
+ else if(V==='week'||V==='month'){const s=V==='week'?mon(D):mon(new Date(D.getFullYear(),D.getMonth(),1)),n=V==='week'?7:42,max=V==='week'?12:3;
+  b='<div class="cal">'+['Mo','Di','Mi','Do','Fr','Sa','So'].map(w=>`<div class="h">${w}</div>`).join('');
+  for(let i=0;i<n;i++){const d=new Date(s);d.setDate(s.getDate()+i);const k=iso(d),x=on(k);b+=`<div class="${V==='month'&&d.getMonth()!==D.getMonth()?'o':''} ${k===TD()?'t':''}" style="${V==='week'?'min-height:220px':''}"><small>${d.getDate()}.</small>${x.slice(0,max).map(chip).join('')}${x.length>max?`<button class="more" onclick="S.cv='day';S.cd='${k}';render()">+${x.length-max} weitere</button>`:''}</div>`}b+='</div>'}
+ else{b='<div class="yr">'+[...Array(12).keys()].map(m=>{const p=D.getFullYear()+'-'+String(m+1).padStart(2,'0'),x=ts.filter(t=>t.due.startsWith(p)),late=x.filter(t=>st(t)[0]==='s-ba').length,cats={};x.forEach(t=>{const c=catOf(t);cats[c]=(cats[c]||0)+1});
+  return`<button onclick="S.cv='month';S.cd='${p}-01';render()"><b>${new Date(2000,m,1).toLocaleDateString('de-AT',{month:'long'})}</b><span class="muted">${x.length} Termine</span><span style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px">${Object.entries(cats).map(([c,n])=>`<span style="display:inline-flex;gap:3px;align-items:center">${icon(c)}${n}</span>`).join('')}</span>${late?`<span class="pill s-ba">${late} überfällig</span>`:''}</button>`}).join('')+'</div>'}
+ return`<div class="head"><h2>Kalender</h2><div class="segs">${[['day','Tag'],['week','Woche'],['month','Monat'],['agenda','Liste'],['year','Jahr']].map(v=>`<button class="${V===v[0]?'on':''}" onclick="S.cv='${v[0]}';render()">${v[1]}</button>`).join('')}</div></div>
+ <div class="calbar"><button class="btn" onclick="S.cd='${step(-1)}';render()" aria-label="Zurück">‹</button><button class="btn" onclick="S.cd='${step(1)}';render()" aria-label="Weiter">›</button><button class="btn" onclick="S.cd=TD();render()">Heute</button><h3>${ti}</h3>
+ <span class="muted" style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;font-size:12px">${['b12','hv','reifen','bremse','folie','reinigung'].map(c=>`<span style="display:inline-flex;gap:4px;align-items:center">${icon(c)}${CAT[c]}</span>`).join('')}</span></div>${b}`}
+
+function sett(){const c=S.cfg;
+ const rows=[['≤ 14 Tage nach Eingang',['','hv','','','folie',''],'HV · ggf. Folie applizieren'],['30 Tage nach Eingang',['reifen','','','','',''],''],['3 Monate',['','b12','hv','bremse','',''],''],['6 Monate',['reifen','b12','hv','bremse','',''],''],['9 Monate',['','b12','hv','bremse','',''],''],['12 Monate',['reifen','b12','hv','bremse','','reinigung'],''],['15 / 18 / 21 / 24 Monate','wdh','Zyklus wiederholt sich; Säuberung wieder nach 24 Monaten']];
+ return`<div class="head"><h2>Einstellungen</h2></div>
+ <section class="panel"><div class="ph"><h3>Pflegeprogramm Neufahrzeuge</h3><span class="muted">TQS Anlage 1, Abschnitt 3.2 · Fristen ab Eingangsdatum</span></div>
+ <div class="scroll"><table class="mx"><tr><th>Termin</th><th>Reifendruck</th><th>12V-Batterie</th><th>HV-Batterie</th><th>Bremsen</th><th>Folie</th><th>Säuberung</th></tr>
+ ${rows.map(r=>`<tr><td><b>${r[0]}</b></td>${r[1]==='wdh'?`<td colspan="6" class="muted" style="text-align:center">${r[2]}</td>`:r[1].map(x=>`<td>${x?icon(x):''}</td>`).join('')}</tr>`).join('')}</table></div>
+ <div class="pb hint" style="display:flex;flex-direction:column;gap:6px"><span>HV-Batterie nur bei Hybrid- und Elektrofahrzeugen. Ist der Transportmodus <b>aus</b>, ersetzt eine 12V-Batteriepflege alle 6 Wochen die vierteljährliche Prüfung.</span><span>Für Porsche, Bentley und den Crafter gelten teilweise andere Vorgaben (TQS 3.1 Checkliste); diese sind hier nicht abgebildet.</span></div></section>
+ <section class="panel" style="max-width:640px"><div class="ph"><h3>Grenzwerte und Intervalle</h3></div><div class="pb" style="display:flex;flex-direction:column;gap:14px">
+ <label class="f">12V-Batteriepflege bei Transportmodus aus: Intervall in Tagen<input type="number" min="7" id="s_wk" value="${c.wk}"></label>
+ <label class="f">„Bitte Laden!“ bei 12V-Spannung unter (Volt)<input type="number" step="0.1" id="s_v12" value="${c.v12}"></label>
+ <label class="f">„Bitte Laden!“ bei HV-Ladezustand unter (%)<input type="number" min="0" max="100" id="s_hv" value="${c.hv}"></label>
+ <div><button class="btn p" onclick="saveCfg()">Speichern und Termine neu berechnen</button></div></div></section>`}
+async function saveCfg(){const c={wk:+$('s_wk').value||42,v12:+$('s_v12').value||12.5,hv:+$('s_hv').value||25};try{await db.doc('settings/cfg').set(c)}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}S.cfg={...DEF,...c};for(const v of S.veh)await sync(v);toast('Gespeichert. Termine wurden neu berechnet.')}
+
+/* ---------- Rahmen ---------- */
+const NAV=[['dash','Dashboard',IC.dash],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car],['prob','Probleme',IC.warn],['set','Einstellungen',IC.set]];
+function renderNav(){const late=activeTasks().filter(t=>t.status!=='Erledigt'&&t.due<TD()).length,pr=S.prob.filter(p=>p.status==='Offen').length;
+ $('nav').innerHTML=`<div class="brand"><div class="mk">TQS</div><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
+ <div class="nl">${NAV.map(n=>`<a class="${(S.view===n[0]||(S.view==='veh'&&n[0]==='veh_l'))?'on':''}" onclick="S.view='${n[0]}';render()" title="${n[1]}">${n[2]}<span class="lb">${n[1]}</span>${n[0]==='dash'&&late?`<span class="cnt">${late}</span>`:n[0]==='prob'&&pr?`<span class="cnt">${pr}</span>`:''}</a>`).join('')}</div>
+ <button class="me" onclick="profileModal()" title="Profil"><span class="av">${E(initials(me()))}</span><div><b>${E(me())}</b><small>${E(S.acct.email)}</small></div></button>`}
+function render(){if(!db||!S.acct||$('app').hidden)return;if(!$('mod').hidden||!$('alrt').hidden)return;
+ renderNav();const f={dash,cal,veh_l:vlist,veh:vdet,prob:()=>`<div class="head"><h2>Probleme</h2><button class="btn p" onclick="probModal()">${IC.plus} Problem melden</button></div><section class="panel">${probTbl(S.prob.slice(),1)}</section>`,set:sett}[S.view]||dash;
+ const a=document.activeElement&&document.activeElement.id;$('main').innerHTML=f();
+ if(a&&$(a)&&a==='q'){const e=$(a);e.focus();try{e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}
+document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;render()}});
+document.addEventListener('change',e=>{if(e.target.id==='fl'){S.fl=e.target.value;render()}if(e.target.id==='sd'){S.showDone=e.target.checked;render()}});
+
+let subscribed=false,unsubs=[];
+function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=false;
+ if(!subscribed){subscribed=true;
+  const sub=(n,k)=>unsubs.push(db.collection(n).onSnapshot(s=>{S[k]=s.docs.map(d=>({...d.data(),_id:d.id}));if(k in S.ready)S.ready[k]=1;migrate();render()},e=>{console.error(n,e);if(e.code==='permission-denied')toast('Kein Zugriff auf die Datenbank. Sind die Firestore-Regeln eingetragen?')}));
+  sub('vehicles','veh');sub('tasks','tasks');sub('problems','prob');sub('log','log');
+  unsubs.push(db.doc('settings/cfg').onSnapshot(s=>{S.cfg={...DEF,...(s.data()||{})};render()},e=>console.error(e)))}
+ render()}
+async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks)return;S.migrated=true;try{for(const v of S.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
+function signedIn(u){S.acct={email:u.email,name:u.displayName||u.email.split('@')[0]};enterApp()}
+function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.prob=[];S.log=[];
+ const was=!!S.acct;S.acct=null;$('mod').hidden=true;$('mb').innerHTML='';$('app').hidden=true;$('boot').hidden=true;$('auth').hidden=false;if(was){authTab('login');msg('mLogin','Du wurdest abgemeldet.',1)}}
+
+let auth=null;
+(()=>{const fail=t=>{$('boot').innerHTML=`<p style="max-width:520px">${t}</p>`};
+ if(typeof firebase==='undefined')return fail('Firebase konnte nicht geladen werden. Bitte Internetverbindung prüfen und die Seite neu laden.');
+ if(!firebaseConfig.apiKey||/HIER/.test(firebaseConfig.apiKey))return fail('Firebase ist noch nicht eingerichtet: Bitte den <b>firebaseConfig</b>-Block oben in der index.html mit den Werten aus der Firebase-Konsole ersetzen.');
+ firebase.initializeApp(firebaseConfig);auth=firebase.auth();auth.languageCode='de';db=firebase.firestore();
+ auth.onAuthStateChanged(u=>{if(holdAuth)return;if(u&&u.emailVerified&&okDomain(u.email))signedIn(u);else{if(u)auth.signOut();signedOut()}})})();
+</script>
+</body>
+</html>
