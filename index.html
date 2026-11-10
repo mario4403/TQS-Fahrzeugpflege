@@ -223,6 +223,7 @@ td .car{width:84px;height:38px;display:block}
 .toggle.on .sw-t{background:var(--ac);border-color:var(--ac)}
 .toggle.on .sw-t::after{left:20px}
 .toggle.locked{cursor:default;opacity:.85}
+.toggle.dim{opacity:.6}.toggle.on.show .sw-t{background:#7b65c8}
 .toggle b{display:block;font-size:13px}
 .toggle small{display:block;font-size:12px;color:var(--mu)}
 .tabs{display:flex;gap:2px;border-bottom:1px solid var(--bd);padding:0 8px;overflow-x:auto}
@@ -463,15 +464,21 @@ function planFor(v){const out=[];if(!v.deliv||v.archived)return out;const d=v.de
  if(hv)out.push({k:'hv0',cat:'hv',t:'HV-Batterie prüfen',w:'≤ 14 Tage nach Eingang',due:addD(d,14)});
  out.push({k:'pflege',cat:'folie',t:'Folie applizieren (falls erforderlich)',w:'≤ 14 Tage nach Eingang',due:addD(d,14)});
  out.push({k:'r30',cat:'reifen',t:'Reifendruck kontrollieren',w:'30 Tage nach Eingang',due:addD(d,30)});
- const toff=v.transp?null:(v.transpOff&&v.transpOff>d?v.transpOff:d);
- const pend=planEnd(v);
+ const toff=v.transp?null:(v.transpOff&&v.transpOff>d?v.transpOff:d),pend=planEnd(v),BIG='9999-12-31';
+ /* Zeiträume mit Transport- oder Schauraummodus: 12V vierteljährlich; dazwischen alle 6 Wochen */
+ const ivs=[];if(v.transp)ivs.push([d,BIG]);else if(toff>d)ivs.push([d,toff]);
+ if(v.showOn&&!v.transp){const a=v.showOn<d?d:v.showOn,b=v.show?BIG:(v.showOff||a);if(b>a)ivs.push([a,b])}
+ const prot=x=>ivs.some(([a,b])=>x>=a&&x<b);
  for(let m=3;addM(d,m)<=pend;m+=3){const due=addM(d,m),w=`${m} Monate nach Eingang`;
-  if(v.transp||due<toff)out.push({k:'b'+m,cat:'b12',t:'12V-Batterie prüfen / laden',w,due});
+  if(prot(due))out.push({k:'b'+m,cat:'b12',t:'12V-Batterie prüfen / laden',w,due});
   if(hv)out.push({k:'h'+m,cat:'hv',t:'HV-Batterie prüfen / laden',w,due});
   out.push({k:'f'+m,cat:'bremse',t:'Bremsen freibremsen',w,due});
   if(m%6===0)out.push({k:'r'+m,cat:'reifen',t:'Reifendruck kontrollieren',w,due});
   if(m%12===0)out.push({k:'s'+m,cat:'reinigung',t:'Fahrzeugschmutz entfernen (Säuberung)',w,due});}
- if(!v.transp){const end=pend,step=Math.max(7,+S.cfg.wk||42);for(let i=1;;i++){const due=addD(toff,i*step);if(due>end)break;out.push({k:'w'+i,cat:'b12',t:'12V-Batterie pflegen',w:`alle ${Math.round(step/7)} Wochen ab Entfernung Transportmodus (${fmt(toff)}) · ${i}. Termin`,due})}}
+ {const step=Math.max(7,+S.cfg.wk||42),wk=Math.round(step/7),gaps=[];let cur=d;
+  for(const [a,b] of ivs.slice().sort((x,y)=>x[0]<y[0]?-1:1)){if(a>cur)gaps.push([cur,a]);if(b>cur)cur=b}if(cur<pend)gaps.push([cur,BIG]);
+  let k=0;for(const [a,b] of gaps){const lab=!v.show&&v.showOff&&a===v.showOff?'Ende Schauraummodus':'Entfernung Transportmodus';
+   for(let i=1;;i++){const due=addD(a,i*step);if(due>pend||due>=b)break;k++;out.push({k:'w'+k,cat:'b12',t:'12V-Batterie pflegen',w:`alle ${wk} Wochen ab ${lab} (${fmt(a)}) · ${i}. Termin`,due})}}}
  return out}
 async function pool(fns,n){let i=0;const run=async()=>{while(i<fns.length){const f=fns[i++];await f()}};await Promise.all(Array.from({length:Math.min(n||6,fns.length)},run))}
 const syncing={};
@@ -674,9 +681,10 @@ async function saveVeh(old){const f=formVeh(),fin=old||f.fin,err=t=>{$('verr').t
  toast(old?`Gespeichert · Pflegeplan aktualisiert (+${r.add} / −${r.del})`:`Fahrzeug angelegt · ${r.total} Pflegetermine bis ${fmt(planEnd(v))} eingetragen`)}
 document.addEventListener('input',e=>{if(['vb','vm','vv','vbody','vcol','vcn','vcc','vd','c1','c3','c4'].includes(e.target.id))vPrev()});
 document.addEventListener('change',e=>{if(['vbody','vcol','c1','c3','c4','vd'].includes(e.target.id))vPrev()});
+const showTxt=v=>v.show?(v.showOn>TD()?`Start geplant am ${fmt(v.showOn)}`:`an seit ${fmt(v.showOn)}`):v.showOn?`${fmt(v.showOn)} – ${fmt(v.showOff)}`:'nie eingeschaltet';
 const offTxt=v=>{const d=v.transpOff||v.deliv;return d>TD()?`Entfernung geplant am ${fmt(d)}`:`entfernt am ${fmt(d)}`};
 function toggleTransp(fin){const v=veh(fin);if(!v.fin)return;const free=!!S.cfg.transpFree,wk=Math.round((+S.cfg.wk||42)/7);
- if(!v.transp&&!free)return toast(`Transportmodus wurde am ${fmt(v.transpOff||v.deliv)} entfernt. Ändern nur über Einstellungen → Transportmodus bearbeiten.`);
+ if(!v.transp&&!free)return toast(`Transportmodus wurde am ${fmt(v.transpOff||v.deliv)} entfernt. Ändern nur über Einstellungen → Transport-/Schauraummodus bearbeiten.`);
  const head=`<header><div style="flex:1"><h3>${v.transp?'Transportmodus ausschalten':'Transportmodus bearbeiten'}</h3><span class="muted">${vname(v)} · <span class="mono">${E(fin)}</span></span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>`;
  modal(head+`<div class="sb"><label class="f">Transportmodus entfernt am<input type="date" id="toff" value="${v.transpOff||TD()}" ${free?'':`max="${TD()}"`}></label>
  ${free?`<p class="msg err" style="display:block">Freie Bearbeitung ist eingeschaltet: Datum auch in der Zukunft möglich, Transportmodus kann wieder eingeschaltet werden.</p>`:`<p class="msg err" style="display:block">Das kann nicht rückgängig gemacht werden: Der Transportmodus lässt sich danach nicht wieder einschalten.</p>`}
@@ -684,16 +692,47 @@ function toggleTransp(fin){const v=veh(fin);if(!v.fin)return;const free=!!S.cfg.
  <footer>${!v.transp?`<button class="btn" style="margin-right:auto" onclick="transpOn('${fin}')">Wieder einschalten</button>`:''}<button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="toffs" onclick="saveTranspOff('${fin}')">${v.transp?(free?'Ausschalten':'Endgültig ausschalten'):'Datum speichern'}</button></footer>`)}
 async function saveTranspOff(fin){const v=veh(fin),d=$('toff').value,was=v.transp;
  if(!d)return $('toffw').textContent='Bitte das Datum eintragen.';
+ if(v.showOn&&d>v.showOn)return $('toffw').textContent=`Der Transportmodus muss vor dem Schauraummodus (${fmt(v.showOn)}) entfernt worden sein.`;
  if(d>TD()&&!S.cfg.transpFree)return $('toffw').textContent='Das Datum darf nicht in der Zukunft liegen (Freischaltung in den Einstellungen nötig).';
  busy('toffs',true,'Speichern …');
  try{await db.doc('vehicles/'+fin).update({transp:false,transpOff:d,transpOffBy:me()})}catch(e){busy('toffs',false,'Speichern');return $('toffw').textContent='Speichern nicht möglich: keine Schreibrechte.'}
  v.transp=false;v.transpOff=d;log(fin,was?`Transportmodus ${d>TD()?'Entfernung geplant am':'entfernt am'} ${fmt(d)}`:`Datum Transportmodus geändert auf ${fmt(d)}`);
  $('mod').hidden=true;$('mb').innerHTML='';render();const r=await sync(v);
  toast(`Transportmodus ${offTxt(v)} · 12V-Termine angepasst (+${r.add} / −${r.del})`)}
-async function transpOn(fin){const v=veh(fin);if(!S.cfg.transpFree)return;if(!confirm('Transportmodus wieder einschalten? Die 12V-Termine werden wieder vierteljährlich geplant.'))return;
+async function transpOn(fin){const v=veh(fin);if(!S.cfg.transpFree)return;if(v.show)return $('toffw').textContent='Zuerst den Schauraummodus ausschalten: Beide Modi können nicht gleichzeitig an sein.';if(!confirm('Transportmodus wieder einschalten? Die 12V-Termine werden wieder vierteljährlich geplant.'))return;
  try{await db.doc('vehicles/'+fin).update({transp:true,transpOff:''})}catch(e){return $('toffw').textContent='Speichern nicht möglich: keine Schreibrechte.'}
  v.transp=true;v.transpOff='';log(fin,'Transportmodus wieder eingeschaltet');$('mod').hidden=true;$('mb').innerHTML='';render();const r=await sync(v);
  toast(`Transportmodus wieder an · 12V-Termine angepasst (+${r.add} / −${r.del})`)}
+function toggleShow(fin){const v=veh(fin);if(!v.fin)return;const free=!!S.cfg.transpFree,mx=free?'':`max="${TD()}"`;
+ if(v.transp)return toast('Schauraummodus geht erst, wenn der Transportmodus aus ist. Beide können nicht gleichzeitig an sein.');
+ const ended=!v.show&&!!v.showOn;if(ended&&!free)return toast(`Schauraummodus war ${showTxt(v)} an. Ändern nur über Einstellungen → Transport-/Schauraummodus bearbeiten.`);
+ const minOn=v.transpOff&&v.transpOff>v.deliv?v.transpOff:(v.deliv||'');
+ const title=!v.showOn?'Schauraummodus einschalten':v.show?'Schauraummodus ausschalten':'Schauraummodus bearbeiten';
+ const fOn=`<label class="f">Schauraummodus eingeschaltet am<input type="date" id="son" value="${v.showOn||TD()}" min="${minOn}" ${mx}></label>`;
+ const fOff=`<label class="f">Schauraummodus ausgeschaltet am<input type="date" id="soff" value="${v.showOff||TD()}" ${mx}></label>`;
+ const fields=!v.showOn?fOn:v.show?(free?fOn:'')+fOff:fOn+fOff;
+ const lock=v.show&&!free;
+ const warn=!v.showOn?'Solange der Schauraummodus an ist, wird die 12V-Batterie vierteljährlich geprüft. Der Transportmodus kann in dieser Zeit nicht eingeschaltet werden.':
+  lock?'Das kann nicht rückgängig gemacht werden: Der Schauraummodus lässt sich danach nicht wieder einschalten.':'Freie Bearbeitung ist eingeschaltet: Daten auch in der Zukunft möglich.';
+ modal(`<header><div style="flex:1"><h3>${title}</h3><span class="muted">${vname(v)} · <span class="mono">${E(fin)}</span></span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb">${fields}<p class="msg ${lock?'err':'okm'}" style="display:block">${warn}</p>
+ <span class="hint">Ab dem Ausschalten wird die 12V-Batterie wieder alle ${Math.round((+S.cfg.wk||42)/7)} Wochen gepflegt.</span><span class="warn" id="sw"></span></div>
+ <footer>${ended&&free?`<button class="btn" style="margin-right:auto" onclick="saveShow('${fin}','reon')">Wieder einschalten</button><button class="btn" style="color:var(--ba)" onclick="saveShow('${fin}','reset')">Zurücksetzen</button>`:''}<button class="btn" onclick="closeM()">Abbrechen</button>
+ <button class="btn p" id="ss" onclick="saveShow('${fin}','${!v.showOn?'on':v.show?'off':'edit'}')">${!v.showOn?'Einschalten':v.show?(free?'Ausschalten':'Endgültig ausschalten'):'Speichern'}</button></footer>`)}
+async function saveShow(fin,mode){const v=veh(fin),free=!!S.cfg.transpFree,T=TD(),w=m=>{$('sw').textContent=m};
+ if(v.transp)return w('Zuerst muss der Transportmodus aus sein.');
+ const on=$('son')?$('son').value:v.showOn,off=$('soff')?$('soff').value:'';let upd,txt;
+ if(mode==='reset'){if(!confirm('Schauraummodus bei diesem Fahrzeug komplett zurücksetzen?'))return;upd={show:false,showOn:'',showOff:''};txt='Schauraummodus zurückgesetzt'}
+ else{
+  if(!on)return w('Bitte das Datum zum Einschalten eintragen.');
+  if(!free&&on>T)return w('Das Datum darf nicht in der Zukunft liegen (Freischaltung in den Einstellungen nötig).');
+  const tE=v.transpOff&&v.transpOff>v.deliv?v.transpOff:v.deliv;if(tE&&on<tE)return w(`Einschalten erst ab ${fmt(tE)} möglich (Transportmodus bis dahin an bzw. Eingang).`);
+  if(mode==='on'||mode==='reon'){upd={show:true,showOn:on,showOff:''};txt=mode==='reon'?`Schauraummodus wieder eingeschaltet (seit ${fmt(on)})`:`Schauraummodus eingeschaltet am ${fmt(on)}`}
+  else{if(!off)return w('Bitte das Datum zum Ausschalten eintragen.');if(off<on)return w('Ausschalten kann nicht vor dem Einschalten liegen.');if(!free&&off>T)return w('Das Datum darf nicht in der Zukunft liegen.');
+   upd={show:false,showOn:on,showOff:off};txt=mode==='off'?`Schauraummodus ausgeschaltet am ${fmt(off)}`:`Schauraummodus geändert: ${fmt(on)} – ${fmt(off)}`}}
+ try{await db.doc('vehicles/'+fin).update({...upd,showBy:me()})}catch(e){return w('Speichern nicht möglich: keine Schreibrechte.')}
+ Object.assign(v,upd);log(fin,txt);$('mod').hidden=true;$('mb').innerHTML='';render();const r=await sync(v);
+ toast(`${txt} · 12V-Termine angepasst (+${r.add} / −${r.del})`)}
 async function archive(fin){const v=veh(fin);v.archived=!v.archived;await db.doc('vehicles/'+fin).update({archived:v.archived});log(fin,v.archived?'Archiviert':'Reaktiviert');await sync(v);toast(v.archived?'Archiviert. Offene Termine wurden entfernt.':'Reaktiviert. Pflegeplan neu erstellt.')}
 
 /* ---------- PDF-Protokoll (eigener PDF-Erzeuger, ohne externe Bibliothek) ---------- */
@@ -759,9 +798,9 @@ function pdfProtokoll(fin){const v=veh(fin);if(!v.fin)return;
   doc.text(W-M,y+15,`Stand ${fmt(T)}`,{size:8,color:C.mu,align:'right'});y+=24};
  head();
  doc.text(M,y+10,[`${v.brand||''} ${v.model||''}`.trim(),v.variant].filter(Boolean).join(' · '),{size:12,bold:true,maxW:W-2*M});y+=18;
- const info=[['FIN',v.fin],['Eingang',fmt(v.deliv)],['Standort',v.loc||'–'],['Kennzeichen',v.plate||'–'],['Interne Nr.',v.nr||'–'],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Transportmodus',v.transp?'an':offTxt(v)],['Farbe',v.color||'–']];
- const cw=(W-2*M)/4;doc.rect(M,y,W-2*M,50,C.z);
- info.forEach((x,i)=>{const cx=M+10+(i%4)*cw,cy=y+4+Math.floor(i/4)*23;doc.text(cx,cy+8,x[0].toUpperCase(),{size:6.5,bold:true,color:C.mu});doc.text(cx,cy+19,x[1],{size:9.5,maxW:cw-16})});y+=62;
+ const info=[['FIN',v.fin],['Eingang',fmt(v.deliv)],['Standort',v.loc||'–'],['Kennzeichen',v.plate||'–'],['Interne Nr.',v.nr||'–'],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Farbe',v.color||'–']];
+ const cw=(W-2*M)/4,ih=Math.ceil(info.length/4)*23+4;doc.rect(M,y,W-2*M,ih,C.z);
+ info.forEach((x,i)=>{const cx=M+10+(i%4)*cw,cy=y+4+Math.floor(i/4)*23;doc.text(cx,cy+8,x[0].toUpperCase(),{size:6.5,bold:true,color:C.mu});doc.text(cx,cy+19,x[1],{size:9.5,maxW:cw-16})});y+=ih+12;
  doc.text(M,y+8,`${ts.length} Maßnahmen bis ${fmt(T)}  ·  ${nDone} erledigt  ·  ${ts.length-nDone} nicht erledigt${nLate?` (davon ${nLate} überfällig)`:''}`,{size:9,color:C.mu});y+=16;
  const cols=[['Geplant',58],['Maßnahme',160],['Intervall / Herkunft',150],['Status',70],['Erledigt am',62],['Mitarbeiter:in',95],['Messwert',54],['Bemerkung',0]];
  cols[7][1]=W-2*M-cols.slice(0,7).reduce((a,c)=>a+c[1],0);
@@ -819,7 +858,7 @@ function taskLi(t,canDel){const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t),od=canDel&
 function vCard(v){const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0],late=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt'&&t.due<TD()).length;
  return`<button class="vc" onclick="openVeh('${v.fin}')">${carSVG(v)}<span class="meta"><b>${vname(v)}</b><span><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color||'Farbe offen')} · <span class="mono">…${v.fin.slice(-6)}</span></span>
  ${nx?`<span class="nx">${icon(catOf(nx))} ${fmt(nx.due)} · ${E(nx.title)}</span>`:'<span>Keine offenen Termine</span>'}
- <span style="display:flex;gap:4px;flex-wrap:wrap">${late?`<span class="pill s-ba">${late} überfällig</span>`:''}${v.transp?'<span class="tag">Transportmodus</span>':''}${v.ev?'<span class="tag ac">Elektro</span>':v.hyb?'<span class="tag ac">Hybrid</span>':''}</span></span></button>`}
+ <span style="display:flex;gap:4px;flex-wrap:wrap">${late?`<span class="pill s-ba">${late} überfällig</span>`:''}${v.transp?'<span class="tag">Transportmodus</span>':''}${v.show?'<span class="tag">Schauraum</span>':''}${v.ev?'<span class="tag ac">Elektro</span>':v.hyb?'<span class="tag ac">Hybrid</span>':''}</span></span></button>`}
 function openVeh(f){S.sel=f;S.view='veh';S.tab='plan';render();window.scrollTo(0,0)}
 
 function dash(){const T=TD(),a=S.veh.filter(v=>!v.archived),op=activeTasks().filter(t=>t.status!=='Erledigt'),bl=battLow(),pr=S.prob.filter(p=>p.status==='Offen'&&!veh(p.fin).archived);
@@ -838,13 +877,13 @@ function dash(){const T=TD(),a=S.veh.filter(v=>!v.archived),op=activeTasks().fil
 function vlist(){const q=S.q.toLowerCase(),T=TD();const l=S.veh.filter(v=>{const x=S.tasks.filter(t=>t.fin===v.fin),o=x.filter(t=>t.status!=='Erledigt');
  if(S.fl==='arch')return v.archived;if(v.archived)return false;
  if(q&&![v.fin,v.brand,v.model,v.nr,v.plate,v.color,v.loc].some(s=>(s||'').toLowerCase().includes(q)))return false;
- return{'':1,late:o.some(t=>t.due<T),transp:v.transp,notransp:!v.transp,hv:v.hyb||v.ev,low:battLow().includes(v.fin),prob:S.prob.some(p=>p.fin===v.fin&&p.status==='Offen')}[S.fl]||0});
+ return{'':1,late:o.some(t=>t.due<T),transp:v.transp,notransp:!v.transp,show:!!v.show,hv:v.hyb||v.ev,low:battLow().includes(v.fin),prob:S.prob.some(p=>p.fin===v.fin&&p.status==='Offen')}[S.fl]||0});
  return`<div class="head"><h2>Fahrzeuge</h2><button class="btn" onclick="exportCsv()">CSV-Export</button><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button></div>
- <div class="tools"><input id="q" placeholder="Suchen: FIN, Marke, Modell, Farbe, Kennzeichen …" value="${E(S.q)}"><select id="fl">${[['','Alle aktiven'],['late','Mit überfälligen Maßnahmen'],['low','Batterie laden'],['transp','Transportmodus an'],['notransp','Transportmodus aus'],['hv','Hybrid / Elektro'],['prob','Mit offenen Problemen'],['arch','Archiviert']].map(o=>`<option value="${o[0]}" ${S.fl===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></div>
+ <div class="tools"><input id="q" placeholder="Suchen: FIN, Marke, Modell, Farbe, Kennzeichen …" value="${E(S.q)}"><select id="fl">${[['','Alle aktiven'],['late','Mit überfälligen Maßnahmen'],['low','Batterie laden'],['transp','Transportmodus an'],['notransp','Transportmodus aus'],['show','Schauraummodus an'],['hv','Hybrid / Elektro'],['prob','Mit offenen Problemen'],['arch','Archiviert']].map(o=>`<option value="${o[0]}" ${S.fl===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></div>
  <section class="panel"><div class="scroll"><table><tr><th></th><th>Fahrzeug</th><th>FIN</th><th>Farbe</th><th>Standort</th><th>Eingang</th><th>Transportmodus</th><th>Nächste Maßnahme</th></tr>
  ${l.map(v=>{const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0];return`<tr class="cl" onclick="openVeh('${v.fin}')"><td style="--carbg:var(--sf)">${carSVG(v)}</td><td><b>${vname(v)}</b><br><span class="muted">${E(v.variant)}</span></td><td class="mono">${v.fin}</td><td><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}</td><td>${E(v.loc)||'–'}</td><td class="num">${fmt(v.deliv)}</td><td>${v.transp?'<span class="pill s-gr">an</span>':'<span class="pill s-wa">aus</span>'}</td><td>${nx?`<span class="pill ${st(nx)[0]}">${fmt(nx.due)}</span> ${E(nx.title)}`:'–'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Keine Fahrzeuge gefunden.</td></tr>'}</table></div></section>`}
-function exportCsv(){const r=[['FIN','Marke','Modell','Variante','Karosserie','Farbe','Standort','Eingang','Kennzeichen','Nr','Transportmodus','Hybrid','Elektro','Offene Maßnahmen','Nächste Fälligkeit']];
- S.veh.forEach(v=>{const o=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1);r.push([v.fin,v.brand,v.model,v.variant,BODIES[bodyOf(v)].l,v.color,v.loc,fmt(v.deliv),v.plate,v.nr,v.transp?'an':'aus seit '+fmt(v.transpOff||v.deliv),v.hyb?'ja':'nein',v.ev?'ja':'nein',o.length,o[0]?fmt(o[0].due):''])});
+function exportCsv(){const r=[['FIN','Marke','Modell','Variante','Karosserie','Farbe','Standort','Eingang','Kennzeichen','Nr','Transportmodus','Schauraummodus','Hybrid','Elektro','Offene Maßnahmen','Nächste Fälligkeit']];
+ S.veh.forEach(v=>{const o=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1);r.push([v.fin,v.brand,v.model,v.variant,BODIES[bodyOf(v)].l,v.color,v.loc,fmt(v.deliv),v.plate,v.nr,v.transp?'an':'aus seit '+fmt(v.transpOff||v.deliv),showTxt(v),v.hyb?'ja':'nein',v.ev?'ja':'nein',o.length,o[0]?fmt(o[0].due):''])});
  const csv='﻿'+r.map(x=>x.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(';')).join('\n');
  const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='fahrzeuge_'+TD()+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000)}
 
@@ -879,13 +918,18 @@ function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug ni
  let body='';
  if(S.tab==='plan'){const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(planEnd(v))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length]].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div>${(()=>{const od=op.filter(t=>t.due<TD());return od.length?`<button class="btn sm" style="color:var(--ba)" onclick="removeTasks(${E(JSON.stringify(od.map(t=>t._id)))})">${IC.trash} Überfällige löschen (${od.length})</button>`:''})()}<button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(t=>taskLi(t,1)).join('')}</ul>`:`<p class="empty">${S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
  else if(S.tab==='batt')body=battTab(v);
- else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',v.loc],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Transportmodus',v.transp?'an':offTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
+ else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',v.loc],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
  else if(S.tab==='prob')body=`<div class="ph"><span style="flex:1"></span><button class="btn sm" onclick="probModal('${v.fin}')">${IC.plus} Problem melden</button></div>${probTbl(ps)}`;
  else body=lg.length?`<div class="scroll"><table><tr><th>Zeitpunkt</th><th>Mitarbeiter:in</th><th>Änderung</th></tr>${lg.map(l=>`<tr><td class="num">${new Date(l.at).toLocaleString('de-AT',{dateStyle:'short',timeStyle:'short'})}</td><td>${E(l.by)}</td><td style="white-space:normal">${E(l.text)}</td></tr>`).join('')}</table></div>`:'<p class="empty">Noch keine Einträge.</p>';
  return`<div><button class="link" onclick="S.view='veh_l';render()">← Alle Fahrzeuge</button></div>
  <section class="panel"><div class="vhero" style="--carbg:var(--sf)">${carSVG(v)}<div style="min-width:0"><span class="mono muted">${v.fin}</span><h2>${vname(v)}</h2><span class="muted">${E(v.variant)}${v.variant?' · ':''}${E(v.color||'')}${v.loc?' · '+E(v.loc):''} · Eingang ${fmt(v.deliv)}</span>
   <div class="chips">${v.archived?'<span class="pill s-gr">Archiviert</span>':''}${v.ev?'<span class="tag ac">Elektro</span>':v.hyb?'<span class="tag ac">Hybrid</span>':''}${v.solar?'<span class="tag">Solarpanel</span>':''}${battLow().includes(v.fin)?'<span class="pill s-ba">Batterie laden</span>':''}${op.some(t=>t.due<TD())?`<span class="pill s-ba">${op.filter(t=>t.due<TD()).length} überfällig</span>`:''}</div></div>
-  <div class="acts">${v.transp?`<button class="toggle on" onclick="toggleTransp('${v.fin}')" aria-pressed="true" title="Transportmodus ausschalten"><span class="sw-t"></span><span><b>Transportmodus an</b><small>12V-Batterie vierteljährlich · zum Ausschalten tippen</small></span></button>`:(S.cfg.transpFree?`<button class="toggle" onclick="toggleTransp('${v.fin}')" aria-pressed="false"><span class="sw-t"></span><span><b>Transportmodus aus</b><small>${offTxt(v)} · tippen zum Bearbeiten</small></span></button>`:`<div class="toggle locked" aria-disabled="true"><span class="sw-t"></span><span><b>Transportmodus entfernt</b><small>${offTxt(v)} · 12V-Batterie alle ${Math.round((+S.cfg.wk||42)/7)} Wochen</small></span></div>`)}
+  <div class="acts">${(()=>{const wk=Math.round((+S.cfg.wk||42)/7),free=!!S.cfg.transpFree;
+   if(v.transp)return`<button class="toggle dim" onclick="toggleShow('${v.fin}')" aria-pressed="false" title="Nur möglich, wenn der Transportmodus aus ist"><span class="sw-t"></span><span><b>Schauraummodus aus</b><small>erst möglich, wenn der Transportmodus aus ist</small></span></button>`;
+   if(v.show)return`<button class="toggle on show" onclick="toggleShow('${v.fin}')" aria-pressed="true"><span class="sw-t"></span><span><b>Schauraummodus an</b><small>${showTxt(v)} · 12V vierteljährlich · zum Ausschalten tippen</small></span></button>`;
+   if(v.showOn&&!free)return`<div class="toggle locked" aria-disabled="true"><span class="sw-t"></span><span><b>Schauraummodus beendet</b><small>${showTxt(v)} · 12V-Batterie alle ${wk} Wochen</small></span></div>`;
+   return`<button class="toggle" onclick="toggleShow('${v.fin}')" aria-pressed="false"><span class="sw-t"></span><span><b>Schauraummodus aus</b><small>${v.showOn?showTxt(v)+' · tippen zum Bearbeiten':'zum Einschalten tippen'}</small></span></button>`})()}
+  ${v.transp?`<button class="toggle on" onclick="toggleTransp('${v.fin}')" aria-pressed="true" title="Transportmodus ausschalten"><span class="sw-t"></span><span><b>Transportmodus an</b><small>12V-Batterie vierteljährlich · zum Ausschalten tippen</small></span></button>`:(S.cfg.transpFree?`<button class="toggle" onclick="toggleTransp('${v.fin}')" aria-pressed="false"><span class="sw-t"></span><span><b>Transportmodus aus</b><small>${offTxt(v)} · tippen zum Bearbeiten</small></span></button>`:`<div class="toggle locked" aria-disabled="true"><span class="sw-t"></span><span><b>Transportmodus entfernt</b><small>${offTxt(v)} · 12V-Batterie alle ${Math.round((+S.cfg.wk||42)/7)} Wochen</small></span></div>`)}
   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="vehModal('${v.fin}')">Bearbeiten</button><button class="btn sm" onclick="probModal('${v.fin}')">Problem melden</button><button class="btn sm" onclick="pdfProtokoll('${v.fin}')" title="Komplette Historie bis heute als PDF">${IC.pdf} PDF-Protokoll</button><button class="btn sm d" onclick="archive('${v.fin}')">${v.archived?'Reaktivieren':'Archivieren'}</button></div></div></div>
   <div class="tabs" role="tablist">${tabs.map(t=>`<button class="${S.tab===t[0]?'on':''}" onclick="S.tab='${t[0]}';render()">${t[1]}${t[2]?` <span class="c">${t[2]}</span>`:''}</button>`).join('')}</div>${body}</section>`}
 
@@ -923,9 +967,9 @@ function sett(){const c=S.cfg;
  <label class="f">„Bitte Laden!“ bei 12V-Spannung unter (Volt)<input type="number" step="0.1" id="s_v12" value="${c.v12}"></label>
  <label class="f">„Bitte Laden!“ bei HV-Ladezustand unter (%)<input type="number" min="0" max="100" id="s_hv" value="${c.hv}"></label>
  <div><button class="btn p" onclick="saveCfg()">Speichern und Termine neu berechnen</button></div></div></section>
- <section class="panel" style="max-width:640px;border-color:${c.transpFree?'var(--ba)':'var(--bd)'}"><div class="ph" style="background:linear-gradient(90deg,var(--bab),transparent 65%)"><h3>Transportmodus bearbeiten</h3>${c.transpFree?'<span class="pill s-ba">freigeschaltet</span>':''}</div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
- <p class="msg err" style="display:block;margin:0"><b>Achtung:</b> Normalerweise wird der Transportmodus einmal mit Datum ausgeschaltet und ist danach gesperrt. Mit dieser Freischaltung kann der Transportmodus bei allen Fahrzeugen beliebig ein- und ausgeschaltet und das Datum frei in Vergangenheit oder Zukunft gelegt werden. Die 12V-Termine werden dabei neu berechnet. Bereits erledigte Maßnahmen bleiben erhalten. Die Einstellung gilt für alle Benutzer.</p>
- <button class="toggle ${c.transpFree?'on':''}" onclick="setTranspFree(${!c.transpFree})" aria-pressed="${!!c.transpFree}"><span class="sw-t"></span><span><b>Freie Bearbeitung ${c.transpFree?'an':'aus'}</b><small>${c.transpFree?'Transportmodus ist bei allen Fahrzeugen frei änderbar':'Transportmodus kann nur einmal ausgeschaltet werden'}</small></span></button>
+ <section class="panel" style="max-width:640px;border-color:${c.transpFree?'var(--ba)':'var(--bd)'}"><div class="ph" style="background:linear-gradient(90deg,var(--bab),transparent 65%)"><h3>Transport-/Schauraummodus bearbeiten</h3>${c.transpFree?'<span class="pill s-ba">freigeschaltet</span>':''}</div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
+ <p class="msg err" style="display:block;margin:0"><b>Achtung:</b> Normalerweise werden Transport- und Schauraummodus einmal mit Datum ausgeschaltet und sind danach gesperrt. Mit dieser Freischaltung können beide Modi bei allen Fahrzeugen beliebig ein- und ausgeschaltet und das Datum frei in Vergangenheit oder Zukunft gelegt werden. Die 12V-Termine werden dabei neu berechnet. Bereits erledigte Maßnahmen bleiben erhalten. Die Einstellung gilt für alle Benutzer.</p>
+ <button class="toggle ${c.transpFree?'on':''}" onclick="setTranspFree(${!c.transpFree})" aria-pressed="${!!c.transpFree}"><span class="sw-t"></span><span><b>Freie Bearbeitung ${c.transpFree?'an':'aus'}</b><small>${c.transpFree?'Transport- und Schauraummodus sind frei änderbar':'Beide Modi können nur einmal ausgeschaltet werden'}</small></span></button>
  </div></section>`}
 async function setTranspFree(on){if(on&&!confirm('Freie Bearbeitung des Transportmodus wirklich einschalten? Das gilt für alle Benutzer.'))return;
  try{await db.doc('settings/cfg').set({transpFree:on},{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}
