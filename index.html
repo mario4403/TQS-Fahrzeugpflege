@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
+<script>/* Erscheinungsbild vor dem ersten Zeichnen setzen (kein Aufflackern) */
+(function(){var t='auto';try{t=localStorage.getItem('tqs_theme')||'auto'}catch(e){}if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)})();</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -24,11 +26,11 @@ const firebaseConfig = {
 <style>
 /* Layout: dunkle Werkstatt-Seitenleiste + helle Arbeitsfläche; Status als Streifen/Pillen, Fahrzeuge als Seitenriss-Skizzen */
 :root{
- --bg:#eceff3;--sf:#ffffff;--sf2:#f5f7f9;--tx:#14202b;--mu:#5b6877;--bd:#d6dde4;
+ --bg:#eef2f7;--sf:#ffffff;--sf2:#f4f7fb;--tx:#14202b;--mu:#5b6877;--bd:#d8dfe8;
  --ac:#0b6a96;--acs:#e1eef5;--on-ac:#ffffff;
  --nav:#132029;--navtx:#b9c6d1;--navhi:#ffffff;--navac:#f0a92e;
  --ok:#1b8a4c;--okb:#e0f3e8;--wa:#9a6a00;--wab:#fdf0cc;--ba:#c42b2b;--bab:#fbe3e1;--gr:#5f6c7a;--grb:#e8ecf0;
- --glass:#2b3a48;--carline:rgba(15,25,35,.45);--shadow:rgba(20,32,43,.12);
+ --pub:#f1ecfc;--glass:#2b3a48;--carline:rgba(15,25,35,.45);--shadow:rgba(20,32,43,.12);
  --f-disp:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
  --f-body:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -38,13 +40,13 @@ const firebaseConfig = {
  --ac:#4cb0e0;--acs:#173444;--on-ac:#06141c;
  --nav:#091016;--navtx:#9fb0be;--navhi:#ffffff;--navac:#f0a92e;
  --ok:#4cc483;--okb:#11301f;--wa:#e8b84a;--wab:#352a0c;--ba:#ff7f78;--bab:#3d1a19;--gr:#9eabb8;--grb:#22303c;
- --glass:#0f1820;--carline:rgba(0,0,0,.55);--shadow:rgba(0,0,0,.35);color-scheme:dark}}
+ --pub:#251d3b;--glass:#0f1820;--carline:rgba(0,0,0,.55);--shadow:rgba(0,0,0,.35);color-scheme:dark}}
 :root[data-theme="dark"]{
  --bg:#0d141a;--sf:#152029;--sf2:#1a2732;--tx:#e3e9ef;--mu:#93a1af;--bd:#263542;
  --ac:#4cb0e0;--acs:#173444;--on-ac:#06141c;
  --nav:#091016;--navtx:#9fb0be;--navhi:#ffffff;--navac:#f0a92e;
  --ok:#4cc483;--okb:#11301f;--wa:#e8b84a;--wab:#352a0c;--ba:#ff7f78;--bab:#3d1a19;--gr:#9eabb8;--grb:#22303c;
- --glass:#0f1820;--carline:rgba(0,0,0,.55);--shadow:rgba(0,0,0,.35);color-scheme:dark}
+ --pub:#251d3b;--glass:#0f1820;--carline:rgba(0,0,0,.55);--shadow:rgba(0,0,0,.35);color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
@@ -146,6 +148,20 @@ main{min-width:0;padding-block:24px 48px;padding-left:28px;padding-right:max(28p
 .kpi::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--bd)}
 .kpi.ba::after{background:var(--ba)}.kpi.wa::after{background:var(--wa)}.kpi.ok::after{background:var(--ok)}.kpi.ac::after{background:var(--ac)}
 .kpi.ba b{color:var(--ba)}
+/* etwas mehr Farbe */
+.kpi.ba{background:linear-gradient(135deg,var(--bab),var(--sf) 75%)}
+.kpi.wa{background:linear-gradient(135deg,var(--wab),var(--sf) 75%)}.kpi.wa b{color:var(--wa)}
+.kpi.ok{background:linear-gradient(135deg,var(--okb),var(--sf) 75%)}.kpi.ok b{color:var(--ok)}
+.kpi.ac{background:linear-gradient(135deg,var(--acs),var(--sf) 75%)}.kpi.ac b{color:var(--ac)}
+.kpi:not(.ba):not(.wa):not(.ok):not(.ac){background:linear-gradient(135deg,var(--pub),var(--sf) 75%)}.kpi:not(.ba):not(.wa):not(.ok):not(.ac)::after{background:#7a62c9}
+.panel>.ph{background:linear-gradient(90deg,var(--acs),transparent 65%);border-radius:12px 12px 0 0}
+.head h2{position:relative;padding-bottom:6px}.head h2::after{content:"";position:absolute;left:0;bottom:0;width:42px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--ac),var(--navac))}
+.tl li{border-left:4px solid transparent}
+.tl li[data-c="b12"]{border-left-color:#e0a12a}.tl li[data-c="hv"]{border-left-color:#1aa6cc}.tl li[data-c="reifen"]{border-left-color:#7d8a98}.tl li[data-c="bremse"]{border-left-color:#c4573a}.tl li[data-c="folie"]{border-left-color:#7b65c8}.tl li[data-c="reinigung"]{border-left-color:#22a389}.tl li[data-c="sonst"]{border-left-color:var(--ac)}
+.vc{border-top:3px solid var(--ac)}.vc:hover{background:var(--sf2)}
+.th-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--grb);border-radius:10px;padding:4px;max-width:420px}
+.th-seg button{border:0;background:transparent;padding:9px;border-radius:7px;font-weight:600;color:var(--mu);display:flex;align-items:center;justify-content:center;gap:6px}
+.th-seg button.on{background:var(--sf);color:var(--ac);box-shadow:0 1px 3px var(--shadow)}
 
 .dash{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;align-items:start}
 
@@ -653,7 +669,7 @@ async function fixProb(id){const p=S.prob.find(x=>x._id===id),o=p.status==='Offe
 function probTbl(ps,showV){return ps.length?`<div class="scroll"><table><tr>${showV?'<th>Fahrzeug</th>':''}<th>Art</th><th>Festgestellt</th><th>Ort</th><th>Beschreibung</th><th>Status</th><th></th></tr>${ps.sort((a,b)=>a.date<b.date?1:-1).map(p=>`<tr>${showV?`<td><b>${vname(veh(p.fin))}</b><br><span class="mono muted">${p.fin}</span></td>`:''}<td>${E(p.type)}</td><td class="num">${fmt(p.date)}</td><td>${E(p.place)||'–'}</td><td style="white-space:normal;min-width:200px">${E(p.desc)||'–'}</td><td><span class="pill ${p.status==='Offen'?'s-ba':'s-ok'}">${p.status}${p.fixed?' '+fmt(p.fixed):''}</span></td><td><button class="btn sm" onclick="fixProb('${p._id}')">${p.status==='Offen'?'Als behoben markieren':'Wieder öffnen'}</button></td></tr>`).join('')}</table></div>`:'<p class="empty">Keine Probleme gemeldet.</p>'}
 
 /* ---------- Ansichten ---------- */
-function taskLi(t){const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t);return`<li onclick="taskModal('${t._id}')" style="--carbg:var(--sf)">${carSVG(v,'thumb')}
+function taskLi(t){const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t);return`<li data-c="${c}" onclick="taskModal('${t._id}')" style="--carbg:var(--sf)">${carSVG(v,'thumb')}
  <div style="min-width:0"><div class="t1">${icon(c)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${E(t.title)}</span></div><div class="t2"><span><b style="color:var(--tx);font-weight:500">${vname(v)}</b></span><span class="mono">${E(t.fin)}</span>${t.when?`<span>${E(t.when)}</span>`:''}</div></div>
  <div class="due"><b>${fmt(t.due)}</b><span class="pill ${sc}">${t.due<TD()&&t.status!=='Erledigt'?rel(t.due):sl==='Geplant'?rel(t.due):sl}</span></div></li>`}
 function vCard(v){const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0],late=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt'&&t.due<TD()).length;
@@ -749,7 +765,11 @@ function cal(){const ts=activeTasks(),D=new Date(S.cd+'T12:00:00'),V=S.cv,on=d=>
 
 function sett(){const c=S.cfg;
  const rows=[['≤ 14 Tage nach Eingang',['','hv','','','folie',''],'HV · ggf. Folie applizieren'],['30 Tage nach Eingang',['reifen','','','','',''],''],['3 Monate',['','b12','hv','bremse','',''],''],['6 Monate',['reifen','b12','hv','bremse','',''],''],['9 Monate',['','b12','hv','bremse','',''],''],['12 Monate',['reifen','b12','hv','bremse','','reinigung'],''],['15 / 18 / 21 / 24 Monate','wdh','Zyklus wiederholt sich; Säuberung wieder nach 24 Monaten']];
+ const th=getTheme();
  return`<div class="head"><h2>Einstellungen</h2></div>
+ <section class="panel" style="max-width:640px"><div class="ph"><h3>Erscheinungsbild</h3></div><div class="pb" style="display:flex;flex-direction:column;gap:10px">
+ <div class="th-seg" role="radiogroup" aria-label="Erscheinungsbild">${[['light','☀︎ Hell'],['dark','☾ Dunkel'],['auto','Automatisch']].map(o=>`<button role="radio" aria-checked="${th===o[0]}" class="${th===o[0]?'on':''}" onclick="setTheme('${o[0]}')">${o[1]}</button>`).join('')}</div>
+ <span class="hint">„Automatisch“ folgt der Einstellung deines Geräts. Die Auswahl gilt für dieses Gerät und diesen Browser.</span></div></section>
  <section class="panel"><div class="ph"><h3>Pflegeprogramm Neufahrzeuge</h3><span class="muted">TQS Anlage 1, Abschnitt 3.2 · Fristen ab Eingangsdatum</span></div>
  <div class="scroll"><table class="mx"><tr><th>Termin</th><th>Reifendruck</th><th>12V-Batterie</th><th>HV-Batterie</th><th>Bremsen</th><th>Folie</th><th>Säuberung</th></tr>
  ${rows.map(r=>`<tr><td><b>${r[0]}</b></td>${r[1]==='wdh'?`<td colspan="6" class="muted" style="text-align:center">${r[2]}</td>`:r[1].map(x=>`<td>${x?icon(x):''}</td>`).join('')}</tr>`).join('')}</table></div>
@@ -759,6 +779,9 @@ function sett(){const c=S.cfg;
  <label class="f">„Bitte Laden!“ bei 12V-Spannung unter (Volt)<input type="number" step="0.1" id="s_v12" value="${c.v12}"></label>
  <label class="f">„Bitte Laden!“ bei HV-Ladezustand unter (%)<input type="number" min="0" max="100" id="s_hv" value="${c.hv}"></label>
  <div><button class="btn p" onclick="saveCfg()">Speichern und Termine neu berechnen</button></div></div></section>`}
+function getTheme(){try{return localStorage.getItem('tqs_theme')||'auto'}catch(e){return'auto'}}
+function setTheme(t){try{localStorage.setItem('tqs_theme',t)}catch(e){}
+ if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);render()}
 async function saveCfg(){const c={wk:+$('s_wk').value||42,v12:+$('s_v12').value||12.5,hv:+$('s_hv').value||25};try{await db.doc('settings/cfg').set(c)}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}S.cfg={...DEF,...c};for(const v of S.veh)await sync(v);toast('Gespeichert. Termine wurden neu berechnet.')}
 
 /* ---------- Rahmen ---------- */
