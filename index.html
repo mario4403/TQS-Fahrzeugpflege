@@ -327,7 +327,7 @@ td .car{width:84px;height:38px;display:block}
   <div class="brand"><div class="mk">TQS</div><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
   <div>
    <h1>Pflegeprogramm für Neufahrzeuge</h1>
-   <p>Jedes Fahrzeug bekommt beim Anlegen automatisch seinen Pflegeplan für zwei Jahre: Batterie, Reifendruck, Bremsen, Folie und Säuberung, nach TQS Anlage 1, Abschnitt 3.2.</p>
+   <p>Jedes Fahrzeug bekommt beim Anlegen automatisch seinen Pflegeplan, immer bis zwei Jahre im Voraus: Batterie, Reifendruck, Bremsen, Folie und Säuberung, nach TQS Anlage 1, Abschnitt 3.2.</p>
   </div>
   <div class="track" aria-hidden="true">
    <div class="on"><b>≤ 14 T</b>HV · Folie</div><div class="on"><b>30 T</b>Reifen</div><div><b>3 M</b>12V · HV · Bremse</div><div><b>6 M</b>+ Reifen</div><div><b>9 M</b>12V · HV · Bremse</div><div><b>12 M</b>+ Säuberung</div>
@@ -457,18 +457,21 @@ let db=null;
 const me=()=>S.acct?S.acct.name:'unbekannt';
 
 /* ---------- Pflegeplan (TQS Anlage 1, 3.2) ---------- */
+/* Plan reicht immer bis 2 Jahre nach heute (mindestens 2 Jahre nach Eingang) */
+const planEnd=v=>{const a=addM(v.deliv||TD(),24),b=addM(TD(),24);return a>b?a:b};
 function planFor(v){const out=[];if(!v.deliv||v.archived)return out;const d=v.deliv,hv=v.hyb||v.ev;
  if(hv)out.push({k:'hv0',cat:'hv',t:'HV-Batterie prüfen',w:'≤ 14 Tage nach Eingang',due:addD(d,14)});
  out.push({k:'pflege',cat:'folie',t:'Folie applizieren (falls erforderlich)',w:'≤ 14 Tage nach Eingang',due:addD(d,14)});
  out.push({k:'r30',cat:'reifen',t:'Reifendruck kontrollieren',w:'30 Tage nach Eingang',due:addD(d,30)});
  const toff=v.transp?null:(v.transpOff&&v.transpOff>d?v.transpOff:d);
- for(let m=3;m<=24;m+=3){const due=addM(d,m),w=`${m} Monate nach Eingang`;
+ const pend=planEnd(v);
+ for(let m=3;addM(d,m)<=pend;m+=3){const due=addM(d,m),w=`${m} Monate nach Eingang`;
   if(v.transp||due<toff)out.push({k:'b'+m,cat:'b12',t:'12V-Batterie prüfen / laden',w,due});
   if(hv)out.push({k:'h'+m,cat:'hv',t:'HV-Batterie prüfen / laden',w,due});
   out.push({k:'f'+m,cat:'bremse',t:'Bremsen freibremsen',w,due});
   if(m%6===0)out.push({k:'r'+m,cat:'reifen',t:'Reifendruck kontrollieren',w,due});
   if(m%12===0)out.push({k:'s'+m,cat:'reinigung',t:'Fahrzeugschmutz entfernen (Säuberung)',w,due});}
- if(!v.transp){const end=addM(d,24),step=Math.max(7,+S.cfg.wk||42);for(let i=1;;i++){const due=addD(toff,i*step);if(due>end)break;out.push({k:'w'+i,cat:'b12',t:'12V-Batterie pflegen',w:`alle ${Math.round(step/7)} Wochen ab Entfernung Transportmodus (${fmt(toff)}) · ${i}. Termin`,due})}}
+ if(!v.transp){const end=pend,step=Math.max(7,+S.cfg.wk||42);for(let i=1;;i++){const due=addD(toff,i*step);if(due>end)break;out.push({k:'w'+i,cat:'b12',t:'12V-Batterie pflegen',w:`alle ${Math.round(step/7)} Wochen ab Entfernung Transportmodus (${fmt(toff)}) · ${i}. Termin`,due})}}
  return out}
 async function pool(fns,n){let i=0;const run=async()=>{while(i<fns.length){const f=fns[i++];await f()}};await Promise.all(Array.from({length:Math.min(n||6,fns.length)},run))}
 const syncing={};
@@ -657,7 +660,7 @@ function vehModal(fin){const v=S.veh.find(x=>x.fin===fin)||{transp:true};curV=v;
  <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev()}
 function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{fin:$('vf').value.trim().toUpperCase(),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),transp:!curV||curV.transp!==false,solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked}}
 function vPrev(){if(!$('vprev'))return;$('vcw').hidden=$('vcol').value!=='__c';const v=formVeh();$('vprev').innerHTML=carSVG(v)+`<div><b>${vname(v)}</b><br><small>${BODIES[bodyOf(v)].l}${v.color?' · '+E(v.color):''}</small></div>`;
- const n=planFor({...v,archived:false}).length,b=planFor({...v,archived:false}).filter(x=>x.cat==='b12').length;$('vplan').textContent=v.deliv?`Pflegeplan: ${n} Termine bis ${fmt(addM(v.deliv,24))}, davon ${b}× 12V-Batterie (${v.transp?'Transportmodus an: vierteljährlich':'Transportmodus aus: alle 6 Wochen'}).`:'Ohne Eingangsdatum wird kein Pflegeplan erstellt.'}
+ const n=planFor({...v,archived:false}).length,b=planFor({...v,archived:false}).filter(x=>x.cat==='b12').length;$('vplan').textContent=v.deliv?`Pflegeplan: ${n} Termine bis ${fmt(planEnd(v))}, davon ${b}× 12V-Batterie (${v.transp?'Transportmodus an: vierteljährlich':'Transportmodus aus: alle 6 Wochen'}).`:'Ohne Eingangsdatum wird kein Pflegeplan erstellt.'}
 async function saveVeh(old){const f=formVeh(),fin=old||f.fin,err=t=>{$('verr').textContent=t};
  if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(fin))return err('Die FIN muss 17 Zeichen haben (Buchstaben ohne I, O, Q und Ziffern).');
  if(!old&&S.veh.some(v=>v.fin===fin))return err('Ein Fahrzeug mit dieser FIN gibt es bereits.');
@@ -668,7 +671,7 @@ async function saveVeh(old){const f=formVeh(),fin=old||f.fin,err=t=>{$('verr').t
  try{await db.doc('vehicles/'+fin).set(v)}catch(e){busy('vsave',false,'Speichern');return err('Speichern nicht möglich: keine Schreibrechte.')}
  log(fin,old?'Stammdaten geändert':'Fahrzeug angelegt');const r=await sync(v);
  $('mod').hidden=true;$('mb').innerHTML='';if(!old){S.sel=fin;S.view='veh';S.tab='plan'}render();
- toast(old?`Gespeichert · Pflegeplan aktualisiert (+${r.add} / −${r.del})`:`Fahrzeug angelegt · ${r.total} Pflegetermine für 2 Jahre eingetragen`)}
+ toast(old?`Gespeichert · Pflegeplan aktualisiert (+${r.add} / −${r.del})`:`Fahrzeug angelegt · ${r.total} Pflegetermine bis ${fmt(planEnd(v))} eingetragen`)}
 document.addEventListener('input',e=>{if(['vb','vm','vv','vbody','vcol','vcn','vcc','vd','c1','c3','c4'].includes(e.target.id))vPrev()});
 document.addEventListener('change',e=>{if(['vbody','vcol','c1','c3','c4','vd'].includes(e.target.id))vPrev()});
 const offTxt=v=>{const d=v.transpOff||v.deliv;return d>TD()?`Entfernung geplant am ${fmt(d)}`:`entfernt am ${fmt(d)}`};
@@ -874,7 +877,7 @@ function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug ni
  const ts=S.tasks.filter(t=>t.fin===v.fin).sort((a,b)=>a.due<b.due?-1:1),ps=S.prob.filter(p=>p.fin===v.fin),lg=S.log.filter(l=>l.fin===v.fin).sort((a,b)=>a.at<b.at?1:-1),op=ts.filter(t=>t.status!=='Erledigt'),rs=readings(v.fin);
  const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['log','Historie']];
  let body='';
- if(S.tab==='plan'){const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(addM(v.deliv||TD(),24))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length]].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div>${(()=>{const od=op.filter(t=>t.due<TD());return od.length?`<button class="btn sm" style="color:var(--ba)" onclick="removeTasks(${E(JSON.stringify(od.map(t=>t._id)))})">${IC.trash} Überfällige löschen (${od.length})</button>`:''})()}<button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(t=>taskLi(t,1)).join('')}</ul>`:`<p class="empty">${S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
+ if(S.tab==='plan'){const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(planEnd(v))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length]].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div>${(()=>{const od=op.filter(t=>t.due<TD());return od.length?`<button class="btn sm" style="color:var(--ba)" onclick="removeTasks(${E(JSON.stringify(od.map(t=>t._id)))})">${IC.trash} Überfällige löschen (${od.length})</button>`:''})()}<button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(t=>taskLi(t,1)).join('')}</ul>`:`<p class="empty">${S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
  else if(S.tab==='batt')body=battTab(v);
  else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',v.loc],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Transportmodus',v.transp?'an':offTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
  else if(S.tab==='prob')body=`<div class="ph"><span style="flex:1"></span><button class="btn sm" onclick="probModal('${v.fin}')">${IC.plus} Problem melden</button></div>${probTbl(ps)}`;
@@ -914,7 +917,7 @@ function sett(){const c=S.cfg;
  <section class="panel"><div class="ph"><h3>Pflegeprogramm Neufahrzeuge</h3><span class="muted">TQS Anlage 1, Abschnitt 3.2 · Fristen ab Eingangsdatum</span></div>
  <div class="scroll"><table class="mx"><tr><th>Termin</th><th>Reifendruck</th><th>12V-Batterie</th><th>HV-Batterie</th><th>Bremsen</th><th>Folie</th><th>Säuberung</th></tr>
  ${rows.map(r=>`<tr><td><b>${r[0]}</b></td>${r[1]==='wdh'?`<td colspan="6" class="muted" style="text-align:center">${r[2]}</td>`:r[1].map(x=>`<td>${x?icon(x):''}</td>`).join('')}</tr>`).join('')}</table></div>
- <div class="pb hint" style="display:flex;flex-direction:column;gap:6px"><span>HV-Batterie nur bei Hybrid- und Elektrofahrzeugen. Neue Fahrzeuge starten mit Transportmodus <b>an</b> (12V vierteljährlich). Wird er auf der Fahrzeugseite mit Datum ausgeschaltet, ersetzt ab diesem Tag eine 12V-Batteriepflege alle 6 Wochen die vierteljährliche Prüfung. Einschalten ist danach nicht mehr möglich.</span><span>Für Porsche, Bentley und den Crafter gelten teilweise andere Vorgaben (TQS 3.1 Checkliste); diese sind hier nicht abgebildet.</span></div></section>
+ <div class="pb hint" style="display:flex;flex-direction:column;gap:6px"><span>HV-Batterie nur bei Hybrid- und Elektrofahrzeugen. Der Plan reicht immer <b>2 Jahre über das heutige Datum</b> hinaus und wird automatisch verlängert (Eingang 2025 → Termine bis 2028). Die Termine wiederholen sich danach im Rhythmus von 3, 6, 9 und 12 Monaten. Neue Fahrzeuge starten mit Transportmodus <b>an</b> (12V vierteljährlich). Wird er auf der Fahrzeugseite mit Datum ausgeschaltet, ersetzt ab diesem Tag eine 12V-Batteriepflege alle 6 Wochen die vierteljährliche Prüfung. Einschalten ist danach nicht mehr möglich.</span><span>Für Porsche, Bentley und den Crafter gelten teilweise andere Vorgaben (TQS 3.1 Checkliste); diese sind hier nicht abgebildet.</span></div></section>
  <section class="panel" style="max-width:640px"><div class="ph"><h3>Grenzwerte und Intervalle</h3></div><div class="pb" style="display:flex;flex-direction:column;gap:14px">
  <label class="f">12V-Batteriepflege bei Transportmodus aus: Intervall in Tagen<input type="number" min="7" id="s_wk" value="${c.wk}"></label>
  <label class="f">„Bitte Laden!“ bei 12V-Spannung unter (Volt)<input type="number" step="0.1" id="s_v12" value="${c.v12}"></label>
