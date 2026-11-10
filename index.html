@@ -164,6 +164,7 @@ main{min-width:0;padding-block:24px 48px;padding-left:28px;padding-right:max(28p
 .tl li{border-left:4px solid transparent}
 .tl li[data-c="b12"]{border-left-color:#e0a12a}.tl li[data-c="hv"]{border-left-color:#1aa6cc}.tl li[data-c="reifen"]{border-left-color:#7d8a98}.tl li[data-c="bremse"]{border-left-color:#c4573a}.tl li[data-c="folie"]{border-left-color:#7b65c8}.tl li[data-c="reinigung"]{border-left-color:#22a389}.tl li[data-c="sonst"]{border-left-color:var(--ac)}
 .vc{border-top:3px solid var(--ac)}.vc:hover{background:var(--sf2)}
+.tl li{position:relative}.tl li.hasdel{grid-template-columns:96px minmax(0,1fr) auto auto}.del-x{border:0;background:transparent;color:var(--mu);padding:6px;border-radius:7px;margin-left:4px;cursor:pointer;display:flex;align-items:center;flex-shrink:0}.del-x:hover{background:var(--bab);color:var(--ba)}
 .pf-seg{display:inline-grid;grid-auto-flow:column;gap:4px;background:var(--grb);border-radius:9px;padding:3px}
 .pf-seg button{border:0;background:transparent;padding:6px 11px;border-radius:7px;font-weight:600;font-size:13px;color:var(--mu);display:flex;align-items:center;gap:6px}
 .pf-seg button .c{font-size:11px;background:var(--sf);border-radius:999px;padding:0 6px;color:var(--mu)}
@@ -307,7 +308,7 @@ td .car{width:84px;height:38px;display:block}
  main{padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
  h2,.vhero h2{font-size:23px}
  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
- .tl li{grid-template-columns:64px minmax(0,1fr);row-gap:6px}.tl .thumb{width:64px;height:30px}.tl .due{grid-column:2;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px}
+ .tl li{grid-template-columns:64px minmax(0,1fr);row-gap:6px}.tl li.hasdel{grid-template-columns:64px minmax(0,1fr) auto}.tl li.hasdel .del-x{grid-column:3;grid-row:1}.tl .thumb{width:64px;height:30px}.tl .due{grid-column:2;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px}
  .vhero{grid-template-columns:minmax(0,1fr);padding:16px}.vhero .car{width:100%;max-width:260px;height:auto}
  .fg{grid-template-columns:minmax(0,1fr)}
  .cal>div{min-height:64px;padding:3px}.chip span{display:none}.chip{justify-content:center;padding:3px}
@@ -405,6 +406,7 @@ const IC={
  car:SV('<path d="M3 16v-3l2-5h11l3 4 2 1v3z"/><circle cx="7.5" cy="16.5" r="2"/><circle cx="16.5" cy="16.5" r="2"/>'),
  warn:SV('<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>'),
  set:SV('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'),
+ trash:SV('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>'),
  plus:SV('<path d="M12 5v14M5 12h14"/>'),
  pdf:SV('<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M12 11v6M9.5 14.5 12 17l2.5-2.5"/>'),
  out:SV('<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>'),
@@ -471,11 +473,11 @@ function planFor(v){const out=[];if(!v.deliv||v.archived)return out;const d=v.de
 async function pool(fns,n){let i=0;const run=async()=>{while(i<fns.length){const f=fns[i++];await f()}};await Promise.all(Array.from({length:Math.min(n||6,fns.length)},run))}
 const syncing={};
 async function sync(v){if(syncing[v.fin])return syncing[v.fin];
- const p=(async()=>{const want=planFor(v),keys=new Set(want.map(x=>x.k)),mine=S.tasks.filter(t=>t.fin===v.fin),ops=[];let add=0,del=0;
-  for(const t of mine)if(t.status==='Offen'&&!t.manual&&!keys.has(t.k)){del++;ops.push(()=>db.doc('tasks/'+t._id).delete())}
+ const p=(async()=>{const want=planFor(v),keys=new Set(want.map(x=>x.k)),mine=(S.taskAll||S.tasks).filter(t=>t.fin===v.fin),ops=[];let add=0,del=0;
+  for(const t of mine)if(t.status==='Offen'&&!t.manual&&!t.removed&&!keys.has(t.k)){del++;ops.push(()=>db.doc('tasks/'+t._id).delete())}
   for(const x of want){const id=v.fin+'_'+x.k,cur=mine.find(t=>t._id===id);
    if(!cur){add++;ops.push(()=>db.doc('tasks/'+id).set({fin:v.fin,k:x.k,cat:x.cat,title:x.t,when:x.w,due:x.due,status:'Offen',done:'',who:'',val:'',note:''}))}
-   else if(cur.status!=='Erledigt'&&(cur.due!==x.due||cur.title!==x.t||cur.when!==x.w||cur.cat!==x.cat))ops.push(()=>db.doc('tasks/'+id).update({due:x.due,title:x.t,when:x.w,cat:x.cat}))}
+   else if(cur.status!=='Erledigt'&&!cur.removed&&(cur.due!==x.due||cur.title!==x.t||cur.when!==x.w||cur.cat!==x.cat))ops.push(()=>db.doc('tasks/'+id).update({due:x.due,title:x.t,when:x.w,cat:x.cat}))}
   await pool(ops,6);return{add,del,total:want.length}})();
  syncing[v.fin]=p;try{return await p}finally{delete syncing[v.fin]}}
 
@@ -581,7 +583,7 @@ function taskModal(id){const t=S.tasks.find(x=>x._id===id);if(!t)return;const v=
   <label class="f full">Mitarbeiter:in<input id="tw" value="${E(t.who||me())}"></label>
   <label class="f full">Bemerkung<textarea id="tn" rows="2">${E(t.note)}</textarea></label></div>
  </div>
- <footer>${t.manual?`<button class="btn" style="margin-right:auto;color:var(--ba)" onclick="delManual('${t._id}')">Löschen</button>`:''}<button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" onclick="saveTask('${t._id}')">Speichern</button></footer>`);
+ <footer>${t.manual?`<button class="btn" style="margin-right:auto;color:var(--ba)" onclick="delManual('${t._id}')">Löschen</button>`:t.status!=='Erledigt'&&t.due<TD()?`<button class="btn" style="margin-right:auto;color:var(--ba)" onclick="closeM();removeTasks(['${t._id}'])">Löschen</button>`:''}<button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" onclick="saveTask('${t._id}')">Speichern</button></footer>`);
  if(bat){const chk=()=>{const n=pnum($('tv').value);$('tvw').textContent=n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv)?'Wert unter der Ladegrenze: Bitte Laden!':''};$('tv').addEventListener('input',chk);chk()}}
 async function saveTask(id){const t=S.tasks.find(x=>x._id===id),c=catOf(t),bat=c==='b12'||c==='hv',s=$('ts').value;let d=$('td').value;if(s==='Erledigt'&&!d)d=TD();
  let val='';if(bat){const raw=$('tv').value.trim();if(raw){const n=pnum(raw);if(n==null||n<0||(c==='hv'&&n>100)||(c==='b12'&&n>20)){$('tvw').textContent=c==='b12'?'Bitte eine Spannung in Volt eingeben, z. B. 12,6.':'Bitte einen Prozentwert zwischen 0 und 100 eingeben.';return}val=String(n)}}
@@ -621,6 +623,11 @@ async function saveManual(fin){const o=manualModal.opts[+$('mc').value],c=o[0],b
  if(done&&S.planF==='open')S.planF='all';
  $('mod').hidden=true;$('mb').innerHTML='';
  const n=pnum(val);if(n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv))chargeAlert(c,n,fin);else{toast('Maßnahme hinzugefügt.');render()}}
+async function removeTasks(ids){const ts=ids.map(id=>S.tasks.find(t=>t._id===id)).filter(t=>t&&t.status!=='Erledigt');if(!ts.length)return;
+ if(!confirm(ts.length===1?`Überfällige Maßnahme „${ts[0].title}“ (geplant ${fmt(ts[0].due)}) löschen?\n\nSie wird bei der Plan-Neuberechnung nicht wieder angelegt.`:`${ts.length} überfällige Maßnahmen löschen?\n\nSie werden bei der Plan-Neuberechnung nicht wieder angelegt.`))return;
+ const now=new Date().toISOString();let ok=0;
+ for(const t of ts){try{if(t.manual)await db.doc('tasks/'+t._id).delete();else await db.doc('tasks/'+t._id).update({removed:true,removedAt:now,removedBy:me()});ok++;log(t.fin,`Überfällige Maßnahme gelöscht: ${t.title} (geplant ${fmt(t.due)})`)}catch(e){toast('Löschen nicht möglich: keine Schreibrechte.');break}}
+ if(ok)toast(ok===1?'Maßnahme gelöscht.':`${ok} Maßnahmen gelöscht.`)}
 async function delManual(id){const t=S.tasks.find(x=>x._id===id);if(!t||!t.manual)return;if(!confirm('Diese eigene Maßnahme wirklich löschen?'))return;
  try{await db.doc('tasks/'+id).delete()}catch(e){return toast('Löschen nicht möglich: keine Schreibrechte.')}
  log(t.fin,'Eigene Maßnahme gelöscht: '+t.title);closeM();toast('Gelöscht.')}
@@ -803,9 +810,9 @@ async function fixProb(id){const p=S.prob.find(x=>x._id===id),o=p.status==='Offe
 function probTbl(ps,showV){return ps.length?`<div class="scroll"><table><tr>${showV?'<th>Fahrzeug</th>':''}<th>Art</th><th>Festgestellt</th><th>Ort</th><th>Beschreibung</th><th>Status</th><th></th></tr>${ps.sort((a,b)=>a.date<b.date?1:-1).map(p=>`<tr>${showV?`<td><b>${vname(veh(p.fin))}</b><br><span class="mono muted">${p.fin}</span></td>`:''}<td>${E(p.type)}</td><td class="num">${fmt(p.date)}</td><td>${E(p.place)||'–'}</td><td style="white-space:normal;min-width:200px">${E(p.desc)||'–'}</td><td><span class="pill ${p.status==='Offen'?'s-ba':'s-ok'}">${p.status}${p.fixed?' '+fmt(p.fixed):''}</span></td><td><button class="btn sm" onclick="fixProb('${p._id}')">${p.status==='Offen'?'Als behoben markieren':'Wieder öffnen'}</button></td></tr>`).join('')}</table></div>`:'<p class="empty">Keine Probleme gemeldet.</p>'}
 
 /* ---------- Ansichten ---------- */
-function taskLi(t){const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t);return`<li data-c="${c}" onclick="taskModal('${t._id}')" style="--carbg:var(--sf)">${carSVG(v,'thumb')}
+function taskLi(t,canDel){const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t),od=canDel&&t.status!=='Erledigt'&&t.due<TD();return`<li data-c="${c}" ${od?'class="hasdel"':''} onclick="taskModal('${t._id}')" style="--carbg:var(--sf)">${carSVG(v,'thumb')}
  <div style="min-width:0"><div class="t1">${icon(c)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${E(t.title)}</span></div><div class="t2"><span><b style="color:var(--tx);font-weight:500">${vname(v)}</b></span><span class="mono">${E(t.fin)}</span>${t.when?`<span>${E(t.when)}</span>`:''}</div></div>
- <div class="due"><b ${t.status==='Erledigt'&&t.done?`title="geplant ${fmt(t.due)}"`:''}>${fmt(t.status==='Erledigt'&&t.done?t.done:t.due)}</b><span class="pill ${sc}">${t.due<TD()&&t.status!=='Erledigt'?rel(t.due):sl==='Geplant'?rel(t.due):sl}</span></div></li>`}
+ <div class="due"><b ${t.status==='Erledigt'&&t.done?`title="geplant ${fmt(t.due)}"`:''}>${fmt(t.status==='Erledigt'&&t.done?t.done:t.due)}</b><span class="pill ${sc}">${t.due<TD()&&t.status!=='Erledigt'?rel(t.due):sl==='Geplant'?rel(t.due):sl}</span></div>${od?`<button class="del-x" title="Überfällige Maßnahme löschen" aria-label="Löschen" onclick="event.stopPropagation();removeTasks(['${t._id}'])">${IC.trash}</button>`:''}</li>`}
 function vCard(v){const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0],late=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt'&&t.due<TD()).length;
  return`<button class="vc" onclick="openVeh('${v.fin}')">${carSVG(v)}<span class="meta"><b>${vname(v)}</b><span><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color||'Farbe offen')} · <span class="mono">…${v.fin.slice(-6)}</span></span>
  ${nx?`<span class="nx">${icon(catOf(nx))} ${fmt(nx.due)} · ${E(nx.title)}</span>`:'<span>Keine offenen Termine</span>'}
@@ -867,7 +874,7 @@ function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug ni
  const ts=S.tasks.filter(t=>t.fin===v.fin).sort((a,b)=>a.due<b.due?-1:1),ps=S.prob.filter(p=>p.fin===v.fin),lg=S.log.filter(l=>l.fin===v.fin).sort((a,b)=>a.at<b.at?1:-1),op=ts.filter(t=>t.status!=='Erledigt'),rs=readings(v.fin);
  const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['log','Historie']];
  let body='';
- if(S.tab==='plan'){const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(addM(v.deliv||TD(),24))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length]].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div><button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(taskLi).join('')}</ul>`:`<p class="empty">${S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
+ if(S.tab==='plan'){const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(addM(v.deliv||TD(),24))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length]].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div>${(()=>{const od=op.filter(t=>t.due<TD());return od.length?`<button class="btn sm" style="color:var(--ba)" onclick="removeTasks(${E(JSON.stringify(od.map(t=>t._id)))})">${IC.trash} Überfällige löschen (${od.length})</button>`:''})()}<button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(t=>taskLi(t,1)).join('')}</ul>`:`<p class="empty">${S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
  else if(S.tab==='batt')body=battTab(v);
  else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',v.loc],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Transportmodus',v.transp?'an':offTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
  else if(S.tab==='prob')body=`<div class="ph"><span style="flex:1"></span><button class="btn sm" onclick="probModal('${v.fin}')">${IC.plus} Problem melden</button></div>${probTbl(ps)}`;
@@ -941,13 +948,13 @@ document.addEventListener('change',e=>{if(e.target.id==='fl'){S.fl=e.target.valu
 let subscribed=false,unsubs=[];
 function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=false;
  if(!subscribed){subscribed=true;
-  const sub=(n,k)=>unsubs.push(db.collection(n).onSnapshot(s=>{S[k]=s.docs.map(d=>({...d.data(),_id:d.id}));if(k in S.ready)S.ready[k]=1;migrate();render()},e=>{console.error(n,e);if(e.code==='permission-denied')toast('Kein Zugriff auf die Datenbank. Sind die Firestore-Regeln eingetragen?')}));
+  const sub=(n,k)=>unsubs.push(db.collection(n).onSnapshot(s=>{S[k]=s.docs.map(d=>({...d.data(),_id:d.id}));if(k==='tasks'){S.taskAll=S.tasks;S.tasks=S.taskAll.filter(t=>!t.removed)}if(k in S.ready)S.ready[k]=1;migrate();render()},e=>{console.error(n,e);if(e.code==='permission-denied')toast('Kein Zugriff auf die Datenbank. Sind die Firestore-Regeln eingetragen?')}));
   sub('vehicles','veh');sub('tasks','tasks');sub('problems','prob');sub('log','log');
   unsubs.push(db.doc('settings/cfg').onSnapshot(s=>{S.cfg={...DEF,...(s.data()||{})};render()},e=>console.error(e)))}
  render()}
 async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks)return;S.migrated=true;try{for(const v of S.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
 function signedIn(u){S.acct={email:u.email,name:u.displayName||u.email.split('@')[0]};enterApp()}
-function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.prob=[];S.log=[];
+function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.taskAll=[];S.prob=[];S.log=[];
  const was=!!S.acct;S.acct=null;$('mod').hidden=true;$('mb').innerHTML='';$('app').hidden=true;$('boot').hidden=true;$('auth').hidden=false;if(was){authTab('login');msg('mLogin','Du wurdest abgemeldet.',1)}}
 
 let auth=null;
