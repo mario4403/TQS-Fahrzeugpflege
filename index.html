@@ -202,8 +202,10 @@ main{padding-bottom:110px}
 /* Scanner */
 .scanbox{position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;max-height:52vh}
 .scanbox video{width:100%;height:100%;object-fit:cover;display:block}
-.scanline{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#f0a92e;box-shadow:0 0 12px #f0a92e;animation:scl 1.8s ease-in-out infinite}
-@keyframes scl{0%,100%{transform:translateY(-60px)}50%{transform:translateY(60px)}}
+.scanframe{position:absolute;left:5%;right:5%;top:32%;height:36%;border:3px solid #f0a92e;border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.42);pointer-events:none}
+.scanline{position:absolute;left:4%;right:4%;top:50%;height:2px;background:#f0a92e;box-shadow:0 0 10px #f0a92e;opacity:.7;animation:scl 1.8s ease-in-out infinite}
+@keyframes scl{0%,100%{transform:translateY(-18px)}50%{transform:translateY(18px)}}
+.scanread{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font:600 13px var(--f-mono);padding:4px 10px;border-radius:6px;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
 .scl{list-style:none;margin:0;padding:0;border:1px solid var(--bd);border-radius:10px;overflow:hidden}
 .scl li{display:grid;grid-template-columns:80px minmax(0,1fr);gap:12px;align-items:center;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--bd)}.scl li:last-child{border-bottom:0}.scl li:hover{background:var(--sf2)}.scl .thumb{width:80px;height:36px}
 .big-in{font-size:22px!important;padding:12px!important;font-variant-numeric:tabular-nums}
@@ -1119,8 +1121,8 @@ async function saveCfg(){const c={wk:+$('s_wk').value||42,v12:+$('s_v12').value|
 const SCANF=['code_39','code_128','data_matrix','qr_code','pdf417'];
 const SCAN_LIB='https://cdn.jsdelivr.net/npm/barcode-detector@3.2.3/dist/es/ponyfill.min.js';
 let scanStream=null,scanRun=false,scanDet=null;
-function scanModal(){modal(`<header><div style="flex:1"><h3>FIN scannen oder suchen</h3><span class="muted">Barcode oder QR-Code mit der FIN ins Bild halten</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
- <div class="sb"><div class="scanbox" id="scb"><video id="scv" playsinline muted></video><div class="scanline"></div></div><span class="hint" id="scs">Kamera wird gestartet …</span>
+function scanModal(){modal(`<header><div style="flex:1"><h3>FIN scannen oder suchen</h3><span class="muted">FIN-Schild, Aufkleber oder Barcode in den Rahmen halten</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><div class="scanbox" id="scb"><video id="scv" playsinline muted></video><div class="scanframe"><div class="scanline"></div></div><div class="scanread" id="scrd" hidden></div></div><span class="hint" id="scs">Kamera wird gestartet …</span>
  <label class="f">Oder eintippen: FIN, letzte Stellen, Kennzeichen oder Nr.<input id="scq" class="mono" style="text-transform:uppercase" placeholder="z. B. 000123" autocomplete="off" enterkeyhint="search"></label><div id="scr"></div></div>
  <footer><button class="btn" onclick="closeM()">Schließen</button></footer>`);
  $('scq').addEventListener('input',()=>scanSearch($('scq').value));
@@ -1129,18 +1131,71 @@ function scanModal(){modal(`<header><div style="flex:1"><h3>FIN scannen oder suc
 async function scanDetector(){if(scanDet)return scanDet;
  if('BarcodeDetector' in window){try{const f=await BarcodeDetector.getSupportedFormats(),use=SCANF.filter(x=>f.includes(x));if(use.length)return scanDet=new BarcodeDetector({formats:use})}catch(e){}}
  const m=await import(SCAN_LIB);return scanDet=new m.BarcodeDetector({formats:SCANF})}
+/* Texterkennung (OCR) direkt im Browser, kostenlos: Tesseract.js lädt beim ersten Scannen einmalig ~3 MB und merkt sie sich */
+const OCR_LIB='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',VINCH='ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
+let ocrW=null,ocrP=null;
+function loadScript(src){return new Promise((ok,no)=>{if([...document.scripts].some(s=>s.src===src))return ok();const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+function ocrWorker(onPct){if(ocrW)return Promise.resolve(ocrW);if(ocrP)return ocrP;
+ ocrP=(async()=>{await loadScript(OCR_LIB);const w=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status&&/load|initializ/.test(m.status)&&onPct)onPct(m.progress)}});
+  await w.setParameters({tessedit_char_whitelist:VINCH,tessedit_pageseg_mode:'6',user_defined_dpi:'300'});return ocrW=w})();
+ ocrP.catch(()=>{ocrP=null});return ocrP}
+/* Bildausschnitt im Rahmen holen, in Graustufen umwandeln und Kontrast verstärken */
+function ocrFrame(vd,box){const vw=vd.videoWidth,vh=vd.videoHeight;if(!vw||!vh)return null;
+ const cw=box.clientWidth,ch=box.clientHeight,sc=Math.max(cw/vw,ch/vh),ox=(vw*sc-cw)/2,oy=(vh*sc-ch)/2;
+ const sx=(cw*.05+ox)/sc,sy=(ch*.32+oy)/sc,sw=cw*.9/sc,sh=ch*.36/sc,W=1200,H=Math.max(40,Math.round(sh*W/sw)),P=24;
+ const c=document.createElement('canvas');c.width=W+2*P;c.height=H+2*P;const x=c.getContext('2d',{willReadFrequently:true});
+ x.drawImage(vd,sx,sy,sw,sh,P,P,W,H);const d=x.getImageData(P,P,W,H),a=d.data,hi_=new Uint32Array(256);let sum=0;
+ for(let i=0;i<a.length;i+=4){const g=(a[i]*299+a[i+1]*587+a[i+2]*114)/1000|0;a[i]=g;hi_[g]++;sum+=g}
+ const n=W*H;let lo=0,hi=255,acc=0;for(let k=0;k<256;k++){acc+=hi_[k];if(acc>=n*.02){lo=k;break}}acc=0;for(let k=255;k>=0;k--){acc+=hi_[k];if(acc>=n*.02){hi=k;break}}
+ const f=255/Math.max(1,hi-lo),inv=sum/n<110;/* helle Schrift auf dunklem Grund umkehren */
+ for(let i=0;i<a.length;i+=4){let g=Math.max(0,Math.min(255,(a[i]-lo)*f));if(inv)g=255-g;a[i]=a[i+1]=a[i+2]=g}
+ x.fillStyle=`rgb(${a[0]},${a[0]},${a[0]})`;x.fillRect(0,0,c.width,c.height);x.putImageData(d,P,P);return c}
+/* Aus erkanntem Text mögliche FINs (17 Zeichen) herausziehen; O/Q/I gibt es in FINs nicht.
+   Bevorzugt werden Kandidaten, die als eigenes Wort stehen oder mit einem bekannten Herstellercode beginnen. */
+const WMI=['WVW','WV1','WV2','WVG','WAU','WUA','WP0','WP1','TMB','VSS','VWV','WMW','WBA','WDD','WDB','W0L','WF0','VF1','VF3','VF7','ZFA','YV1','SAL','SAJ','JTD','JMZ','KMH','KNA','TRU','LSV','LFV','3VW','1VW'];
+function vinCands(t){t=String(t||'').toUpperCase().replace(/[OQ]/g,'0').replace(/I/g,'1');const sc=new Map(),add=(c,s)=>{if(WMI.includes(c.slice(0,3)))s+=2;if((sc.get(c)??-1)<s)sc.set(c,s)};
+ for(const l of t.split(/\n/)){const tk=l.split(/[^A-Z0-9]+/).filter(Boolean);
+  for(let a=0;a<tk.length;a++){let s='';for(let b=a;b<tk.length&&s.length<17;b++){s+=tk[b];if(s.length===17)add(s,3)}}
+  const all=tk.join('');for(let i=0;i+17<=all.length;i++)add(all.slice(i,i+17),0)}
+ return[...sc.entries()].sort((x,y)=>y[1]-x[1]).map(e=>e[0])}
+/* Bester Kandidat für ein noch unbekanntes Fahrzeug: muss als eigenes Wort stehen oder einen Herstellercode haben */
+function vinTop(t){t=String(t||'').toUpperCase().replace(/[OQ]/g,'0').replace(/I/g,'1');let best=null,bs=-1;
+ for(const l of t.split(/\n/)){const tk=l.split(/[^A-Z0-9]+/).filter(Boolean);
+  for(let a=0;a<tk.length;a++){let s='';for(let b=a;b<tk.length&&s.length<17;b++){s+=tk[b];if(s.length===17){const v=3+(WMI.includes(s.slice(0,3))?2:0);if(v>bs){bs=v;best=s}}}}
+  const all=tk.join('');for(let i=0;i+17<=all.length;i++){const s=all.slice(i,i+17);if(WMI.includes(s.slice(0,3))&&2>bs){bs=2;best=s}}}
+ return best}
+/* Leicht verwechselbare Zeichen beim Lesen (8/B, 5/S, 0/D …) */
+const VCONF=['0D','8B','5S','2Z','6G','1L','1T','7T','4A','UV','MN','HN','3B','0U','EF','KX'];
+/* Nur typische Lesefehler werden toleriert (max. 2). Echte andere Zeichen (z. B. …001 statt …002) zählen nie als Treffer,
+   damit ein neues Auto derselben Serie nicht mit einem vorhandenen verwechselt wird. */
+function vinDist(a,b){let d=0;for(let i=0;i<17;i++){const x=a[i],y=b[i];if(x===y)continue;if(!VCONF.some(p=>p.includes(x)&&p.includes(y)))return 99;d++;if(d>2)return 99}return d}
+function vinMatch(c){const hits=S.veh.filter(v=>vinDist(c,v.fin)<99);return hits.length===1?hits[0]:null}
 async function startScan(){const s=m=>{if($('scs'))$('scs').textContent=m},off=()=>{if($('scb'))$('scb').hidden=true};
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){off();return s('Kamera hier nicht verfügbar. Bitte die FIN eintippen.')}
- try{scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false})}catch(e){off();return s('Kein Kamerazugriff. Bitte im Browser erlauben oder die FIN eintippen.')}
- const vd=$('scv');if(!vd){stopScan();return}vd.srcObject=scanStream;try{await vd.play()}catch(e){}
- let det;try{s('Scanner wird geladen …');det=await scanDetector()}catch(e){stopScan();off();return s('Scanner konnte nicht geladen werden (Internet nötig). Bitte die FIN eintippen.')}
- if(!scanStream)return;scanRun=true;s('Barcode oder QR-Code mit der FIN ins Bild halten …');
- const loop=async()=>{if(!scanRun||!$('scv'))return;try{if(vd.readyState>=2){const r=await det.detect(vd);for(const c of r){const m=String(c.rawValue||'').toUpperCase().replace(/[^A-Z0-9]/g,' ').match(/[A-HJ-NPR-Z0-9]{17}/);if(m){scanHit(m[0]);return}}}}catch(e){}setTimeout(loop,200)};loop()}
+ try{scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false})}catch(e){off();return s('Kein Kamerazugriff. Bitte im Browser erlauben oder die FIN eintippen.')}
+ const vd=$('scv'),box=$('scb');if(!vd){stopScan();return}vd.srcObject=scanStream;try{await vd.play()}catch(e){}
+ try{const tr=scanStream.getVideoTracks()[0],cap=tr.getCapabilities?tr.getCapabilities():{};if(cap.focusMode&&cap.focusMode.includes('continuous'))tr.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{})}catch(e){}
+ scanRun=true;const hist=[];let det=null,ocr=null,busy=false;
+ s('Texterkennung wird geladen … (beim ersten Mal ca. 3 MB)');
+ scanDetector().then(d=>det=d).catch(()=>{});
+ ocrWorker(p=>{if(scanRun&&!ocr&&p!=null)s(`Texterkennung wird geladen … ${Math.round(p*100)} %`)}).then(w=>{ocr=w;if(scanRun)s('FIN in den gelben Rahmen halten – sie wird automatisch erkannt.')})
+  .catch(()=>{if(scanRun)s(det?'Texterkennung nicht verfügbar (Internet nötig). Barcodes werden weiter erkannt.':'Texterkennung konnte nicht geladen werden (Internet nötig). Bitte die FIN eintippen.')});
+ const found=(fin,how)=>{const m=S.veh.find(v=>v.fin===fin)||vinMatch(fin);if(m){scanHit(m.fin,how);return true}return false};
+ const loop=async()=>{if(!scanRun||!$('scv'))return;
+  try{if(vd.readyState>=2&&det){const r=await det.detect(vd);for(const c of r){const m=String(c.rawValue||'').toUpperCase().replace(/[^A-Z0-9]/g,' ').match(/[A-HJ-NPR-Z0-9]{17}/);if(m){scanHit(m[0],'Barcode');return}}}}catch(e){}
+  if(ocr&&!busy&&vd.readyState>=2){busy=true;try{const cv=ocrFrame(vd,box);if(cv){const r=await ocr.recognize(cv);if(!scanRun)return;
+    const cs=vinCands(r.data.text);const rd=$('scrd');if(rd){const t=(cs[0]||r.data.text.replace(/\s+/g,' ').trim()).slice(0,24);rd.hidden=!t;rd.textContent=t?'gelesen: '+t:''}
+    for(const c of cs)if(found(c,'Texterkennung'))return;
+    const top=vinTop(r.data.text);if(top){hist.push(top);if(hist.filter(x=>x===top).length>=2){scanHit(top,'Texterkennung');return}}
+    while(hist.length>12)hist.shift()}}catch(e){}busy=false}
+  setTimeout(loop,ocr?60:200)};
+ loop()}
 function stopScan(){scanRun=false;if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null}}
-function scanHit(fin){stopScan();try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}const v=S.veh.find(x=>x.fin===fin);
- if(v){closeM();openVeh(fin);toast(`FIN ${fin} erkannt`);return}
- if($('scb'))$('scb').hidden=true;$('scs').textContent=`FIN ${fin} erkannt – dieses Fahrzeug ist noch nicht angelegt.`;
- $('scr').innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" onclick="closeM();vehModal(null,{fin:'${fin}'})">${IC.plus} Fahrzeug anlegen</button><button class="btn" onclick="scanModal()">Nochmal scannen</button></div>`}
+function scanHit(fin,how){stopScan();try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}const v=S.veh.find(x=>x.fin===fin);
+ if(v){closeM();openVeh(fin);toast(`FIN ${fin} erkannt${how?' ('+how+')':''}`);return}
+ if($('scb'))$('scb').hidden=true;const q=$('scq');if(q){q.value=fin;q.focus()}
+ $('scs').textContent=`FIN erkannt und eingetragen – bitte kurz prüfen. Dieses Fahrzeug ist noch nicht angelegt.`;
+ $('scr').innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" onclick="const f=$('scq').value.trim().toUpperCase();closeM();vehModal(null,{fin:f})">${IC.plus} Fahrzeug anlegen</button><button class="btn" onclick="scanModal()">Nochmal scannen</button></div>`}
 function scanSearch(q){const r=$('scr');if(!r)return;q=q.trim().toUpperCase();const qn=q.replace(/[\s-]/g,'');if(qn.length<3){r.innerHTML='';return}
  const hits=S.veh.filter(v=>v.fin.includes(qn)||(v.plate||'').toUpperCase().replace(/[\s-]/g,'').includes(qn)||(v.nr||'').toUpperCase()===q).sort((a,b)=>(a.archived?1:0)-(b.archived?1:0)).slice(0,8);
  r.innerHTML=hits.length?`<ul class="scl">${hits.map(v=>`<li data-fin="${v.fin}" onclick="closeM();openVeh('${v.fin}')" style="--carbg:var(--sf)">${carSVG(v,'thumb')}<div style="min-width:0"><b>${vname(v)}</b>${v.archived?' <span class="pill s-gr">archiviert</span>':''}<br><span class="mono">${v.fin}</span>${v.spot?` · <span class="muted">${E(v.spot)}</span>`:''}</div></li>`).join('')}</ul>`:
