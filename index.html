@@ -229,6 +229,13 @@ main{padding-bottom:110px}
  .fin-copy{background:none!important}.tl .thumb,.tv .thumb{display:none}.tl li,.tv .tvh{grid-template-columns:minmax(0,1fr) auto auto!important}
 }
 .photo{object-fit:cover;border-radius:8px;background:var(--grb);display:block}
+.crop{display:flex;flex-direction:column;gap:10px;background:var(--sf2);border-radius:12px;padding:12px}
+.crop-st{position:relative;width:100%;aspect-ratio:520/240;border-radius:10px;overflow:hidden;touch-action:none;cursor:grab;background:#000;user-select:none;-webkit-user-select:none}
+.crop-st:active{cursor:grabbing}.crop-st canvas{width:100%;height:100%;display:block}
+.crop-fr{position:absolute;inset:0;border:2px solid #f0a92e;border-radius:10px;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.crop-fr::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent 33.2%,rgba(255,255,255,.35) 33.2% 33.5%,transparent 33.5% 66.5%,rgba(255,255,255,.35) 66.5% 66.8%,transparent 66.8%),linear-gradient(0deg,transparent 33%,rgba(255,255,255,.35) 33% 33.6%,transparent 33.6% 66.4%,rgba(255,255,255,.35) 66.4% 67%,transparent 67%)}
+.crop-z{display:flex;align-items:center;gap:8px}.crop-z input[type=range]{flex:1;min-width:60px;min-height:0!important}
+.crop-b{display:flex;gap:8px;justify-content:flex-end}.crop-b .btn{flex:0 1 auto}
 .phrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 4px}.phrow .hint{flex:1 1 180px}
 .steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px;line-height:1.45}
 .pf-seg{display:inline-grid;grid-auto-flow:column;gap:4px;background:var(--grb);border-radius:9px;padding:3px}
@@ -808,11 +815,15 @@ async function delManual(id){const t=S.tasks.find(x=>x._id===id);if(!t||!t.manua
 const BRANDS=['Volkswagen','VW Nutzfahrzeuge','Audi','Škoda','Seat','Cupra','Porsche','Bentley'];
 let curV=null;
 const uniq=a=>[...new Set(a.filter(Boolean))].sort(new Intl.Collator('de',{numeric:true}).compare);
-let vPhoto='';
-function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(pre||{})};curV=v;vPhoto=okPhoto(v.photo)?v.photo:'';const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
+let vPhoto='',crop=null;
+function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(pre||{})};curV=v;vPhoto=okPhoto(v.photo)?v.photo:'';crop=null;const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
  modal(`<header><h3>${fin?'Fahrzeug bearbeiten':'Neues Fahrzeug'}</h3><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
  <div class="sb"><div class="prev" id="vprev"></div>
- <div class="phrow"><input type="file" id="vph" accept="image/*" hidden><button class="btn sm" type="button" onclick="$('vph').click()">${IC.camera} <span id="vphl">${vPhoto?'Foto ändern':'Foto hinzufügen'}</span></button><button class="btn sm" type="button" id="vphx" style="color:var(--ba)" ${vPhoto?'':'hidden'} onclick="vPhoto='';this.hidden=true;$('vphl').textContent='Foto hinzufügen';$('vphs').textContent='Foto wird beim Speichern entfernt – dann ist wieder die Skizze zu sehen.';vPrev()">Foto entfernen</button><span class="hint" id="vphs">${vPhoto?'':'Optional: 1 Foto, wird statt der Skizze angezeigt.'}</span></div>
+ <div class="phrow"><input type="file" id="vph" accept="image/*" hidden><button class="btn sm" type="button" onclick="$('vph').click()">${IC.camera} <span id="vphl">${vPhoto?'Foto ändern':'Foto hinzufügen'}</span></button><button class="btn sm" type="button" id="vphe" hidden onclick="cropOpen()">Ausschnitt ändern</button><button class="btn sm" type="button" id="vphx" style="color:var(--ba)" ${vPhoto?'':'hidden'} onclick="vPhoto='';this.hidden=true;$('vphl').textContent='Foto hinzufügen';$('vphs').textContent='Foto wird beim Speichern entfernt – dann ist wieder die Skizze zu sehen.';vPrev()">Foto entfernen</button><span class="hint" id="vphs">${vPhoto?'':'Optional: 1 Foto, wird statt der Skizze angezeigt.'}</span></div>
+ <div class="crop" id="vcrop" hidden><div class="crop-st" id="vcst"><canvas id="vccv"></canvas><div class="crop-fr"></div></div>
+  <div class="crop-z"><button class="btn sm" type="button" onclick="cropFit('contain')" title="Ganzes Foto zeigen">Ganzes Foto</button><input type="range" id="vczr" min="0" max="1000" value="0" aria-label="Zoom"><button class="btn sm" type="button" onclick="cropFit('cover')" title="Rahmen ausfüllen">Füllen</button><button class="btn sm" type="button" onclick="cropRot()" title="Drehen" aria-label="Um 90° drehen">↻</button></div>
+  <span class="hint">Mit dem Finger verschieben, mit zwei Fingern, dem Regler oder dem Mausrad zoomen. So erscheint das Foto überall in der App.</span>
+  <div class="crop-b"><button class="btn sm" type="button" onclick="cropClose()">Abbrechen</button><button class="btn sm p" type="button" onclick="cropApply()">${IC.check} Ausschnitt übernehmen</button></div></div>
  <div class="fg">
   <label class="f full">FIN (17 Zeichen)<input id="vf" class="mono" maxlength="17" value="${E(v.fin)}" ${fin?'disabled':''} style="text-transform:uppercase"></label>
   <label class="f">Marke<input id="vb" list="brands" value="${E(v.brand)}"><datalist id="brands">${BRANDS.map(b=>`<option value="${b}">`).join('')}</datalist></label>
@@ -832,19 +843,57 @@ function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(
  <p class="hint" id="vplan"></p><p class="msg err" id="verr"></p></div>
  <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev();
  $('vph').addEventListener('change',e=>{pickPhoto(e.target.files&&e.target.files[0]);e.target.value=''})}
-/* Foto im Handy verkleinern (480×270, JPEG ca. 30–60 KB) und direkt beim Fahrzeug speichern – kein kostenpflichtiger Dateispeicher nötig */
-async function pickPhoto(f){const s=$('vphs');if(!f||!s)return;s.textContent='Foto wird verkleinert …';
+/* ---------- Foto: laden, Ausschnitt wählen, verkleinern ----------
+   Ausgabe 520×240 (gleiches Seitenverhältnis wie alle Anzeigen), JPEG meist 30–70 KB, direkt beim Fahrzeug gespeichert */
+const PW=520,PH=240;
+async function pickPhoto(f){const s=$('vphs');if(!f||!s)return;s.textContent='Foto wird geladen …';
  try{let src;try{src=await createImageBitmap(f,{imageOrientation:'from-image'})}catch(e){src=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=URL.createObjectURL(f)})}
-  const W=480,H=270,sw=src.width,sh=src.height,sc=Math.max(W/sw,H/sh),cw=W/sc,ch=H/sc,c=document.createElement('canvas');c.width=W;c.height=H;
-  const x=c.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(src,(sw-cw)/2,(sh-ch)/2,cw,ch,0,0,W,H);
-  let q=.82,d=c.toDataURL('image/jpeg',q);while(d.length>120000&&q>.45){q-=.08;d=c.toDataURL('image/jpeg',q)}
-  if(!okPhoto(d))throw 0;vPhoto=d;$('vphx').hidden=false;$('vphl').textContent='Foto ändern';
-  s.textContent=`Foto übernommen (${Math.round(d.length*.75/1024)} KB) – wird mit „Speichern“ gesichert.`;vPrev()}
+  /* Original auf max. 1600 px verkleinern, damit das Verschieben flüssig bleibt */
+  const k=Math.min(1,1600/Math.max(src.width,src.height)),c=document.createElement('canvas');c.width=Math.round(src.width*k);c.height=Math.round(src.height*k);
+  const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(src,0,0,c.width,c.height);crop={img:c};cropBg();cropFit('contain');cropOpen();s.textContent='Ausschnitt wählen und übernehmen.'}
  catch(e){s.textContent='Dieses Bild konnte nicht gelesen werden. Bitte ein JPG- oder PNG-Foto wählen.'}}
+/* Hintergrund für leere Ränder: unscharfe, abgedunkelte Version des Fotos (oder Durchschnittsfarbe) */
+function cropBg(){const im=crop.img,b=document.createElement('canvas');b.width=PW;b.height=PH;const x=b.getContext('2d'),sc=Math.max(PW/im.width,PH/im.height);
+ if('filter' in x){x.filter='blur(14px) brightness(.8)';x.drawImage(im,(PW-im.width*sc)/2,(PH-im.height*sc)/2,im.width*sc,im.height*sc);x.filter='none'}
+ else{const t=document.createElement('canvas');t.width=t.height=1;const y=t.getContext('2d');y.drawImage(im,0,0,1,1);const d=y.getImageData(0,0,1,1).data;x.fillStyle=`rgb(${d[0]*.8|0},${d[1]*.8|0},${d[2]*.8|0})`;x.fillRect(0,0,PW,PH)}
+ crop.bg=b}
+const cropBase=()=>Math.min(PW/crop.img.width,PH/crop.img.height);/* Zoom 1 = ganzes Foto sichtbar */
+const cropMax=()=>Math.max(PW/crop.img.width,PH/crop.img.height)/cropBase()*4;
+function cropFit(m){if(!crop)return;const im=crop.img;crop.cx=im.width/2;crop.cy=im.height/2;crop.z=m==='cover'?Math.max(PW/im.width,PH/im.height)/cropBase():1;cropDraw()}
+function cropRot(){const im=crop.img,c=document.createElement('canvas');c.width=im.height;c.height=im.width;const x=c.getContext('2d');x.translate(c.width,0);x.rotate(Math.PI/2);x.drawImage(im,0,0);crop.img=c;cropBg();cropFit('contain')}
+function cropPaint(x,W,H){const im=crop.img,k=crop.z*cropBase()*(W/PW);x.clearRect(0,0,W,H);x.drawImage(crop.bg,0,0,W,H);x.imageSmoothingQuality='high';
+ x.drawImage(im,W/2-crop.cx*k,H/2-crop.cy*k,im.width*k,im.height*k)}
+function cropDraw(){if(!crop)return;const cv=$('vccv');if(!cv)return;const st=$('vcst'),w=st.clientWidth||PW,dpr=Math.min(2,devicePixelRatio||1);
+ cv.width=Math.round(w*dpr);cv.height=Math.round(w*PH/PW*dpr);
+ const im=crop.img;crop.z=Math.max(.6,Math.min(cropMax(),crop.z));crop.cx=Math.max(0,Math.min(im.width,crop.cx));crop.cy=Math.max(0,Math.min(im.height,crop.cy));
+ cropPaint(cv.getContext('2d'),cv.width,cv.height);
+ const zr=$('vczr');if(zr){const lo=Math.log(.6),hi=Math.log(cropMax());zr.value=Math.round((Math.log(crop.z)-lo)/(hi-lo)*1000)}}
+function cropOpen(){if(!crop)return;$('vcrop').hidden=false;$('vprev').hidden=true;cropWire();requestAnimationFrame(cropDraw);$('vcrop').scrollIntoView({block:'nearest'})}
+function cropClose(){$('vcrop').hidden=true;$('vprev').hidden=false}
+function cropApply(){if(!crop)return;const c=document.createElement('canvas');c.width=PW;c.height=PH;cropPaint(c.getContext('2d'),PW,PH);
+ let q=.84,d=c.toDataURL('image/jpeg',q);while(d.length>130000&&q>.45){q-=.08;d=c.toDataURL('image/jpeg',q)}
+ if(!okPhoto(d))return $('vphs').textContent='Das Foto konnte nicht verarbeitet werden.';
+ vPhoto=d;cropClose();$('vphx').hidden=false;$('vphe').hidden=false;$('vphl').textContent='Anderes Foto';
+ $('vphs').textContent=`Foto übernommen (${Math.round(d.length*.75/1024)} KB) – wird mit „Speichern“ gesichert.`;vPrev()}
+/* Verschieben (1 Finger / Maus), Zoomen (2 Finger, Regler, Mausrad) */
+function cropWire(){const st=$('vcst');if(!st||st.dataset.w)return;st.dataset.w=1;const pts=new Map();let last=null;
+ const k=()=>crop.z*cropBase()*(st.clientWidth/PW);
+ const zoomAt=(nz,px,py)=>{const r=st.getBoundingClientRect(),kx=k(),ix=crop.cx+(px-r.left-r.width/2)/kx,iy=crop.cy+(py-r.top-r.height/2)/kx;
+  crop.z=Math.max(.6,Math.min(cropMax(),nz));const k2=k();crop.cx=ix-(px-r.left-r.width/2)/k2;crop.cy=iy-(py-r.top-r.height/2)/k2;cropDraw()};
+ const mid=()=>{const a=[...pts.values()];return{x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2,d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}};
+ st.addEventListener('pointerdown',e=>{st.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});last=pts.size===2?mid():{x:e.clientX,y:e.clientY}});
+ st.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId)||!crop)return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pts.size===2){const m=mid();if(last&&last.d){crop.cx-=(m.x-last.x)/k();crop.cy-=(m.y-last.y)/k();zoomAt(crop.z*m.d/last.d,m.x,m.y)}last=m}
+  else if(pts.size===1&&last){crop.cx-=(e.clientX-last.x)/k();crop.cy-=(e.clientY-last.y)/k();last={x:e.clientX,y:e.clientY};cropDraw()}});
+ const up=e=>{pts.delete(e.pointerId);const a=[...pts.values()];last=a.length===1?{x:a[0].x,y:a[0].y}:null};
+ st.addEventListener('pointerup',up);st.addEventListener('pointercancel',up);
+ st.addEventListener('wheel',e=>{if(!crop)return;e.preventDefault();zoomAt(crop.z*Math.exp(-e.deltaY*.0015),e.clientX,e.clientY)},{passive:false});
+ $('vczr').addEventListener('input',e=>{if(!crop)return;const lo=Math.log(.6),hi=Math.log(cropMax()),r=st.getBoundingClientRect();zoomAt(Math.exp(lo+(hi-lo)*e.target.value/1000),r.left+r.width/2,r.top+r.height/2)});
+ addEventListener('resize',()=>{if($('vcrop')&&!$('vcrop').hidden)cropDraw()})}
 function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{photo:vPhoto,fin:$('vf').value.trim().toUpperCase(),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),spot:$('vsp').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),transp:!curV||curV.transp!==false,solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked}}
 function vPrev(){if(!$('vprev'))return;$('vcw').hidden=$('vcol').value!=='__c';const v=formVeh();$('vprev').innerHTML=carSVG(v)+`<div><b>${vname(v)}</b><br><small>${BODIES[bodyOf(v)].l}${v.color?' · '+E(v.color):''}</small></div>`;
  const n=planFor({...v,archived:false}).length,b=planFor({...v,archived:false}).filter(x=>x.cat==='b12').length;$('vplan').textContent=v.deliv?`Pflegeplan: ${n} Termine bis ${fmt(planEnd(v))}, davon ${b}× 12V-Batterie (${v.transp?'Transportmodus an: vierteljährlich':'Transportmodus aus: alle 6 Wochen'}).`:'Ohne Eingangsdatum wird kein Pflegeplan erstellt.'}
-async function saveVeh(old){const f=formVeh(),fin=old||f.fin,err=t=>{$('verr').textContent=t};
+async function saveVeh(old){if(crop&&$('vcrop')&&!$('vcrop').hidden)cropApply();const f=formVeh(),fin=old||f.fin,err=t=>{$('verr').textContent=t};
  if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(fin))return err('Die FIN muss 17 Zeichen haben (Buchstaben ohne I, O, Q und Ziffern).');
  if(!old&&S.veh.some(v=>v.fin===fin))return err('Ein Fahrzeug mit dieser FIN gibt es bereits.');
  if(!f.brand||!f.model)return err('Bitte Marke und Modell angeben.');
