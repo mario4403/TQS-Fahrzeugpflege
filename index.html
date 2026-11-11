@@ -95,7 +95,7 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 .a-side{background:var(--nav);color:var(--navtx);padding-block:48px;padding-left:max(40px,env(safe-area-inset-left,0px));padding-right:40px;display:flex;flex-direction:column;justify-content:space-between;gap:32px;position:relative;overflow:hidden}
 .a-side::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:repeating-linear-gradient(-45deg,var(--navac) 0 14px,transparent 14px 28px);opacity:.85}
 .brand{display:flex;align-items:center;gap:10px;color:var(--navhi)}
-.brand .mk{width:34px;height:34px;border-radius:8px;background:var(--navac);color:#1a1300;display:grid;place-items:center;font:700 14px var(--f-disp);letter-spacing:.04em}
+.brand .mk{width:36px;height:36px;border-radius:9px;display:block;flex:0 0 auto;object-fit:cover;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .brand b{font:600 18px var(--f-disp);letter-spacing:.02em}
 .brand small{display:block;font-size:11px;color:var(--navtx);letter-spacing:.06em;text-transform:uppercase}
 .a-side h1{color:var(--navhi);font-size:clamp(30px,4vw,46px);line-height:1.05;max-width:14ch}
@@ -104,7 +104,7 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 .track div{border-top:3px solid #2c3d4b;padding-top:8px;font-size:12px}
 .track div b{display:block;color:var(--navhi);font:600 17px var(--f-disp)}
 .track div.on{border-top-color:var(--navac)}
-.a-main{display:grid;place-items:center;padding-block:40px;padding-left:24px;padding-right:max(24px,env(safe-area-inset-right,0px))}
+.a-main{display:grid;place-items:center;padding-top:calc(40px + env(safe-area-inset-top,0px));padding-bottom:40px;padding-left:24px;padding-right:max(24px,env(safe-area-inset-right,0px))}
 .a-card{width:100%;max-width:400px;display:flex;flex-direction:column;gap:18px}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--grb);border-radius:10px;padding:4px}
 .seg button{border:0;background:transparent;padding:9px;border-radius:7px;font-weight:600;color:var(--mu)}
@@ -126,7 +126,7 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 
 /* App shell */
 #app:not([hidden]){display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
-nav{background:var(--nav);color:var(--navtx);display:flex;flex-direction:column;gap:22px;padding-block:20px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:14px;position:sticky;top:0;height:100vh;height:100dvh}
+nav{background:var(--nav);color:var(--navtx);display:flex;flex-direction:column;gap:22px;padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:20px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:14px;position:sticky;top:0;height:100vh;height:100dvh}
 nav .brand{padding:0 6px}
 .nl{display:flex;flex-direction:column;gap:2px}
 .nl a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--navtx);cursor:pointer;font-weight:500;text-decoration:none;position:relative}
@@ -139,7 +139,7 @@ nav .brand{padding:0 6px}
 .av{width:34px;height:34px;border-radius:50%;background:var(--navac);color:#1a1300;display:grid;place-items:center;font:700 13px var(--f-disp);flex-shrink:0}
 .me b{display:block;color:var(--navhi);font-weight:600;font-size:13px}
 .me small{display:block;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
-main{min-width:0;padding-block:24px 48px;padding-left:28px;padding-right:max(28px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+main{min-width:0;padding-top:calc(24px + env(safe-area-inset-top,0px));padding-bottom:48px;padding-left:28px;padding-right:max(28px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
 .head{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .head h2{flex:1;min-width:0}
 .head .eye{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);font-family:var(--f-body);margin-bottom:2px}
@@ -361,12 +361,11 @@ td .car{width:84px;height:38px;display:block}
 @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.dash{grid-template-columns:minmax(0,1fr)}.dash .vg{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}.vhero{grid-template-columns:200px minmax(0,1fr)}.vhero .car{width:200px;height:92px}.vhero .acts{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}.vhero .acts .toggle{flex:1 1 260px;width:auto}}
 @media(max-width:760px){
  #auth:not([hidden]){grid-template-columns:minmax(0,1fr)}
- .a-side{padding-block:28px 34px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+ .a-side{padding-top:calc(28px + env(safe-area-inset-top,0px));padding-bottom:34px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
  .a-side h1{font-size:30px}.track{display:none}
  .a-main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px}
  #app:not([hidden]){grid-template-columns:minmax(0,1fr)}
- nav{position:sticky;top:env(safe-area-inset-top,0px);height:auto;flex-direction:row;align-items:center;gap:8px;padding-block:8px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));z-index:20;overflow-x:auto}
- body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--nav)}
+ nav{position:sticky;top:0;height:auto;flex-direction:row;align-items:center;gap:8px;padding-top:calc(8px + env(safe-area-inset-top,0px));padding-bottom:8px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));z-index:20;overflow-x:auto}
  nav .brand b,nav .brand small{display:none}
  .nl{flex-direction:row}.nl a{padding:8px 10px;white-space:nowrap}.nl a.on::before{display:none}.nl a span.lb{display:none}.nl a.on span.lb{display:inline}
  .me{margin:0 0 0 auto;width:auto;padding:4px;background:none}.me div{display:none}
@@ -398,6 +397,7 @@ body.mopen{overflow:hidden}
  nav .scanb{display:none}
  .me{width:44px;height:44px;justify-content:center;margin:0;flex:0 0 auto}
  /* untere Navigationsleiste */
+ html{scroll-padding-top:calc(76px + env(safe-area-inset-top,0px));scroll-padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
  #tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--nav);border-top:1px solid rgba(255,255,255,.08);
   padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));gap:2px}
  #tabbar button{flex:1 1 0;min-width:0;min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;background:none;color:#9fb0bf;font-family:inherit;font-size:11px;font-weight:600;line-height:1.15;letter-spacing:-.1px;border-radius:12px;position:relative;padding:4px 2px;cursor:pointer}
@@ -452,7 +452,7 @@ body.mopen{overflow:hidden}
 
 <div id="auth" hidden>
  <aside class="a-side">
-  <div class="brand"><div class="mk">TQS</div><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
+  <div class="brand"><img class="mk" src="icon-192.png?v=3" alt="TQS Fahrzeugpflege" width="34" height="34"><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
   <div>
    <h1>Pflegeprogramm für Neufahrzeuge</h1>
    <p>Jedes Fahrzeug bekommt beim Anlegen automatisch seinen Pflegeplan, immer bis zwei Jahre im Voraus: Batterie, Reifendruck, Bremsen, Folie und Säuberung, nach TQS Anlage 1, Abschnitt 3.2.</p>
@@ -1331,7 +1331,7 @@ document.addEventListener('change',e=>{if(e.target.id==='tourL'){S.tourL=e.targe
 /* ---------- Rahmen ---------- */
 const NAV=[['dash','Dashboard',IC.dash],['tour','Rundgang',IC.route],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car],['prob','Probleme',IC.warn],['set','Einstellungen',IC.set]];
 function renderNav(){const late=activeTasks().filter(t=>t.status!=='Erledigt'&&t.due<TD()).length,pr=S.prob.filter(p=>p.status==='Offen').length;
- $('nav').innerHTML=`<div class="brand"><div class="mk">TQS</div><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
+ $('nav').innerHTML=`<div class="brand"><img class="mk" src="icon-192.png?v=3" alt="TQS Fahrzeugpflege" width="34" height="34"><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
  <div class="nl">${NAV.map(n=>`<a data-v="${n[0]}" class="${(S.view===n[0]||(S.view==='veh'&&n[0]==='veh_l'))?'on':''}" onclick="go('${n[0]}')" title="${n[1]}">${n[2]}<span class="lb">${n[1]}</span>${n[0]==='dash'&&late?`<span class="cnt">${late}</span>`:n[0]==='prob'&&pr?`<span class="cnt">${pr}</span>`:''}</a>`).join('')}</div>
  <button class="scanb" onclick="scanModal()" title="FIN scannen oder suchen">${IC.scan}<span class="lb">FIN scannen</span></button>
  <button class="me" onclick="profileModal()" title="Profil"><span class="av">${E(initials(me()))}</span><div><b>${E(me())}</b><small>${E(S.acct.email)}</small></div></button>`;
