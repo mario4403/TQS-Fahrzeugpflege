@@ -130,7 +130,7 @@ nav .brand{padding:0 6px}
 .nl a.on{background:rgba(255,255,255,.09);color:var(--navhi)}
 .nl a.on::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--navac)}
 .nl .cnt{margin-left:auto;font-size:11px;background:var(--ba);color:#fff;border-radius:999px;padding:0 7px;font-weight:600}
-.me{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.05);cursor:pointer;border:0;color:inherit;text-align:left;width:100%}
+.me{margin-top:0;display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,.05);cursor:pointer;border:0;color:inherit;text-align:left;width:100%}
 .me:hover{background:rgba(255,255,255,.09)}
 .av{width:34px;height:34px;border-radius:50%;background:var(--navac);color:#1a1300;display:grid;place-items:center;font:700 13px var(--f-disp);flex-shrink:0}
 .me b{display:block;color:var(--navhi);font-weight:600;font-size:13px}
@@ -168,6 +168,59 @@ main{min-width:0;padding-block:24px 48px;padding-left:28px;padding-right:max(28p
 .fin-copy{cursor:copy;border-radius:4px;padding:1px 3px;margin:-1px -3px;transition:background .15s,color .15s}
 .fin-copy:hover{background:var(--acs);color:var(--ac);text-decoration:underline dotted;text-underline-offset:3px}
 .fin-copy.copied{background:var(--okb);color:var(--ok)}.fin-copy.copied::after{content:" ✓"}
+/* Liste: Schnell erledigen, Auswahl */
+.tl .ra{display:flex;align-items:center;gap:2px}.tl .ra:empty{display:none}
+.qchk{width:36px;height:36px;border-radius:50%;border:2px solid var(--bd);background:var(--sf);color:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s}
+.qchk .ic{width:18px;height:18px;stroke-width:2.6}
+.qchk:hover,.qchk:focus-visible{border-color:var(--ok);color:var(--ok);background:var(--okb)}
+.tl li.selm{cursor:pointer}.tl .pk{width:96px;display:flex;justify-content:center}
+.tl .pk{position:relative}.tl .pk::before{content:"";width:26px;height:26px;border:2px solid var(--bd);border-radius:7px;background:var(--sf)}
+.tl .pk .ic{position:absolute;width:18px;height:18px;stroke-width:3;color:#fff;top:50%;left:50%;transform:translate(-50%,-50%)}
+.tl li.picked{background:var(--acs)}.tl li.picked .pk::before{background:var(--ac);border-color:var(--ac)}
+.tl li.cmp{grid-template-columns:minmax(0,1fr) auto auto;padding-block:9px}.tl li.cmp.selm{grid-template-columns:40px minmax(0,1fr) auto auto}.tl li.cmp .pk{width:40px}
+body.has-sel #toast:not([hidden]){bottom:calc(max(16px,env(safe-area-inset-bottom,0px) + 10px) + 74px)}
+.tl li.rm{cursor:default;opacity:.85}.tl li.rm .t1{text-decoration:line-through;text-decoration-color:var(--mu)}
+.selbar{position:fixed;left:50%;transform:translateX(-50%);bottom:max(16px,calc(env(safe-area-inset-bottom,0px) + 10px));z-index:30;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:10px 12px;box-shadow:0 12px 32px rgba(0,0,0,.22);width:min(720px,calc(100% - 32px))}
+main{padding-bottom:110px}
+#toast:not([hidden]){display:flex;align-items:center;gap:14px}
+#toast .undo{border:0;background:transparent;color:#ffcf6b;font:inherit;font-weight:700;cursor:pointer;padding:4px 2px;white-space:nowrap}
+/* Dashboard: überfällig nach Fahrzeug */
+.vgp{border-bottom:1px solid var(--bd)}.vgp:last-child{border-bottom:0}
+.vgp summary{display:grid;grid-template-columns:96px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:10px 16px;cursor:pointer;list-style:none}
+.vgp summary::-webkit-details-marker{display:none}.vgp summary:hover{background:var(--sf2)}
+.vgp summary .thumb{width:96px;height:44px}.vgp .t2{font-size:12px;color:var(--mu);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;align-items:center}
+.vgp .t2 .ic,.tv .t2 .ic,.tl .t2 .ic{width:13px;height:13px;vertical-align:-2px}
+.vgp .chev{color:var(--mu);transition:transform .15s;display:flex}.vgp[open] .chev{transform:rotate(90deg)}
+.vgp[open]>summary{background:var(--sf2)}.vgp .tl{border-top:1px solid var(--bd);background:var(--bg)}.vgp .tl li{padding-left:28px}
+/* Rundgang */
+.tloc{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px;font-size:16px}.tloc .ic{width:18px;height:18px;align-self:center;color:var(--ac)}.tloc .muted{font-size:13px;font-weight:400}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px}
+.tv .tvh{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bd)}
+.tv .tvh .thumb{width:96px;height:44px}.tv .t2{font-size:12px;color:var(--mu);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.tv .spot{display:inline-block;font:700 13px var(--f-mono);background:var(--acs);color:var(--ac);border-radius:6px;padding:2px 8px;margin-bottom:4px}
+.tsum{margin:4px 0 0}
+/* Scanner */
+.scanbox{position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;max-height:52vh}
+.scanbox video{width:100%;height:100%;object-fit:cover;display:block}
+.scanline{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#f0a92e;box-shadow:0 0 12px #f0a92e;animation:scl 1.8s ease-in-out infinite}
+@keyframes scl{0%,100%{transform:translateY(-60px)}50%{transform:translateY(60px)}}
+.scl{list-style:none;margin:0;padding:0;border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+.scl li{display:grid;grid-template-columns:80px minmax(0,1fr);gap:12px;align-items:center;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--bd)}.scl li:last-child{border-bottom:0}.scl li:hover{background:var(--sf2)}.scl .thumb{width:80px;height:36px}
+.big-in{font-size:22px!important;padding:12px!important;font-variant-numeric:tabular-nums}
+.scanb{display:flex;align-items:center;gap:10px;border:0;background:rgba(240,169,46,.14);color:#f0a92e;font:inherit;font-weight:600;padding:10px 12px;border-radius:10px;cursor:pointer;margin-top:auto}
+.scanb:hover{background:rgba(240,169,46,.24)}
+/* Offline */
+#offl:not([hidden]){position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:45;display:flex;align-items:center;gap:8px;background:#5b4a14;color:#fff3cd;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:500;box-shadow:0 6px 18px rgba(0,0,0,.25);max-width:calc(100% - 24px)}
+#offl .dot{width:8px;height:8px;border-radius:50%;background:#f0a92e;flex-shrink:0}
+/* Drucken (Rundgang) */
+@media print{
+ :root:not(#_p){--bg:#fff;--sf:#fff;--sf2:#fff;--tx:#000;--mu:#444;--bd:#bbb;--acs:#eef3f7;--grb:#eee;color-scheme:light}
+ body{background:#fff}nav,.np,#toast,#offl,.selbar,.del-x,.head .btn{display:none!important}
+ #app:not([hidden]){display:block}main{padding:0!important}
+ .panel{box-shadow:none!important;break-inside:avoid}.tgrid{grid-template-columns:1fr 1fr}
+ .tl li{break-inside:avoid;padding:6px 10px}.qchk{border-color:#555;color:transparent!important;background:#fff!important;width:22px;height:22px;border-radius:4px}
+ .fin-copy{background:none!important}.tl .thumb,.tv .thumb{display:none}.tl li,.tv .tvh{grid-template-columns:minmax(0,1fr) auto auto!important}
+}
 .pf-seg{display:inline-grid;grid-auto-flow:column;gap:4px;background:var(--grb);border-radius:9px;padding:3px}
 .pf-seg button{border:0;background:transparent;padding:6px 11px;border-radius:7px;font-weight:600;font-size:13px;color:var(--mu);display:flex;align-items:center;gap:6px}
 .pf-seg button .c{font-size:11px;background:var(--sf);border-radius:999px;padding:0 6px;color:var(--mu)}
@@ -180,7 +233,7 @@ main{min-width:0;padding-block:24px 48px;padding-left:28px;padding-right:max(28p
 
 /* Aufgabenliste */
 .tl{list-style:none;margin:0;padding:0}
-.tl li{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:14px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bd);cursor:pointer}
+.tl li{display:grid;grid-template-columns:96px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bd);cursor:pointer}
 .tl li:last-child{border-bottom:0}
 .tl li:hover{background:var(--sf2)}
 .tl .thumb{width:96px;height:44px}
@@ -312,7 +365,7 @@ td .car{width:84px;height:38px;display:block}
  main{padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
  h2,.vhero h2{font-size:23px}
  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
- .tl li{grid-template-columns:64px minmax(0,1fr);row-gap:6px}.tl li.hasdel{grid-template-columns:64px minmax(0,1fr) auto}.tl li.hasdel .del-x{grid-column:3;grid-row:1}.tl .thumb{width:64px;height:30px}.tl .due{grid-column:2;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px}
+ .tl li,.tl li.hasdel{grid-template-columns:64px minmax(0,1fr) auto;row-gap:6px}.head h2{flex-basis:100%}.head .btn{flex:1 1 auto;justify-content:center}.tl .ra{grid-column:3;grid-row:1/span 2}.tl .pk{width:64px}.tl li.cmp{grid-template-columns:minmax(0,1fr) auto}.tl li.cmp .due{grid-column:1}.tl li.cmp .ra{grid-column:2}.tl li.cmp.selm{grid-template-columns:40px minmax(0,1fr) auto}.tl li.cmp.selm .due{grid-column:2}.tl li.cmp .pk{width:40px;grid-row:1/span 2}.vgp summary{grid-template-columns:64px minmax(0,1fr) auto;row-gap:6px}.vgp summary .thumb{width:64px;height:30px}.vgp summary .pill{grid-column:2;justify-self:start}.vgp .chev{grid-column:3;grid-row:1/span 2}.vgp .tl li{padding-left:16px}.tgrid{grid-template-columns:minmax(0,1fr)}.tv .tvh{grid-template-columns:64px minmax(0,1fr) auto}.tv .tvh .thumb{width:64px;height:30px}.scanb{margin:0;padding:8px 10px}.scanb .lb{display:none}.qchk{width:40px;height:40px}.tl .thumb{width:64px;height:30px}.tl .due{grid-column:2;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px}
  .vhero{grid-template-columns:minmax(0,1fr);padding:16px}.vhero .car{width:100%;max-width:260px;height:auto}
  .fg{grid-template-columns:minmax(0,1fr)}
  .cal>div{min-height:64px;padding:3px}.chip span{display:none}.chip{justify-content:center;padding:3px}
@@ -379,6 +432,7 @@ td .car{width:84px;height:38px;display:block}
 <div id="mod" hidden><div class="sheet" id="mb"></div></div>
 <div id="alrt" hidden><div class="alert-box" id="ab"></div></div>
 <div id="toast" hidden></div>
+<div id="offl" hidden><span class="dot"></span><span>Offline: Änderungen werden gespeichert und übertragen, sobald wieder Netz da ist.</span></div>
 
 <script>
 /* ---------- Helfer ---------- */
@@ -412,6 +466,14 @@ const IC={
  set:SV('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'),
  trash:SV('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>'),
  plus:SV('<path d="M12 5v14M5 12h14"/>'),
+ check:SV('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+ pin:SV('<path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/>'),
+ scan:SV('<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M7 9v6M10 9v6M13 9v6M17 9v6"/>'),
+ route:SV('<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"/>'),
+ print:SV('<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3"/><rect x="7" y="14" width="10" height="7"/>'),
+ restore:SV('<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5M4 4v4.5h4.5"/>'),
+ chev:SV('<path d="M9 6l6 6-6 6"/>'),
+ sel:SV('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/>'),
  pdf:SV('<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M12 11v6M9.5 14.5 12 17l2.5-2.5"/>'),
  out:SV('<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>'),
  bolt:SV('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
@@ -456,7 +518,7 @@ function carSVG(v,cls){const t=BODIES[bodyOf(v)],c=colHex(v),wy=82;
 
 /* ---------- Zustand ---------- */
 const DEF={wk:42,v12:12.5,hv:25};
-const S={veh:[],tasks:[],prob:[],log:[],cfg:{...DEF},view:'dash',cv:'month',cd:TD(),q:'',fl:'',sel:null,tab:'plan',planF:'open',acct:null,uid:null,ready:{veh:0,tasks:0},migrated:false};
+const S={veh:[],tasks:[],prob:[],log:[],cfg:{...DEF},view:'dash',cv:'month',cd:TD(),q:'',fl:'',sel:null,tab:'plan',planF:'open',selMode:false,pick:new Set(),vis:[],openG:new Set(),tourR:'due',tourL:'',acct:null,uid:null,ready:{veh:0,tasks:0},migrated:false};
 let db=null;
 const me=()=>S.acct?S.acct.name:'unbekannt';
 
@@ -506,7 +568,7 @@ function battLow(){const last={};readings().forEach(r=>{if(!veh(r.t.fin).archive
 
 /* ---------- Modal / Alert / Toast ---------- */
 function modal(h){$('mb').innerHTML=h;$('mod').hidden=false}
-function closeM(){$('mod').hidden=true;$('mb').innerHTML='';render()}
+function closeM(){if(typeof stopScan==='function')stopScan();$('mod').hidden=true;$('mb').innerHTML='';render()}
 $('mod').addEventListener('click',e=>{if(e.target.id==='mod')closeM()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('alrt').hidden)closeA();else if(!$('mod').hidden)closeM()}});
 function chargeAlert(cat,v,fin){const x=veh(fin);$('ab').innerHTML=`<div class="top">${IC.warn}<h3>Bitte Laden!</h3></div><div class="bd">
@@ -514,7 +576,9 @@ function chargeAlert(cat,v,fin){const x=veh(fin);$('ab').innerHTML=`<div class="
  <p style="margin:0">${cat==='b12'?`Die 12V-Batterie liegt unter <b>${nf(S.cfg.v12,1)} V</b>.`:`Die HV-Batterie liegt unter <b>${nf(S.cfg.hv)} %</b>.`}<br>${vname(x)} · <span class="mono">${E(fin)}</span></p>
  <button class="btn p" style="justify-content:center" onclick="closeA()">Verstanden</button></div>`;$('alrt').hidden=false}
 function closeA(){$('alrt').hidden=true;render()}
-let tT;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tT);tT=setTimeout(()=>t.hidden=true,3600)}
+let tT;function toast(m,undo){const t=$('toast');t.innerHTML='';const s=document.createElement('span');s.textContent=m;t.appendChild(s);
+ if(undo){const b=document.createElement('button');b.className='undo';b.textContent='Rückgängig';b.onclick=async()=>{t.hidden=true;clearTimeout(tT);try{await undo()}catch(e){toast('Rückgängig nicht möglich.')}};t.appendChild(b)}
+ t.hidden=false;clearTimeout(tT);tT=setTimeout(()=>t.hidden=true,undo?8000:3600)}
 
 /* ---------- Konto (Firebase Authentication) ---------- */
 const DOMAIN='@autohaus-reiser.at';
@@ -637,10 +701,16 @@ async function saveManual(fin){const o=manualModal.opts[+$('mc').value],c=o[0],b
  $('mod').hidden=true;$('mb').innerHTML='';
  const n=pnum(val);if(n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv))chargeAlert(c,n,fin);else{toast('Maßnahme hinzugefügt.');render()}}
 async function removeTasks(ids){const ts=ids.map(id=>S.tasks.find(t=>t._id===id)).filter(t=>t&&t.status!=='Erledigt');if(!ts.length)return;
- if(!confirm(ts.length===1?`Überfällige Maßnahme „${ts[0].title}“ (geplant ${fmt(ts[0].due)}) löschen?\n\nSie wird bei der Plan-Neuberechnung nicht wieder angelegt.`:`${ts.length} überfällige Maßnahmen löschen?\n\nSie werden bei der Plan-Neuberechnung nicht wieder angelegt.`))return;
- const now=new Date().toISOString();let ok=0;
- for(const t of ts){try{if(t.manual)await db.doc('tasks/'+t._id).delete();else await db.doc('tasks/'+t._id).update({removed:true,removedAt:now,removedBy:me()});ok++;log(t.fin,`Überfällige Maßnahme gelöscht: ${t.title} (geplant ${fmt(t.due)})`)}catch(e){toast('Löschen nicht möglich: keine Schreibrechte.');break}}
- if(ok)toast(ok===1?'Maßnahme gelöscht.':`${ok} Maßnahmen gelöscht.`)}
+ const now=new Date().toISOString(),done=[];
+ await pool(ts.map(t=>async()=>{try{if(t.manual)await db.doc('tasks/'+t._id).delete();else await db.doc('tasks/'+t._id).update({removed:true,removedAt:now,removedBy:me()});done.push(t);log(t.fin,`Überfällige Maßnahme gelöscht: ${t.title} (geplant ${fmt(t.due)})`)}catch(e){}}),6);
+ if(done.length<ts.length)toast('Löschen nicht möglich: keine Schreibrechte.');
+ if(!done.length)return;
+ toast(done.length===1?`„${done[0].title}“ gelöscht`:`${done.length} Maßnahmen gelöscht`,async()=>{
+  await pool(done.map(t=>async()=>{if(t.manual){const d={...t};delete d._id;await db.doc('tasks/'+t._id).set(d)}else await db.doc('tasks/'+t._id).update({removed:false,removedAt:'',removedBy:''});log(t.fin,`Löschen rückgängig gemacht: ${t.title}`)}),6);toast('Wiederhergestellt.')})}
+async function restoreTasks(ids){const ts=ids.map(id=>(S.taskAll||[]).find(t=>t._id===id)).filter(t=>t&&t.removed);if(!ts.length)return;
+ await pool(ts.map(t=>async()=>{try{await db.doc('tasks/'+t._id).update({removed:false,removedAt:'',removedBy:''});log(t.fin,`Gelöschte Maßnahme wiederhergestellt: ${t.title}`)}catch(e){}}),6);
+ const fins=[...new Set(ts.map(t=>t.fin))];for(const f of fins){const v=veh(f);if(v.fin)await sync(v)}
+ toast(ts.length===1?`„${ts[0].title}“ wiederhergestellt`:`${ts.length} Maßnahmen wiederhergestellt`)}
 async function delManual(id){const t=S.tasks.find(x=>x._id===id);if(!t||!t.manual)return;if(!confirm('Diese eigene Maßnahme wirklich löschen?'))return;
  try{await db.doc('tasks/'+id).delete()}catch(e){return toast('Löschen nicht möglich: keine Schreibrechte.')}
  log(t.fin,'Eigene Maßnahme gelöscht: '+t.title);closeM();toast('Gelöscht.')}
@@ -648,7 +718,8 @@ async function delManual(id){const t=S.tasks.find(x=>x._id===id);if(!t||!t.manua
 /* ---------- Fahrzeug-Modal ---------- */
 const BRANDS=['Volkswagen','VW Nutzfahrzeuge','Audi','Škoda','Seat','Cupra','Porsche','Bentley'];
 let curV=null;
-function vehModal(fin){const v=S.veh.find(x=>x.fin===fin)||{transp:true};curV=v;const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
+const uniq=a=>[...new Set(a.filter(Boolean))].sort(new Intl.Collator('de',{numeric:true}).compare);
+function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(pre||{})};curV=v;const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
  modal(`<header><h3>${fin?'Fahrzeug bearbeiten':'Neues Fahrzeug'}</h3><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
  <div class="sb"><div class="prev" id="vprev"></div>
  <div class="fg">
@@ -659,7 +730,8 @@ function vehModal(fin){const v=S.veh.find(x=>x.fin===fin)||{transp:true};curV=v;
   <label class="f">Karosserie<select id="vbody"><option value="">Automatisch erkennen</option>${Object.entries(BODIES).map(([k,b])=>`<option value="${k}" ${v.body===k?'selected':''}>${b.l}</option>`).join('')}</select></label>
   <label class="f">Farbe<select id="vcol"><option value="">Bitte wählen</option>${COLORS.map(c=>`<option ${cn===c[0]?'selected':''}>${c[0]}</option>`).join('')}<option value="__c" ${isC?'selected':''}>Andere Farbe …</option></select></label>
   <label class="f" id="vcw" ${isC?'':'hidden'}>Eigene Farbe<span style="display:flex;gap:8px"><input id="vcn" placeholder="Name, z. B. Kings Red" value="${isC?E(cn):''}"><input id="vcc" type="color" value="${E(v.colorHex||'#7a8590')}" style="width:52px;padding:3px"></span></label>
-  <label class="f">Standort<input id="vl" value="${E(v.loc)}"></label>
+  <label class="f">Standort<input id="vl" list="locs" value="${E(v.loc)}" placeholder="z. B. Hauptbetrieb"><datalist id="locs">${uniq(S.veh.map(x=>x.loc)).map(x=>`<option value="${E(x)}">`).join('')}</datalist></label>
+  <label class="f">Stellplatz / Lagerort<input id="vsp" list="spots" value="${E(v.spot)}" placeholder="z. B. Halle 2 · Reihe B · 14"><datalist id="spots">${uniq(S.veh.map(x=>x.spot)).map(x=>`<option value="${E(x)}">`).join('')}</datalist></label>
   <label class="f">Eingangsdatum<input type="date" id="vd" value="${v.deliv||TD()}"></label>
   <label class="f">Kennzeichen<input id="vk" value="${E(v.plate)}"></label>
   <label class="f">Interne Nr.<input id="vn" value="${E(v.nr)}"></label>
@@ -668,7 +740,7 @@ function vehModal(fin){const v=S.veh.find(x=>x.fin===fin)||{transp:true};curV=v;
  <p class="hint">${v.transp!==false?'Transportmodus ist <b>an</b>. Ausschalten auf der Fahrzeugseite, sobald er entfernt wurde.':`Transportmodus: <b>${offTxt(v)}</b>.`}</p>
  <p class="hint" id="vplan"></p><p class="msg err" id="verr"></p></div>
  <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev()}
-function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{fin:$('vf').value.trim().toUpperCase(),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),transp:!curV||curV.transp!==false,solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked}}
+function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{fin:$('vf').value.trim().toUpperCase(),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),spot:$('vsp').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),transp:!curV||curV.transp!==false,solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked}}
 function vPrev(){if(!$('vprev'))return;$('vcw').hidden=$('vcol').value!=='__c';const v=formVeh();$('vprev').innerHTML=carSVG(v)+`<div><b>${vname(v)}</b><br><small>${BODIES[bodyOf(v)].l}${v.color?' · '+E(v.color):''}</small></div>`;
  const n=planFor({...v,archived:false}).length,b=planFor({...v,archived:false}).filter(x=>x.cat==='b12').length;$('vplan').textContent=v.deliv?`Pflegeplan: ${n} Termine bis ${fmt(planEnd(v))}, davon ${b}× 12V-Batterie (${v.transp?'Transportmodus an: vierteljährlich':'Transportmodus aus: alle 6 Wochen'}).`:'Ohne Eingangsdatum wird kein Pflegeplan erstellt.'}
 async function saveVeh(old){const f=formVeh(),fin=old||f.fin,err=t=>{$('verr').textContent=t};
@@ -736,6 +808,16 @@ async function saveShow(fin,mode){const v=veh(fin),free=!!S.cfg.transpFree,T=TD(
  try{await db.doc('vehicles/'+fin).update({...upd,showBy:me()})}catch(e){return w('Speichern nicht möglich: keine Schreibrechte.')}
  Object.assign(v,upd);log(fin,txt);$('mod').hidden=true;$('mb').innerHTML='';render();const r=await sync(v);
  toast(`${txt} · 12V-Termine angepasst (+${r.add} / −${r.del})`)}
+function spotModal(fin){const v=veh(fin);if(!v.fin)return;
+ modal(`<header><div style="flex:1"><h3>Umparken</h3><span class="muted">${vname(v)} · <span class="mono">${E(fin)}</span></span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><div class="fg"><label class="f">Standort<input id="spl" list="locs2" value="${E(v.loc)}"><datalist id="locs2">${uniq(S.veh.map(x=>x.loc)).map(x=>`<option value="${E(x)}">`).join('')}</datalist></label>
+ <label class="f">Stellplatz / Lagerort<input id="sps" list="spots2" value="${E(v.spot)}" placeholder="z. B. Halle 2 · Reihe B · 14"><datalist id="spots2">${uniq(S.veh.map(x=>x.spot)).map(x=>`<option value="${E(x)}">`).join('')}</datalist></label></div>
+ <span class="hint">Bisher: ${E(v.loc)||'kein Standort'} · ${E(v.spot)||'kein Stellplatz'}</span></div>
+ <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="spsv" onclick="saveSpot('${fin}')">Speichern</button></footer>`);setTimeout(()=>{const i=$('sps');if(i){i.focus();i.select()}},50);
+ $('sps').addEventListener('keydown',e=>{if(e.key==='Enter')saveSpot(fin)})}
+async function saveSpot(fin){const v=veh(fin),loc=$('spl').value.trim(),spot=$('sps').value.trim();if(loc===(v.loc||'')&&spot===(v.spot||''))return closeM();
+ busy('spsv',true,'Speichern …');try{await db.doc('vehicles/'+fin).update({loc,spot})}catch(e){busy('spsv',false,'Speichern');return toast('Speichern nicht möglich: keine Schreibrechte.')}
+ log(fin,`Umgeparkt: ${[v.loc,v.spot].filter(Boolean).join(' · ')||'–'} → ${[loc,spot].filter(Boolean).join(' · ')||'–'}`);v.loc=loc;v.spot=spot;closeM();toast('Stellplatz gespeichert.')}
 async function archive(fin){const v=veh(fin);v.archived=!v.archived;await db.doc('vehicles/'+fin).update({archived:v.archived});log(fin,v.archived?'Archiviert':'Reaktiviert');await sync(v);toast(v.archived?'Archiviert. Offene Termine wurden entfernt.':'Reaktiviert. Pflegeplan neu erstellt.')}
 
 /* ---------- PDF-Protokoll (eigener PDF-Erzeuger, ohne externe Bibliothek) ---------- */
@@ -801,7 +883,7 @@ function pdfProtokoll(fin){const v=veh(fin);if(!v.fin)return;
   doc.text(W-M,y+15,`Stand ${fmt(T)}`,{size:8,color:C.mu,align:'right'});y+=24};
  head();
  doc.text(M,y+10,[`${v.brand||''} ${v.model||''}`.trim(),v.variant].filter(Boolean).join(' · '),{size:12,bold:true,maxW:W-2*M});y+=18;
- const info=[['FIN',v.fin],['Eingang',fmt(v.deliv)],['Standort',v.loc||'–'],['Kennzeichen',v.plate||'–'],['Interne Nr.',v.nr||'–'],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Farbe',v.color||'–']];
+ const info=[['FIN',v.fin],['Eingang',fmt(v.deliv)],['Standort',v.loc||'–'],['Stellplatz',v.spot||'–'],['Kennzeichen',v.plate||'–'],['Interne Nr.',v.nr||'–'],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Farbe',v.color||'–']];
  const cw=(W-2*M)/4,ih=Math.ceil(info.length/4)*23+4;doc.rect(M,y,W-2*M,ih,C.z);
  info.forEach((x,i)=>{const cx=M+10+(i%4)*cw,cy=y+4+Math.floor(i/4)*23;doc.text(cx,cy+8,x[0].toUpperCase(),{size:6.5,bold:true,color:C.mu});doc.text(cx,cy+19,x[1],{size:9.5,maxW:cw-16})});y+=ih+12;
  doc.text(M,y+8,`${ts.length} Maßnahmen bis ${fmt(T)}  ·  ${nDone} erledigt  ·  ${ts.length-nDone} nicht erledigt${nLate?` (davon ${nLate} überfällig)`:''}`,{size:9,color:C.mu});y+=16;
@@ -855,45 +937,89 @@ async function fixProb(id){const p=S.prob.find(x=>x._id===id),o=p.status==='Offe
 function probTbl(ps,showV){return ps.length?`<div class="scroll"><table><tr>${showV?'<th>Fahrzeug</th>':''}<th>Art</th><th>Festgestellt</th><th>Ort</th><th>Beschreibung</th><th>Status</th><th></th></tr>${ps.sort((a,b)=>a.date<b.date?1:-1).map(p=>`<tr>${showV?`<td><b>${vname(veh(p.fin))}</b><br><span class="mono muted">${p.fin}</span></td>`:''}<td>${E(p.type)}</td><td class="num">${fmt(p.date)}</td><td>${E(p.place)||'–'}</td><td style="white-space:normal;min-width:200px">${E(p.desc)||'–'}</td><td><span class="pill ${p.status==='Offen'?'s-ba':'s-ok'}">${p.status}${p.fixed?' '+fmt(p.fixed):''}</span></td><td><button class="btn sm" onclick="fixProb('${p._id}')">${p.status==='Offen'?'Als behoben markieren':'Wieder öffnen'}</button></td></tr>`).join('')}</table></div>`:'<p class="empty">Keine Probleme gemeldet.</p>'}
 
 /* ---------- Ansichten ---------- */
-function taskLi(t,canDel){const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t),od=canDel&&t.status!=='Erledigt'&&t.due<TD();return`<li data-c="${c}" ${od?'class="hasdel"':''} onclick="taskModal('${t._id}')" style="--carbg:var(--sf)">${carSVG(v,'thumb')}
- <div style="min-width:0"><div class="t1">${icon(c)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${E(t.title)}</span></div><div class="t2"><span><b style="color:var(--tx);font-weight:500">${vname(v)}</b></span>${finCopy(t.fin)}${t.when?`<span>${E(t.when)}</span>`:''}</div></div>
- <div class="due"><b ${t.status==='Erledigt'&&t.done?`title="geplant ${fmt(t.due)}"`:''}>${fmt(t.status==='Erledigt'&&t.done?t.done:t.due)}</b><span class="pill ${sc}">${t.due<TD()&&t.status!=='Erledigt'?rel(t.due):sl==='Geplant'?rel(t.due):sl}</span></div>${od?`<button class="del-x" title="Überfällige Maßnahme löschen" aria-label="Löschen" onclick="event.stopPropagation();removeTasks(['${t._id}'])">${IC.trash}</button>`:''}</li>`}
+function taskLi(t,o){o=o||{};const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t),open=t.status!=='Erledigt'&&!t.removed,od=o.del&&open&&t.due<TD(),selm=S.selMode&&open&&!o.restore,on=selm&&S.pick.has(t._id);
+ if(selm)S.vis.push(t._id);
+ const click=o.restore?'':selm?`pick('${t._id}')`:`taskModal('${t._id}')`;
+ const ra=o.restore?`<button class="btn sm" onclick="event.stopPropagation();restoreTasks(['${t._id}'])">${IC.restore} Wiederherstellen</button>`:
+  S.selMode?'':(open?`<button class="qchk" title="Erledigt (heute, ${E(me())})" aria-label="Als erledigt markieren" onclick="event.stopPropagation();quickDone('${t._id}')">${IC.check}</button>`:'')+(od?`<button class="del-x" title="Überfällige Maßnahme löschen" aria-label="Löschen" onclick="event.stopPropagation();removeTasks(['${t._id}'])">${IC.trash}</button>`:'');
+ return`<li data-c="${c}" class="${selm?'selm':''}${on?' picked':''}${o.restore?' rm':''}${o.cmp?' cmp':''}" ${click?`onclick="${click}"`:''} style="--carbg:var(--sf)">${selm?`<span class="pk" aria-hidden="true">${on?IC.check:''}</span>`:o.cmp?'':carSVG(v,'thumb')}
+ <div style="min-width:0"><div class="t1">${icon(c)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${E(t.title)}</span></div><div class="t2">${o.cmp?'':`<span><b style="color:var(--tx);font-weight:500">${vname(v)}</b></span>${finCopy(t.fin)}`}${o.spot&&v.spot?`<span>${IC.pin} ${E(v.spot)}</span>`:''}${t.when?`<span>${E(t.when)}</span>`:''}</div></div>
+ <div class="due"><b ${t.status==='Erledigt'&&t.done?`title="geplant ${fmt(t.due)}"`:''}>${fmt(t.status==='Erledigt'&&t.done?t.done:t.due)}</b>${o.restore?`<span class="pill s-gr">gelöscht</span>`:`<span class="pill ${sc}">${t.due<TD()&&t.status!=='Erledigt'?rel(t.due):sl==='Geplant'?rel(t.due):sl}</span>`}</div><div class="ra">${ra}</div></li>`}
+/* ---------- Schnell erledigen, Rückgängig, Mehrfachauswahl ---------- */
+const isBat=c=>c==='b12'||c==='hv';
+const valTxt=(c,v)=>c==='b12'?nf(v,2)+' V':nf(v)+' %';
+async function markDone(ts,vals){vals=vals||{};const T=TD(),prev=ts.map(t=>({id:t._id,fin:t.fin,title:t.title,d:{status:t.status,done:t.done||'',who:t.who||'',val:t.val||''}}));let ok=0,fail=false;
+ await pool(ts.map(t=>async()=>{const c=catOf(t),val=vals[t._id]||t.val||'';try{await db.doc('tasks/'+t._id).update({status:'Erledigt',done:T,who:me(),val,cat:c});ok++;log(t.fin,`${t.title}: Erledigt${val?' ('+valTxt(c,val)+')':''}`)}catch(e){fail=true}}),6);
+ if(fail)toast('Nicht alles gespeichert: keine Schreibrechte.');
+ return{ok,undo:async()=>{await pool(prev.map(p=>async()=>{await db.doc('tasks/'+p.id).update(p.d);log(p.fin,`${p.title}: Erledigen rückgängig gemacht`)}),6);toast('Rückgängig gemacht.')}}}
+async function quickDone(id){const t=S.tasks.find(x=>x._id===id);if(!t||t.status==='Erledigt')return;const c=catOf(t);
+ if(isBat(c))return quickMeas(id);
+ const r=await markDone([t]);if(r.ok)toast(`„${t.title}“ erledigt`,r.undo)}
+function quickMeas(id){const t=S.tasks.find(x=>x._id===id);if(!t)return;const v=veh(t.fin),c=catOf(t);
+ modal(`<header><div style="flex:1"><span class="tag ac">${icon(c)} ${CAT[c]}</span><h3 style="margin-top:8px">${E(t.title)}</h3><span class="muted">${vname(v)} · <span class="mono">${E(t.fin)}</span>${v.spot?' · '+E(v.spot):''}</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><label class="f">${c==='b12'?'Gemessene Spannung (Volt)':'Ladezustand HV-Batterie (%)'}<input id="qv" class="big-in" inputmode="decimal" enterkeyhint="done" placeholder="${c==='b12'?'z. B. 12,6':'z. B. 68'}" autocomplete="off"></label>
+ <span class="hint">${c==='b12'?`Unter ${nf(S.cfg.v12,1)} V muss geladen werden.`:`Unter ${nf(S.cfg.hv)} % muss geladen werden.`} Erledigt am ${fmt(TD())} von ${E(me())}.</span><span class="warn" id="qvw"></span></div>
+ <footer><button class="btn" style="margin-right:auto" onclick="saveQuick('${id}',true)">Ohne Messwert</button><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="qvs" onclick="saveQuick('${id}')">${IC.check} Erledigt</button></footer>`);
+ const i=$('qv');setTimeout(()=>i.focus(),50);
+ i.addEventListener('input',()=>{const n=pnum(i.value);$('qvw').textContent=n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv)?'Wert unter der Ladegrenze: Bitte Laden!':''});
+ i.addEventListener('keydown',e=>{if(e.key==='Enter')saveQuick(id)})}
+async function saveQuick(id,noVal){const t=S.tasks.find(x=>x._id===id);if(!t)return closeM();const c=catOf(t);let val='';
+ if(!noVal){const raw=$('qv').value.trim();if(!raw)return $('qvw').textContent='Bitte einen Messwert eintragen oder „Ohne Messwert“ wählen.';
+  const n=pnum(raw);if(n==null||n<0||(c==='hv'&&n>100)||(c==='b12'&&n>20))return $('qvw').textContent=c==='b12'?'Bitte eine Spannung in Volt eingeben, z. B. 12,6.':'Bitte einen Prozentwert zwischen 0 und 100 eingeben.';val=String(n)}
+ busy('qvs',true);const r=await markDone([t],{[id]:val});$('mod').hidden=true;$('mb').innerHTML='';
+ const n=pnum(val);if(n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv))chargeAlert(c,n,t.fin);else render();
+ if(r.ok)toast(`„${t.title}“ erledigt${val?' · '+valTxt(c,val):''}`,r.undo)}
+function selStart(){S.selMode=true;S.pick=new Set();S.selKey=S.view+'|'+S.sel+'|'+S.tab;render()}
+function selEnd(){S.selMode=false;S.pick=new Set();render()}
+function pick(id){S.pick.has(id)?S.pick.delete(id):S.pick.add(id);render()}
+function pickAll(){const all=S.vis.every(i=>S.pick.has(i));S.vis.forEach(i=>all?S.pick.delete(i):S.pick.add(i));render()}
+function selBar(){const n=S.pick.size,all=S.vis.length&&S.vis.every(i=>S.pick.has(i)),od=[...S.pick].filter(id=>{const t=S.tasks.find(x=>x._id===id);return t&&t.due<TD()}).length;
+ return`<div class="selbar" role="toolbar" aria-label="Auswahl"><b>${n} ausgewählt</b><button class="btn sm" onclick="pickAll()">${all?'Keine':'Alle'} auswählen</button><span style="flex:1"></span>${od?`<button class="btn sm" style="color:var(--ba)" onclick="bulkDel()">${IC.trash} Löschen</button>`:''}<button class="btn sm" onclick="selEnd()">Abbrechen</button><button class="btn sm p" onclick="bulkDone()" ${n?'':'disabled'}>${IC.check} Erledigen</button></div>`}
+async function bulkDone(){const ts=[...S.pick].map(id=>S.tasks.find(t=>t._id===id)).filter(t=>t&&t.status!=='Erledigt');if(!ts.length)return;
+ S.selMode=false;S.pick=new Set();render();const r=await markDone(ts);if(r.ok)toast(`${r.ok} ${r.ok===1?'Maßnahme':'Maßnahmen'} erledigt`,r.undo)}
+function bulkDel(){const ids=[...S.pick].filter(id=>{const t=S.tasks.find(x=>x._id===id);return t&&t.status!=='Erledigt'&&t.due<TD()});S.selMode=false;S.pick=new Set();removeTasks(ids)}
 /* FIN anklicken = in die Zwischenablage kopieren (Cursor wird zum Kopier-Zeichen) */
 const finCopy=(fin,label)=>`<span class="mono fin-copy" data-fin="${E(fin)}" title="FIN ${E(fin)} kopieren" role="button" tabindex="0">${E(label||fin)}</span>`;
 async function copyFin(el){const fin=el.dataset.fin;let ok=false;
  try{await navigator.clipboard.writeText(fin);ok=true}catch(e){try{const ta=document.createElement('textarea');ta.value=fin;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove()}catch(x){}}
  if(ok){el.classList.add('copied');setTimeout(()=>el.classList.remove('copied'),1200);toast(`FIN ${fin} kopiert`)}else toast('Kopieren nicht möglich.')}
-document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('.fin-copy');if(!el)return;e.preventDefault();e.stopPropagation();copyFin(el)},true);
+document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('.fin-copy');if(!el||el.closest('li.selm'))return;e.preventDefault();e.stopPropagation();copyFin(el)},true);
 document.addEventListener('keydown',e=>{const el=e.target.closest&&e.target.closest('.fin-copy');if(!el||(e.key!=='Enter'&&e.key!==' '))return;e.preventDefault();e.stopPropagation();copyFin(el)},true);
 function vCard(v){const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0],late=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt'&&t.due<TD()).length;
  return`<button class="vc" onclick="openVeh('${v.fin}')">${carSVG(v)}<span class="meta"><b>${vname(v)}</b><span><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color||'Farbe offen')} · ${finCopy(v.fin,'…'+v.fin.slice(-6))}</span>
  ${nx?`<span class="nx">${icon(catOf(nx))} ${fmt(nx.due)} · ${E(nx.title)}</span>`:'<span>Keine offenen Termine</span>'}
  <span style="display:flex;gap:4px;flex-wrap:wrap">${late?`<span class="pill s-ba">${late} überfällig</span>`:''}${v.transp?'<span class="tag">Transportmodus</span>':''}${v.show?'<span class="tag">Schauraum</span>':''}${v.ev?'<span class="tag ac">Elektro</span>':v.hyb?'<span class="tag ac">Hybrid</span>':''}</span></span></button>`}
+function togG(el,f){el.open?S.openG.add(f):S.openG.delete(f)}
 function openVeh(f){S.sel=f;S.view='veh';S.tab='plan';render();window.scrollTo(0,0)}
 
 function dash(){const T=TD(),a=S.veh.filter(v=>!v.archived),op=activeTasks().filter(t=>t.status!=='Erledigt'),bl=battLow(),pr=S.prob.filter(p=>p.status==='Offen'&&!veh(p.fin).archived);
- const nx=[...op].sort((x,y)=>x.due<y.due?-1:x.due>y.due?1:0).slice(0,10);
+ const late=op.filter(t=>t.due<T),nx=op.filter(t=>t.due>=T).sort((x,y)=>x.due<y.due?-1:x.due>y.due?1:0).slice(0,8);
+ const gs={};late.forEach(t=>{(gs[t.fin]=gs[t.fin]||[]).push(t)});const gl=Object.entries(gs).map(([f,l])=>[f,l.sort((x,y)=>x.due<y.due?-1:1)]).sort((x,y)=>x[1][0].due<y[1][0].due?-1:1);
  const K=(n,l,c,go)=>`<div class="kpi ${c}" ${go?`style="cursor:pointer" onclick="${go}"`:''}><b>${n}</b><span>${l}</span></div>`;
  const hr=new Date().getHours(),greet=hr<11?'Guten Morgen':hr<18?'Servus':'Guten Abend';
- return`<div class="head"><h2><span class="eye">${new Date().toLocaleDateString('de-AT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>${greet}, ${E(me().split(' ')[0])}</h2><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button></div>
+ return`<div class="head"><h2><span class="eye">${new Date().toLocaleDateString('de-AT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>${greet}, ${E(me().split(' ')[0])}</h2><button class="btn" onclick="scanModal()">${IC.scan} FIN scannen</button><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button></div>
  <div class="kpis">${K(op.filter(t=>t.due<T).length,'Maßnahmen überfällig','ba',"S.view='cal';S.cv='agenda';render()")}${K(op.filter(t=>t.due>=T&&t.due<=addD(T,7)).length,'fällig in den nächsten 7 Tagen','wa')}${K(bl.length,'Fahrzeuge: Batterie laden','ba')}${K(pr.length,'offene Probleme','',"S.view='prob';render()")}${K(a.length,'Fahrzeuge im Bestand','ac',"S.view='veh_l';render()")}</div>
  <div class="dash">
-  <section class="panel"><div class="ph"><h3>Nächste Maßnahmen</h3><span class="muted">die 10 frühesten offenen Termine</span><button class="btn sm" onclick="S.view='cal';render()">${IC.cal} Kalender</button></div>
-   ${nx.length?`<ul class="tl">${nx.map(taskLi).join('')}</ul>`:`<p class="empty">Keine offenen Maßnahmen. Lege ein Fahrzeug an, dann erscheint hier sein Pflegeplan.</p>`}</section>
+  <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+  ${gl.length?`<section class="panel"><div class="ph"><h3>Überfällig</h3><span class="muted">${late.length} ${late.length===1?'Maßnahme':'Maßnahmen'} bei ${gl.length} ${gl.length===1?'Fahrzeug':'Fahrzeugen'}</span>${S.selMode?'':`<button class="btn sm" onclick="selStart()">${IC.sel} Auswählen</button>`}<button class="btn sm" onclick="S.view='tour';render()">${IC.route} Rundgang</button></div>
+   ${gl.map(([f,l])=>{const v=veh(f),o=S.selMode||S.openG.has(f);return`<details class="vgp" ${o?'open':''} ontoggle="togG(this,'${f}')"><summary style="--carbg:var(--sf)">${carSVG(v,'thumb')}<div style="min-width:0"><b>${vname(v)}</b><div class="t2">${finCopy(f)}${v.spot||v.loc?`<span>${IC.pin} ${E([v.loc,v.spot].filter(Boolean).join(' · '))}</span>`:''}</div></div><span class="pill s-ba">${l.length} überfällig · ${rel(l[0].due)}</span><span class="chev">${IC.chev}</span></summary><ul class="tl">${l.map(t=>taskLi(t,{del:1,cmp:1})).join('')}</ul></details>`}).join('')}</section>`:''}
+  <section class="panel"><div class="ph"><h3>Als Nächstes</h3><span class="muted">heute und die kommenden Termine</span><button class="btn sm" onclick="S.view='cal';render()">${IC.cal} Kalender</button></div>
+   ${nx.length?`<ul class="tl">${nx.map(t=>taskLi(t)).join('')}</ul>`:`<p class="empty">${S.veh.length?'Keine anstehenden Maßnahmen.':'Keine offenen Maßnahmen. Lege ein Fahrzeug an, dann erscheint hier sein Pflegeplan.'}</p>`}</section>
+  </div>
   <section class="panel"><div class="ph"><h3>Fahrzeuge</h3><button class="btn sm" onclick="S.view='veh_l';render()">Alle anzeigen</button></div>
    <div class="pb">${a.length?`<div class="vg">${a.slice().sort((x,y)=>{const nx_=f=>(S.tasks.filter(t=>t.fin===f&&t.status!=='Erledigt').map(t=>t.due).sort()[0]||'9');return nx_(x.fin)<nx_(y.fin)?-1:1}).slice(0,6).map(vCard).join('')}</div>`:`<p class="empty">Noch keine Fahrzeuge.<br><button class="btn p" style="margin-top:10px" onclick="vehModal()">${IC.plus} Erstes Fahrzeug anlegen</button></p>`}</div></section>
  </div>`}
 
 function vlist(){const q=S.q.toLowerCase(),T=TD();const l=S.veh.filter(v=>{const x=S.tasks.filter(t=>t.fin===v.fin),o=x.filter(t=>t.status!=='Erledigt');
  if(S.fl==='arch')return v.archived;if(v.archived)return false;
- if(q&&![v.fin,v.brand,v.model,v.nr,v.plate,v.color,v.loc].some(s=>(s||'').toLowerCase().includes(q)))return false;
+ if(q&&![v.fin,v.brand,v.model,v.nr,v.plate,v.color,v.loc,v.spot].some(s=>(s||'').toLowerCase().includes(q)))return false;
  return{'':1,late:o.some(t=>t.due<T),transp:v.transp,notransp:!v.transp,show:!!v.show,hv:v.hyb||v.ev,low:battLow().includes(v.fin),prob:S.prob.some(p=>p.fin===v.fin&&p.status==='Offen')}[S.fl]||0});
- return`<div class="head"><h2>Fahrzeuge</h2><button class="btn" onclick="exportCsv()">CSV-Export</button><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button></div>
- <div class="tools"><input id="q" placeholder="Suchen: FIN, Marke, Modell, Farbe, Kennzeichen …" value="${E(S.q)}"><select id="fl">${[['','Alle aktiven'],['late','Mit überfälligen Maßnahmen'],['low','Batterie laden'],['transp','Transportmodus an'],['notransp','Transportmodus aus'],['show','Schauraummodus an'],['hv','Hybrid / Elektro'],['prob','Mit offenen Problemen'],['arch','Archiviert']].map(o=>`<option value="${o[0]}" ${S.fl===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></div>
- <section class="panel"><div class="scroll"><table><tr><th></th><th>Fahrzeug</th><th>FIN</th><th>Farbe</th><th>Standort</th><th>Eingang</th><th>Transportmodus</th><th>Nächste Maßnahme</th></tr>
- ${l.map(v=>{const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0];return`<tr class="cl" onclick="openVeh('${v.fin}')"><td style="--carbg:var(--sf)">${carSVG(v)}</td><td><b>${vname(v)}</b><br><span class="muted">${E(v.variant)}</span></td><td>${finCopy(v.fin)}</td><td><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}</td><td>${E(v.loc)||'–'}</td><td class="num">${fmt(v.deliv)}</td><td>${v.transp?'<span class="pill s-gr">an</span>':'<span class="pill s-wa">aus</span>'}</td><td>${nx?`<span class="pill ${st(nx)[0]}">${fmt(nx.due)}</span> ${E(nx.title)}`:'–'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Keine Fahrzeuge gefunden.</td></tr>'}</table></div></section>`}
-function exportCsv(){const r=[['FIN','Marke','Modell','Variante','Karosserie','Farbe','Standort','Eingang','Kennzeichen','Nr','Transportmodus','Schauraummodus','Hybrid','Elektro','Offene Maßnahmen','Nächste Fälligkeit']];
- S.veh.forEach(v=>{const o=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1);r.push([v.fin,v.brand,v.model,v.variant,BODIES[bodyOf(v)].l,v.color,v.loc,fmt(v.deliv),v.plate,v.nr,v.transp?'an':'aus seit '+fmt(v.transpOff||v.deliv),showTxt(v),v.hyb?'ja':'nein',v.ev?'ja':'nein',o.length,o[0]?fmt(o[0].due):''])});
+ return`<div class="head"><h2>Fahrzeuge</h2><button class="btn" onclick="scanModal()">${IC.scan} FIN scannen</button><button class="btn" onclick="exportCsv()">CSV-Export</button><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button></div>
+ <div class="tools"><input id="q" placeholder="Suchen: FIN, Marke, Modell, Farbe, Kennzeichen, Stellplatz …" value="${E(S.q)}"><select id="fl">${[['','Alle aktiven'],['late','Mit überfälligen Maßnahmen'],['low','Batterie laden'],['transp','Transportmodus an'],['notransp','Transportmodus aus'],['show','Schauraummodus an'],['hv','Hybrid / Elektro'],['prob','Mit offenen Problemen'],['arch','Archiviert']].map(o=>`<option value="${o[0]}" ${S.fl===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></div>
+ <section class="panel"><div class="scroll"><table><tr><th></th><th>Fahrzeug</th><th>FIN</th><th>Farbe</th><th>Standort / Stellplatz</th><th>Eingang</th><th>Transportmodus</th><th>Nächste Maßnahme</th></tr>
+ ${l.map(v=>{const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0];return`<tr class="cl" onclick="openVeh('${v.fin}')"><td style="--carbg:var(--sf)">${carSVG(v)}</td><td><b>${vname(v)}</b><br><span class="muted">${E(v.variant)}</span></td><td>${finCopy(v.fin)}</td><td><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}</td><td>${E(v.loc)||'–'}${v.spot?`<br><span class="muted">${IC.pin} ${E(v.spot)}</span>`:''}</td><td class="num">${fmt(v.deliv)}</td><td>${v.transp?'<span class="pill s-gr">an</span>':'<span class="pill s-wa">aus</span>'}</td><td>${nx?`<span class="pill ${st(nx)[0]}">${fmt(nx.due)}</span> ${E(nx.title)}`:'–'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Keine Fahrzeuge gefunden.</td></tr>'}</table></div></section>`}
+function exportCsv(){const r=[['FIN','Marke','Modell','Variante','Karosserie','Farbe','Standort','Stellplatz','Eingang','Kennzeichen','Nr','Transportmodus','Schauraummodus','Hybrid','Elektro','Offene Maßnahmen','Nächste Fälligkeit']];
+ S.veh.forEach(v=>{const o=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1);r.push([v.fin,v.brand,v.model,v.variant,BODIES[bodyOf(v)].l,v.color,v.loc,v.spot,fmt(v.deliv),v.plate,v.nr,v.transp?'an':'aus seit '+fmt(v.transpOff||v.deliv),showTxt(v),v.hyb?'ja':'nein',v.ev?'ja':'nein',o.length,o[0]?fmt(o[0].due):''])});
  const csv='﻿'+r.map(x=>x.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(';')).join('\n');
  const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='fahrzeuge_'+TD()+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000)}
 
@@ -926,13 +1052,13 @@ function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug ni
  const ts=S.tasks.filter(t=>t.fin===v.fin).sort((a,b)=>a.due<b.due?-1:1),ps=S.prob.filter(p=>p.fin===v.fin),lg=S.log.filter(l=>l.fin===v.fin).sort((a,b)=>a.at<b.at?1:-1),op=ts.filter(t=>t.status!=='Erledigt'),rs=readings(v.fin);
  const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['log','Historie']];
  let body='';
- if(S.tab==='plan'){const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(planEnd(v))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length]].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div>${(()=>{const od=op.filter(t=>t.due<TD());return od.length?`<button class="btn sm" style="color:var(--ba)" onclick="removeTasks(${E(JSON.stringify(od.map(t=>t._id)))})">${IC.trash} Überfällige löschen (${od.length})</button>`:''})()}<button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(t=>taskLi(t,1)).join('')}</ul>`:`<p class="empty">${S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
+ if(S.tab==='plan'){const rmv=(S.taskAll||[]).filter(t=>t.fin===v.fin&&t.removed).sort((a,b)=>a.due<b.due?-1:1);if(S.planF==='del'&&!rmv.length)S.planF='open';const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='del'?rmv:S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(planEnd(v))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length],...(rmv.length?[['del','Gelöscht',rmv.length]]:[])].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div>${(()=>{const od=op.filter(t=>t.due<TD());return S.planF==='del'?`<button class="btn sm" onclick="restoreTasks(${E(JSON.stringify(rmv.map(t=>t._id)))})">${IC.restore} Alle wiederherstellen</button>`:(op.length&&S.planF!=='done'&&!S.selMode?`<button class="btn sm" onclick="selStart()">${IC.sel} Auswählen</button>`:'')+(od.length?`<button class="btn sm" style="color:var(--ba)" onclick="removeTasks(${E(JSON.stringify(od.map(t=>t._id)))})">${IC.trash} Überfällige löschen (${od.length})</button>`:'')})()}<button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(t=>taskLi(t,{del:1,restore:S.planF==='del'})).join('')}</ul>`:`<p class="empty">${S.planF==='del'?'Keine gelöschten Maßnahmen.':S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
  else if(S.tab==='batt')body=battTab(v);
- else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',v.loc],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
+ else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',v.loc],['Stellplatz / Lagerort',v.spot],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
  else if(S.tab==='prob')body=`<div class="ph"><span style="flex:1"></span><button class="btn sm" onclick="probModal('${v.fin}')">${IC.plus} Problem melden</button></div>${probTbl(ps)}`;
  else body=lg.length?`<div class="scroll"><table><tr><th>Zeitpunkt</th><th>Mitarbeiter:in</th><th>Änderung</th></tr>${lg.map(l=>`<tr><td class="num">${new Date(l.at).toLocaleString('de-AT',{dateStyle:'short',timeStyle:'short'})}</td><td>${E(l.by)}</td><td style="white-space:normal">${E(l.text)}</td></tr>`).join('')}</table></div>`:'<p class="empty">Noch keine Einträge.</p>';
  return`<div><button class="link" onclick="S.view='veh_l';render()">← Alle Fahrzeuge</button></div>
- <section class="panel"><div class="vhero" style="--carbg:var(--sf)">${carSVG(v)}<div style="min-width:0"><span class="mono muted">${v.fin}</span><h2>${vname(v)}</h2><span class="muted">${E(v.variant)}${v.variant?' · ':''}${E(v.color||'')}${v.loc?' · '+E(v.loc):''} · Eingang ${fmt(v.deliv)}</span>
+ <section class="panel"><div class="vhero" style="--carbg:var(--sf)">${carSVG(v)}<div style="min-width:0"><span class="mono muted">${v.fin}</span><h2>${vname(v)}</h2><span class="muted">${E(v.variant)}${v.variant?' · ':''}${E(v.color||'')}${v.loc?' · '+E(v.loc):''}${v.spot?' · '+E(v.spot):''} · Eingang ${fmt(v.deliv)}</span>
   <div class="chips">${v.archived?'<span class="pill s-gr">Archiviert</span>':''}${v.ev?'<span class="tag ac">Elektro</span>':v.hyb?'<span class="tag ac">Hybrid</span>':''}${v.solar?'<span class="tag">Solarpanel</span>':''}${battLow().includes(v.fin)?'<span class="pill s-ba">Batterie laden</span>':''}${op.some(t=>t.due<TD())?`<span class="pill s-ba">${op.filter(t=>t.due<TD()).length} überfällig</span>`:''}</div></div>
   <div class="acts">${(()=>{const wk=Math.round((+S.cfg.wk||42)/7),free=!!S.cfg.transpFree;
    if(v.transp)return`<button class="toggle dim" onclick="toggleShow('${v.fin}')" aria-pressed="false" title="Nur möglich, wenn der Transportmodus aus ist"><span class="sw-t"></span><span><b>Schauraummodus aus</b><small>erst möglich, wenn der Transportmodus aus ist</small></span></button>`;
@@ -940,7 +1066,7 @@ function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug ni
    if(v.showOn&&!free)return`<div class="toggle locked" aria-disabled="true"><span class="sw-t"></span><span><b>Schauraummodus beendet</b><small>${showTxt(v)} · 12V-Batterie alle ${wk} Wochen</small></span></div>`;
    return`<button class="toggle" onclick="toggleShow('${v.fin}')" aria-pressed="false"><span class="sw-t"></span><span><b>Schauraummodus aus</b><small>${v.showOn?showTxt(v)+' · tippen zum Bearbeiten':'zum Einschalten tippen'}</small></span></button>`})()}
   ${v.transp?`<button class="toggle on" onclick="toggleTransp('${v.fin}')" aria-pressed="true" title="Transportmodus ausschalten"><span class="sw-t"></span><span><b>Transportmodus an</b><small>12V-Batterie vierteljährlich · zum Ausschalten tippen</small></span></button>`:(S.cfg.transpFree?`<button class="toggle" onclick="toggleTransp('${v.fin}')" aria-pressed="false"><span class="sw-t"></span><span><b>Transportmodus aus</b><small>${offTxt(v)} · tippen zum Bearbeiten</small></span></button>`:`<div class="toggle locked" aria-disabled="true"><span class="sw-t"></span><span><b>Transportmodus entfernt</b><small>${offTxt(v)} · 12V-Batterie alle ${Math.round((+S.cfg.wk||42)/7)} Wochen</small></span></div>`)}
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="vehModal('${v.fin}')">Bearbeiten</button><button class="btn sm" onclick="probModal('${v.fin}')">Problem melden</button><button class="btn sm" onclick="pdfProtokoll('${v.fin}')" title="Komplette Historie bis heute als PDF">${IC.pdf} PDF-Protokoll</button><button class="btn sm d" onclick="archive('${v.fin}')">${v.archived?'Reaktivieren':'Archivieren'}</button></div></div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="vehModal('${v.fin}')">Bearbeiten</button><button class="btn sm" onclick="spotModal('${v.fin}')" title="Standort / Stellplatz ändern">${IC.pin} Umparken</button><button class="btn sm" onclick="probModal('${v.fin}')">Problem melden</button><button class="btn sm" onclick="pdfProtokoll('${v.fin}')" title="Komplette Historie bis heute als PDF">${IC.pdf} PDF-Protokoll</button><button class="btn sm d" onclick="archive('${v.fin}')">${v.archived?'Reaktivieren':'Archivieren'}</button></div></div></div>
   <div class="tabs" role="tablist">${tabs.map(t=>`<button class="${S.tab===t[0]?'on':''}" onclick="S.tab='${t[0]}';render()">${t[1]}${t[2]?` <span class="c">${t[2]}</span>`:''}</button>`).join('')}</div>${body}</section>`}
 
 function chip(t){const[c]=st(t),v=veh(t.fin);return`<button class="chip ${c}" title="${E(vname(v)+' · '+t.title)}" onclick="taskModal('${t._id}')">${icon(catOf(t))}<span>${E(v.model||t.fin.slice(-6))}: ${E(t.title)}</span></button>`}
@@ -949,9 +1075,9 @@ function cal(){const ts=activeTasks(),D=new Date(S.cd+'T12:00:00'),V=S.cv,on=d=>
  const ti=D.toLocaleDateString('de-AT',V==='year'?{year:'numeric'}:(V==='month'||V==='agenda')?{month:'long',year:'numeric'}:V==='week'?{day:'numeric',month:'short',year:'numeric'}:{weekday:'long',day:'numeric',month:'long',year:'numeric'});
  const mon=d=>{const x=new Date(d);x.setDate(x.getDate()-(x.getDay()+6)%7);return x};
  let b='';
- if(V==='day'){const x=on(S.cd);b=`<section class="panel">${x.length?`<ul class="tl">${x.map(taskLi).join('')}</ul>`:'<p class="empty">Keine Termine an diesem Tag.</p>'}</section>`}
+ if(V==='day'){const x=on(S.cd);b=`<section class="panel">${x.length?`<ul class="tl">${x.map(t=>taskLi(t)).join('')}</ul>`:'<p class="empty">Keine Termine an diesem Tag.</p>'}</section>`}
  else if(V==='agenda'){const p=S.cd.slice(0,7),x=ts.filter(t=>t.due.startsWith(p)||(t.due<TD()&&t.status!=='Erledigt'&&p===TD().slice(0,7))).sort((a,b)=>a.due<b.due?-1:1),g={};x.forEach(t=>(g[t.due]=g[t.due]||[]).push(t));
-  b=`<section class="panel agenda">${Object.keys(g).length?Object.keys(g).sort().map(d=>`<h4>${new Date(d+'T12:00:00').toLocaleDateString('de-AT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} <span class="muted" style="font-weight:500">· ${rel(d)}</span></h4><ul class="tl">${g[d].map(taskLi).join('')}</ul>`).join(''):'<p class="empty">Keine Termine in diesem Monat.</p>'}</section>`}
+  b=`<section class="panel agenda">${Object.keys(g).length?Object.keys(g).sort().map(d=>`<h4>${new Date(d+'T12:00:00').toLocaleDateString('de-AT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} <span class="muted" style="font-weight:500">· ${rel(d)}</span></h4><ul class="tl">${g[d].map(t=>taskLi(t)).join('')}</ul>`).join(''):'<p class="empty">Keine Termine in diesem Monat.</p>'}</section>`}
  else if(V==='week'||V==='month'){const s=V==='week'?mon(D):mon(new Date(D.getFullYear(),D.getMonth(),1)),n=V==='week'?7:42,max=V==='week'?12:3;
   b='<div class="cal">'+['Mo','Di','Mi','Do','Fr','Sa','So'].map(w=>`<div class="h">${w}</div>`).join('');
   for(let i=0;i<n;i++){const d=new Date(s);d.setDate(s.getDate()+i);const k=iso(d),x=on(k);b+=`<div class="${V==='month'&&d.getMonth()!==D.getMonth()?'o':''} ${k===TD()?'t':''}" style="${V==='week'?'min-height:220px':''}"><small>${d.getDate()}.</small>${x.slice(0,max).map(chip).join('')}${x.length>max?`<button class="more" onclick="S.cv='day';S.cd='${k}';render()">+${x.length-max} weitere</button>`:''}</div>`}b+='</div>'}
@@ -989,15 +1115,66 @@ function setTheme(t){try{localStorage.setItem('tqs_theme',t)}catch(e){}
  if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);render()}
 async function saveCfg(){const c={wk:+$('s_wk').value||42,v12:+$('s_v12').value||12.5,hv:+$('s_hv').value||25};try{await db.doc('settings/cfg').set(c,{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}S.cfg={...S.cfg,...c};for(const v of S.veh)await sync(v);toast('Gespeichert. Termine wurden neu berechnet.')}
 
+/* ---------- FIN scannen / suchen ---------- */
+const SCANF=['code_39','code_128','data_matrix','qr_code','pdf417'];
+const SCAN_LIB='https://cdn.jsdelivr.net/npm/barcode-detector@3.2.3/dist/es/ponyfill.min.js';
+let scanStream=null,scanRun=false,scanDet=null;
+function scanModal(){modal(`<header><div style="flex:1"><h3>FIN scannen oder suchen</h3><span class="muted">Barcode oder QR-Code mit der FIN ins Bild halten</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><div class="scanbox" id="scb"><video id="scv" playsinline muted></video><div class="scanline"></div></div><span class="hint" id="scs">Kamera wird gestartet …</span>
+ <label class="f">Oder eintippen: FIN, letzte Stellen, Kennzeichen oder Nr.<input id="scq" class="mono" style="text-transform:uppercase" placeholder="z. B. 000123" autocomplete="off" enterkeyhint="search"></label><div id="scr"></div></div>
+ <footer><button class="btn" onclick="closeM()">Schließen</button></footer>`);
+ $('scq').addEventListener('input',()=>scanSearch($('scq').value));
+ $('scq').addEventListener('keydown',e=>{if(e.key==='Enter'){const f=$('scr').querySelector('li[data-fin]');if(f&&$('scr').querySelectorAll('li[data-fin]').length===1){closeM();openVeh(f.dataset.fin)}}});
+ startScan()}
+async function scanDetector(){if(scanDet)return scanDet;
+ if('BarcodeDetector' in window){try{const f=await BarcodeDetector.getSupportedFormats(),use=SCANF.filter(x=>f.includes(x));if(use.length)return scanDet=new BarcodeDetector({formats:use})}catch(e){}}
+ const m=await import(SCAN_LIB);return scanDet=new m.BarcodeDetector({formats:SCANF})}
+async function startScan(){const s=m=>{if($('scs'))$('scs').textContent=m},off=()=>{if($('scb'))$('scb').hidden=true};
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){off();return s('Kamera hier nicht verfügbar. Bitte die FIN eintippen.')}
+ try{scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false})}catch(e){off();return s('Kein Kamerazugriff. Bitte im Browser erlauben oder die FIN eintippen.')}
+ const vd=$('scv');if(!vd){stopScan();return}vd.srcObject=scanStream;try{await vd.play()}catch(e){}
+ let det;try{s('Scanner wird geladen …');det=await scanDetector()}catch(e){stopScan();off();return s('Scanner konnte nicht geladen werden (Internet nötig). Bitte die FIN eintippen.')}
+ if(!scanStream)return;scanRun=true;s('Barcode oder QR-Code mit der FIN ins Bild halten …');
+ const loop=async()=>{if(!scanRun||!$('scv'))return;try{if(vd.readyState>=2){const r=await det.detect(vd);for(const c of r){const m=String(c.rawValue||'').toUpperCase().replace(/[^A-Z0-9]/g,' ').match(/[A-HJ-NPR-Z0-9]{17}/);if(m){scanHit(m[0]);return}}}}catch(e){}setTimeout(loop,200)};loop()}
+function stopScan(){scanRun=false;if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null}}
+function scanHit(fin){stopScan();try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}const v=S.veh.find(x=>x.fin===fin);
+ if(v){closeM();openVeh(fin);toast(`FIN ${fin} erkannt`);return}
+ if($('scb'))$('scb').hidden=true;$('scs').textContent=`FIN ${fin} erkannt – dieses Fahrzeug ist noch nicht angelegt.`;
+ $('scr').innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" onclick="closeM();vehModal(null,{fin:'${fin}'})">${IC.plus} Fahrzeug anlegen</button><button class="btn" onclick="scanModal()">Nochmal scannen</button></div>`}
+function scanSearch(q){const r=$('scr');if(!r)return;q=q.trim().toUpperCase();const qn=q.replace(/[\s-]/g,'');if(qn.length<3){r.innerHTML='';return}
+ const hits=S.veh.filter(v=>v.fin.includes(qn)||(v.plate||'').toUpperCase().replace(/[\s-]/g,'').includes(qn)||(v.nr||'').toUpperCase()===q).sort((a,b)=>(a.archived?1:0)-(b.archived?1:0)).slice(0,8);
+ r.innerHTML=hits.length?`<ul class="scl">${hits.map(v=>`<li data-fin="${v.fin}" onclick="closeM();openVeh('${v.fin}')" style="--carbg:var(--sf)">${carSVG(v,'thumb')}<div style="min-width:0"><b>${vname(v)}</b>${v.archived?' <span class="pill s-gr">archiviert</span>':''}<br><span class="mono">${v.fin}</span>${v.spot?` · <span class="muted">${E(v.spot)}</span>`:''}</div></li>`).join('')}</ul>`:
+  (/^[A-HJ-NPR-Z0-9]{17}$/.test(qn)?`<p class="hint">Diese FIN ist noch nicht angelegt.</p><button class="btn p" onclick="closeM();vehModal(null,{fin:'${qn}'})">${IC.plus} Fahrzeug anlegen</button>`:'<p class="hint">Kein Fahrzeug gefunden.</p>')}
+
+/* ---------- Rundgang nach Standort / Stellplatz ---------- */
+const NAT=new Intl.Collator('de',{numeric:true,sensitivity:'base'});
+function tour(){const T=TD(),end=S.tourR==='week'?addD(T,7):T,ts=activeTasks().filter(t=>t.status!=='Erledigt'&&t.due<=end);
+ const by={};ts.forEach(t=>{(by[t.fin]=by[t.fin]||[]).push(t)});
+ const allLocs=uniq(S.veh.filter(v=>!v.archived).map(v=>v.loc));if(S.tourL&&!allLocs.includes(S.tourL))S.tourL='';
+ const vs=Object.keys(by).map(veh).filter(v=>v.fin&&(!S.tourL||(v.loc||'')===S.tourL)).sort((a,b)=>NAT.compare(a.loc||'~',b.loc||'~')||NAT.compare(a.spot||'~',b.spot||'~')||NAT.compare(a.fin,b.fin));
+ const n=vs.reduce((s,v)=>s+by[v.fin].length,0);let last=null,out='';
+ vs.forEach(v=>{const l=(v.loc||'');if(l!==last){if(last!==null)out+='</div>';last=l;out+=`<h3 class="tloc">${IC.pin} ${E(l)||'Ohne Standort'}<span class="muted">${vs.filter(x=>(x.loc||'')===l).length} Fahrzeuge</span></h3><div class="tgrid">`}
+  const tl=by[v.fin].sort((a,b)=>a.due<b.due?-1:1);
+  out+=`<section class="panel tv"><div class="tvh" style="--carbg:var(--sf)">${carSVG(v,'thumb')}<div style="min-width:0"><span class="spot">${E(v.spot)||'kein Stellplatz'}</span><b>${vname(v)}</b><div class="t2">${finCopy(v.fin)}${v.plate?`<span>${E(v.plate)}</span>`:''}${v.color?`<span>${E(v.color)}</span>`:''}</div></div><button class="btn sm np" onclick="openVeh('${v.fin}')">Öffnen</button></div><ul class="tl">${tl.map(t=>taskLi(t,{del:1,cmp:1})).join('')}</ul></section>`});
+ if(last!==null)out+='</div>';
+ return`<div class="head"><h2><span class="eye">${new Date().toLocaleDateString('de-AT',{weekday:'long',day:'numeric',month:'long'})}</span>Rundgang</h2><button class="btn np" onclick="scanModal()">${IC.scan} FIN scannen</button>${n&&!S.selMode?`<button class="btn np" onclick="selStart()">${IC.sel} Auswählen</button>`:''}<button class="btn np" onclick="window.print()">${IC.print} Drucken</button></div>
+ <div class="tools np"><div class="pf-seg" role="radiogroup" aria-label="Zeitraum">${[['due','Heute + überfällig'],['week','Nächste 7 Tage']].map(o=>`<button role="radio" aria-checked="${S.tourR===o[0]}" class="${S.tourR===o[0]?'on':''}" onclick="S.tourR='${o[0]}';render()">${o[1]}</button>`).join('')}</div>
+ <select id="tourL"><option value="">Alle Standorte</option>${allLocs.map(l=>`<option ${S.tourL===l?'selected':''}>${E(l)}</option>`).join('')}</select></div>
+ <p class="muted tsum">${n?`${n} ${n===1?'Maßnahme':'Maßnahmen'} bei ${vs.length} ${vs.length===1?'Fahrzeug':'Fahrzeugen'}, sortiert nach Standort und Stellplatz${S.tourR==='week'?` (bis ${fmt(end)})`:''}.`:''}</p>
+ ${n?out:`<section class="panel"><p class="empty">${S.tourR==='week'?'In den nächsten 7 Tagen ist nichts zu tun.':'Heute ist nichts fällig und nichts überfällig.'}</p></section>`}`}
+document.addEventListener('change',e=>{if(e.target.id==='tourL'){S.tourL=e.target.value;render()}});
+
 /* ---------- Rahmen ---------- */
-const NAV=[['dash','Dashboard',IC.dash],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car],['prob','Probleme',IC.warn],['set','Einstellungen',IC.set]];
+const NAV=[['dash','Dashboard',IC.dash],['tour','Rundgang',IC.route],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car],['prob','Probleme',IC.warn],['set','Einstellungen',IC.set]];
 function renderNav(){const late=activeTasks().filter(t=>t.status!=='Erledigt'&&t.due<TD()).length,pr=S.prob.filter(p=>p.status==='Offen').length;
  $('nav').innerHTML=`<div class="brand"><div class="mk">TQS</div><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
  <div class="nl">${NAV.map(n=>`<a class="${(S.view===n[0]||(S.view==='veh'&&n[0]==='veh_l'))?'on':''}" onclick="S.view='${n[0]}';render()" title="${n[1]}">${n[2]}<span class="lb">${n[1]}</span>${n[0]==='dash'&&late?`<span class="cnt">${late}</span>`:n[0]==='prob'&&pr?`<span class="cnt">${pr}</span>`:''}</a>`).join('')}</div>
+ <button class="scanb" onclick="scanModal()" title="FIN scannen oder suchen">${IC.scan}<span class="lb">FIN scannen</span></button>
  <button class="me" onclick="profileModal()" title="Profil"><span class="av">${E(initials(me()))}</span><div><b>${E(me())}</b><small>${E(S.acct.email)}</small></div></button>`}
 function render(){if(!db||!S.acct||$('app').hidden)return;if(!$('mod').hidden||!$('alrt').hidden)return;
- renderNav();const f={dash,cal,veh_l:vlist,veh:vdet,prob:()=>`<div class="head"><h2>Probleme</h2><button class="btn p" onclick="probModal()">${IC.plus} Problem melden</button></div><section class="panel">${probTbl(S.prob.slice(),1)}</section>`,set:sett}[S.view]||dash;
- const a=document.activeElement&&document.activeElement.id;$('main').innerHTML=f();
+ S.vis=[];if(S.selMode&&S.selKey!==S.view+'|'+S.sel+'|'+S.tab){S.selMode=false;S.pick=new Set()}
+ renderNav();const f={dash,tour,cal,veh_l:vlist,veh:vdet,prob:()=>`<div class="head"><h2>Probleme</h2><button class="btn p" onclick="probModal()">${IC.plus} Problem melden</button></div><section class="panel">${probTbl(S.prob.slice(),1)}</section>`,set:sett}[S.view]||dash;
+ const a=document.activeElement&&document.activeElement.id;$('main').innerHTML=f()+(S.selMode?selBar():'');document.body.classList.toggle('has-sel',S.selMode);
  if(a&&$(a)&&a==='q'){const e=$(a);e.focus();try{e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}
 document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;render()}});
 document.addEventListener('change',e=>{if(e.target.id==='fl'){S.fl=e.target.value;render()}});
@@ -1014,11 +1191,24 @@ function signedIn(u){S.acct={email:u.email,name:u.displayName||u.email.split('@'
 function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.taskAll=[];S.prob=[];S.log=[];
  const was=!!S.acct;S.acct=null;$('mod').hidden=true;$('mb').innerHTML='';$('app').hidden=true;$('boot').hidden=true;$('auth').hidden=false;if(was){authTab('login');msg('mLogin','Du wurdest abgemeldet.',1)}}
 
+/* ---------- Offline ---------- */
+/* Firebase hält Änderungen ohne Netz zurück und überträgt sie später. Damit die Knöpfe dabei nicht "hängen",
+   warten Schreibvorgänge offline nur kurz und gelten dann als gespeichert. */
+function patchOffline(){const F=firebase.firestore;if(!F||!F.DocumentReference||F.__tqsOff)return;F.__tqsOff=1;
+ const quick=p=>navigator.onLine?p:Promise.race([p,new Promise(r=>setTimeout(r,350))]);
+ const D=F.DocumentReference.prototype;['set','update','delete'].forEach(m=>{const o=D[m];D[m]=function(...a){const p=o.apply(this,a);if(!navigator.onLine)p.catch(e=>console.warn('Offline-Änderung abgelehnt',e));return quick(p)}});
+ const C=F.CollectionReference&&F.CollectionReference.prototype;if(C&&C.add){const oa=C.add;C.add=function(d){if(navigator.onLine)return oa.call(this,d);const r=this.doc();r.set(d);return Promise.resolve(r)}}}
+function netState(){const o=$('offl');if(o)o.hidden=navigator.onLine;document.body.classList.toggle('is-off',!navigator.onLine)}
+addEventListener('offline',netState);addEventListener('online',()=>{netState();if(S.acct)toast('Wieder online – Änderungen werden übertragen.')});netState();
+if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.warn('Service Worker',e)));
+
 let auth=null;
 (()=>{const fail=t=>{$('boot').innerHTML=`<p style="max-width:520px">${t}</p>`};
  if(typeof firebase==='undefined')return fail('Firebase konnte nicht geladen werden. Bitte Internetverbindung prüfen und die Seite neu laden.');
  if(!firebaseConfig.apiKey||/HIER/.test(firebaseConfig.apiKey))return fail('Firebase ist noch nicht eingerichtet: Bitte den <b>firebaseConfig</b>-Block oben in der index.html mit den Werten aus der Firebase-Konsole ersetzen.');
  firebase.initializeApp(firebaseConfig);auth=firebase.auth();auth.languageCode='de';db=firebase.firestore();
+ try{if(db.enablePersistence)db.enablePersistence({synchronizeTabs:true}).catch(e=>console.warn('Offline-Speicher nicht verfügbar:',e&&e.code))}catch(e){}
+ patchOffline();
  auth.onAuthStateChanged(u=>{if(holdAuth)return;if(u&&u.emailVerified&&okDomain(u.email))signedIn(u);else{if(u)auth.signOut();signedOut()}})})();
 </script>
 </body>
