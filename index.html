@@ -228,6 +228,8 @@ main{padding-bottom:110px}
  .tl li{break-inside:avoid;padding:6px 10px}.qchk{border-color:#555;color:transparent!important;background:#fff!important;width:22px;height:22px;border-radius:4px}
  .fin-copy{background:none!important}.tl .thumb,.tv .thumb{display:none}.tl li,.tv .tvh{grid-template-columns:minmax(0,1fr) auto auto!important}
 }
+.photo{object-fit:cover;border-radius:8px;background:var(--grb);display:block}
+.phrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 4px}.phrow .hint{flex:1 1 180px}
 .steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px;line-height:1.45}
 .pf-seg{display:inline-grid;grid-auto-flow:column;gap:4px;background:var(--grb);border-radius:9px;padding:3px}
 .pf-seg button{border:0;background:transparent;padding:6px 11px;border-radius:7px;font-weight:600;font-size:13px;color:var(--mu);display:flex;align-items:center;gap:6px}
@@ -538,6 +540,7 @@ const IC={
  trash:SV('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>'),
  plus:SV('<path d="M12 5v14M5 12h14"/>'),
  check:SV('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+ camera:SV('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
  pin:SV('<path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/>'),
  scan:SV('<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M7 9v6M10 9v6M13 9v6M17 9v6"/>'),
  route:SV('<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"/>'),
@@ -575,16 +578,30 @@ const KW={
 function bodyOf(v){if(v.body&&BODIES[v.body])return v.body;const s=((v.model||'')+' '+(v.variant||'')+' '+(v.type||'')).toLowerCase();
  for(const k of ['pickup','van','kombi','suv','coupe','limousine'])if(KW[k].some(w=>new RegExp('(^|[^a-z0-9])'+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-z0-9])').test(s)))return k;return'kompakt'}
 const colHex=v=>v.colorHex||(COLORS.find(c=>c[0]===v.color)||[])[1]||'#9aa3ad';
-function carSVG(v,cls){const t=BODIES[bodyOf(v)],c=colHex(v),wy=82;
+const okPhoto=p=>typeof p==='string'&&p.length<400000&&/^data:image\/(jpeg|webp|png);base64,[A-Za-z0-9+/=]+$/.test(p);
+const nums=p=>p.match(/-?\d+(\.\d+)?/g).map(Number);
+function carSVG(v,cls){
+ if(okPhoto(v.photo))return`<img class="${cls||'car'} photo" src="${v.photo}" alt="Foto ${E(v.brand)} ${E(v.model)}" decoding="async">`;
+ const t=BODIES[bodyOf(v)],c=colHex(v),wy=82,r=t.r;
+ /* Türen, Griffe, Spiegel aus den Fensterkoordinaten ableiten */
+ const fw=nums(t.w[t.w.length-1]),fx=fw.filter((_,i)=>i%2===0),fy=fw.filter((_,i)=>i%2===1),belt=Math.max(...fy),fx0=Math.min(...fx),fx1=Math.max(...fx);
+ const rw=nums(t.w[0]).filter((_,i)=>i%2===0),xA=Math.max(t.wh[0]+r+7,Math.min(...rw)-3),xB=fx0-3,xC=t.wh[1]-r-7,yb=Math.min(wy-6,belt+28);
+ const doors=t.w.length>1?[xA,xB,xC]:[xB,xC];
  return`<svg class="${cls||'car'}" viewBox="0 0 240 110" role="img" aria-label="Skizze ${E(v.brand)} ${E(v.model)}${v.color?', '+E(v.color):''}">
- <ellipse cx="121" cy="${wy+t.r+2}" rx="108" ry="4.5" fill="var(--shadow)"/>
+ <ellipse cx="121" cy="${wy+r+2}" rx="108" ry="4.5" fill="var(--shadow)"/>
  <path d="${t.b}" fill="${c}" stroke="var(--carline)" stroke-width="1.6" stroke-linejoin="round"/>
+ <path d="M${t.wh[0]+r+5},${wy-3} L${t.wh[1]-r-5},${wy-3}" stroke="rgba(0,0,0,.22)" stroke-width="4" stroke-linecap="round"/>
  <path d="M${t.bl[0]},${t.bl[2]} L${t.bl[1]},${t.bl[2]}" stroke="rgba(255,255,255,.38)" stroke-width="2"/>
  <path d="M${t.bl[0]},${t.bl[2]+3} L${t.bl[1]},${t.bl[2]+3}" stroke="rgba(0,0,0,.14)" stroke-width="1.2"/>
+ ${doors.map(x=>`<path d="M${x},${belt+1} L${x},${yb}" stroke="rgba(0,0,0,.26)" stroke-width="1"/>`).join('')}
+ ${doors.slice(0,-1).map((x,i)=>`<rect x="${doors[i+1]-15}" y="${belt+6}" width="9" height="2.6" rx="1.3" fill="rgba(0,0,0,.35)"/>`).join('')}
  ${t.w.map(p=>`<path d="${p}" fill="var(--glass)" stroke="var(--carline)" stroke-width="1"/>`).join('')}
+ ${t.w.map(p=>{const n=nums(p),xs=n.filter((_,i)=>i%2===0),ys=n.filter((_,i)=>i%2===1),x0=Math.min(...xs),y0=Math.min(...ys),y1=Math.max(...ys);return`<path d="M${x0+6},${y1-2} L${x0+13},${y0+3}" stroke="rgba(255,255,255,.28)" stroke-width="2.4" stroke-linecap="round"/>`}).join('')}
+ <path d="M${fx1-2},${belt-1} l6,-5 l4,0 l0,6 z" fill="${c}" stroke="var(--carline)" stroke-width=".9" stroke-linejoin="round"/>
  <rect x="${t.hl[0]}" y="${t.hl[1]}" width="9" height="5" rx="2" fill="#fff6d8" stroke="var(--carline)" stroke-width=".8"/>
+ <rect x="${t.hl[0]-1}" y="${t.hl[1]+10}" width="9" height="3.5" rx="1.4" fill="#2a3036" opacity=".7"/>
  <rect x="${t.bl[0]-2}" y="${t.hl[1]+1}" width="6" height="5" rx="1.5" fill="#d13a2f" opacity=".9"/>
- ${t.wh.map(x=>`<circle cx="${x}" cy="${wy}" r="${t.r+4}" fill="var(--carbg,var(--sf))"/><circle cx="${x}" cy="${wy}" r="${t.r}" fill="#1b2127"/><circle cx="${x}" cy="${wy}" r="${t.r*.56}" fill="#c4cbd2"/><circle cx="${x}" cy="${wy}" r="${t.r*.56}" fill="none" stroke="#8a949e" stroke-width="1.2" stroke-dasharray="2.4 2.6"/><circle cx="${x}" cy="${wy}" r="${t.r*.17}" fill="#58636e"/>`).join('')}
+ ${t.wh.map(x=>`<circle cx="${x}" cy="${wy}" r="${r+4}" fill="var(--carbg,var(--sf))"/><path d="M${x-r-4},${wy} A${r+4},${r+4} 0 0 1 ${x+r+4},${wy}" fill="none" stroke="rgba(0,0,0,.28)" stroke-width="1.4"/><circle cx="${x}" cy="${wy}" r="${r}" fill="#1b2127"/><circle cx="${x}" cy="${wy}" r="${r*.58}" fill="#c4cbd2"/>${[0,72,144,216,288].map(a=>{const q=a*Math.PI/180;return`<path d="M${(x+Math.cos(q)*r*.18).toFixed(1)},${(wy+Math.sin(q)*r*.18).toFixed(1)} L${(x+Math.cos(q)*r*.52).toFixed(1)},${(wy+Math.sin(q)*r*.52).toFixed(1)}" stroke="#8a949e" stroke-width="2.2" stroke-linecap="round"/>`}).join('')}<circle cx="${x}" cy="${wy}" r="${r*.58}" fill="none" stroke="#7d8791" stroke-width="1"/><circle cx="${x}" cy="${wy}" r="${r*.17}" fill="#58636e"/>`).join('')}
  </svg>`}
 
 /* ---------- Zustand ---------- */
@@ -791,9 +808,11 @@ async function delManual(id){const t=S.tasks.find(x=>x._id===id);if(!t||!t.manua
 const BRANDS=['Volkswagen','VW Nutzfahrzeuge','Audi','Škoda','Seat','Cupra','Porsche','Bentley'];
 let curV=null;
 const uniq=a=>[...new Set(a.filter(Boolean))].sort(new Intl.Collator('de',{numeric:true}).compare);
-function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(pre||{})};curV=v;const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
+let vPhoto='';
+function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(pre||{})};curV=v;vPhoto=okPhoto(v.photo)?v.photo:'';const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
  modal(`<header><h3>${fin?'Fahrzeug bearbeiten':'Neues Fahrzeug'}</h3><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
  <div class="sb"><div class="prev" id="vprev"></div>
+ <div class="phrow"><input type="file" id="vph" accept="image/*" hidden><button class="btn sm" type="button" onclick="$('vph').click()">${IC.camera} <span id="vphl">${vPhoto?'Foto ändern':'Foto hinzufügen'}</span></button><button class="btn sm" type="button" id="vphx" style="color:var(--ba)" ${vPhoto?'':'hidden'} onclick="vPhoto='';this.hidden=true;$('vphl').textContent='Foto hinzufügen';$('vphs').textContent='Foto wird beim Speichern entfernt – dann ist wieder die Skizze zu sehen.';vPrev()">Foto entfernen</button><span class="hint" id="vphs">${vPhoto?'':'Optional: 1 Foto, wird statt der Skizze angezeigt.'}</span></div>
  <div class="fg">
   <label class="f full">FIN (17 Zeichen)<input id="vf" class="mono" maxlength="17" value="${E(v.fin)}" ${fin?'disabled':''} style="text-transform:uppercase"></label>
   <label class="f">Marke<input id="vb" list="brands" value="${E(v.brand)}"><datalist id="brands">${BRANDS.map(b=>`<option value="${b}">`).join('')}</datalist></label>
@@ -811,8 +830,18 @@ function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(
  <div style="display:flex;gap:18px;flex-wrap:wrap"><label class="chk"><input type="checkbox" id="c3" ${v.hyb?'checked':''}>Hybrid</label><label class="chk"><input type="checkbox" id="c4" ${v.ev?'checked':''}>Elektro</label><label class="chk"><input type="checkbox" id="c2" ${v.solar?'checked':''}>Solarpanel</label></div>
  <p class="hint">${v.transp!==false?'Transportmodus ist <b>an</b>. Ausschalten auf der Fahrzeugseite, sobald er entfernt wurde.':`Transportmodus: <b>${offTxt(v)}</b>.`}</p>
  <p class="hint" id="vplan"></p><p class="msg err" id="verr"></p></div>
- <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev()}
-function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{fin:$('vf').value.trim().toUpperCase(),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),spot:$('vsp').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),transp:!curV||curV.transp!==false,solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked}}
+ <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev();
+ $('vph').addEventListener('change',e=>{pickPhoto(e.target.files&&e.target.files[0]);e.target.value=''})}
+/* Foto im Handy verkleinern (480×270, JPEG ca. 30–60 KB) und direkt beim Fahrzeug speichern – kein kostenpflichtiger Dateispeicher nötig */
+async function pickPhoto(f){const s=$('vphs');if(!f||!s)return;s.textContent='Foto wird verkleinert …';
+ try{let src;try{src=await createImageBitmap(f,{imageOrientation:'from-image'})}catch(e){src=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=URL.createObjectURL(f)})}
+  const W=480,H=270,sw=src.width,sh=src.height,sc=Math.max(W/sw,H/sh),cw=W/sc,ch=H/sc,c=document.createElement('canvas');c.width=W;c.height=H;
+  const x=c.getContext('2d');x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(src,(sw-cw)/2,(sh-ch)/2,cw,ch,0,0,W,H);
+  let q=.82,d=c.toDataURL('image/jpeg',q);while(d.length>120000&&q>.45){q-=.08;d=c.toDataURL('image/jpeg',q)}
+  if(!okPhoto(d))throw 0;vPhoto=d;$('vphx').hidden=false;$('vphl').textContent='Foto ändern';
+  s.textContent=`Foto übernommen (${Math.round(d.length*.75/1024)} KB) – wird mit „Speichern“ gesichert.`;vPrev()}
+ catch(e){s.textContent='Dieses Bild konnte nicht gelesen werden. Bitte ein JPG- oder PNG-Foto wählen.'}}
+function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{photo:vPhoto,fin:$('vf').value.trim().toUpperCase(),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),spot:$('vsp').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),transp:!curV||curV.transp!==false,solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked}}
 function vPrev(){if(!$('vprev'))return;$('vcw').hidden=$('vcol').value!=='__c';const v=formVeh();$('vprev').innerHTML=carSVG(v)+`<div><b>${vname(v)}</b><br><small>${BODIES[bodyOf(v)].l}${v.color?' · '+E(v.color):''}</small></div>`;
  const n=planFor({...v,archived:false}).length,b=planFor({...v,archived:false}).filter(x=>x.cat==='b12').length;$('vplan').textContent=v.deliv?`Pflegeplan: ${n} Termine bis ${fmt(planEnd(v))}, davon ${b}× 12V-Batterie (${v.transp?'Transportmodus an: vierteljährlich':'Transportmodus aus: alle 6 Wochen'}).`:'Ohne Eingangsdatum wird kein Pflegeplan erstellt.'}
 async function saveVeh(old){const f=formVeh(),fin=old||f.fin,err=t=>{$('verr').textContent=t};
