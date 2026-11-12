@@ -229,6 +229,16 @@ main{padding-bottom:110px}
  .fin-copy{background:none!important}.tl .thumb,.tv .thumb{display:none}.tl li,.tv .tvh{grid-template-columns:minmax(0,1fr) auto auto!important}
 }
 .photo{object-fit:cover;border-radius:8px;background:var(--grb);display:block}
+.vhero img.photo{cursor:zoom-in;transition:transform .15s}.vhero img.photo:hover{transform:scale(1.02)}
+#lb:not([hidden]){position:fixed;inset:0;z-index:60;background:#0b1015;display:flex;flex-direction:column;color:#fff;animation:lbin .15s ease-out}
+@keyframes lbin{from{opacity:0}to{opacity:1}}
+#lb .lb-top{display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px 18px}
+#lb .lb-top>div{flex:1;min-width:0;display:flex;flex-direction:column}#lb .lb-top .mono{font-size:12.5px;opacity:.7}
+#lb .lb-x{width:48px;height:48px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:30px;line-height:1;cursor:pointer}
+#lb .lb-st{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;cursor:zoom-in;padding:0 8px}
+#lb .lb-st.zoomed{cursor:grab}
+#lb img{max-width:min(100%,1100px);max-height:100%;width:auto;height:auto;border-radius:10px;user-select:none;-webkit-user-select:none;transform-origin:center;will-change:transform}
+#lb .lb-hint{text-align:center;font-size:13px;opacity:.65;padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px))}
 .crop{display:flex;flex-direction:column;gap:10px;background:var(--sf2);border-radius:12px;padding:12px}
 .crop-st{position:relative;width:100%;aspect-ratio:520/240;border-radius:10px;overflow:hidden;touch-action:none;cursor:grab;background:#000;user-select:none;-webkit-user-select:none}
 .crop-st:active{cursor:grabbing}.crop-st canvas{width:100%;height:100%;display:block}
@@ -815,11 +825,11 @@ async function delManual(id){const t=S.tasks.find(x=>x._id===id);if(!t||!t.manua
 const BRANDS=['Volkswagen','VW Nutzfahrzeuge','Audi','Škoda','Seat','Cupra','Porsche','Bentley'];
 let curV=null;
 const uniq=a=>[...new Set(a.filter(Boolean))].sort(new Intl.Collator('de',{numeric:true}).compare);
-let vPhoto='',crop=null;
-function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(pre||{})};curV=v;vPhoto=okPhoto(v.photo)?v.photo:'';crop=null;const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
+let vPhoto='',vPhotoL=null,crop=null;
+function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(pre||{})};curV=v;vPhoto=okPhoto(v.photo)?v.photo:'';vPhotoL=null;crop=null;const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
  modal(`<header><h3>${fin?'Fahrzeug bearbeiten':'Neues Fahrzeug'}</h3><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
  <div class="sb"><div class="prev" id="vprev"></div>
- <div class="phrow"><input type="file" id="vph" accept="image/*" hidden><button class="btn sm" type="button" onclick="$('vph').click()">${IC.camera} <span id="vphl">${vPhoto?'Foto ändern':'Foto hinzufügen'}</span></button><button class="btn sm" type="button" id="vphe" hidden onclick="cropOpen()">Ausschnitt ändern</button><button class="btn sm" type="button" id="vphx" style="color:var(--ba)" ${vPhoto?'':'hidden'} onclick="vPhoto='';this.hidden=true;$('vphl').textContent='Foto hinzufügen';$('vphs').textContent='Foto wird beim Speichern entfernt – dann ist wieder die Skizze zu sehen.';vPrev()">Foto entfernen</button><span class="hint" id="vphs">${vPhoto?'':'Optional: 1 Foto, wird statt der Skizze angezeigt.'}</span></div>
+ <div class="phrow"><input type="file" id="vph" accept="image/*" hidden><button class="btn sm" type="button" onclick="$('vph').click()">${IC.camera} <span id="vphl">${vPhoto?'Foto ändern':'Foto hinzufügen'}</span></button><button class="btn sm" type="button" id="vphe" hidden onclick="cropOpen()">Ausschnitt ändern</button><button class="btn sm" type="button" id="vphx" style="color:var(--ba)" ${vPhoto?'':'hidden'} onclick="vPhoto='';vPhotoL='';this.hidden=true;$('vphl').textContent='Foto hinzufügen';$('vphs').textContent='Foto wird beim Speichern entfernt – dann ist wieder die Skizze zu sehen.';vPrev()">Foto entfernen</button><span class="hint" id="vphs">${vPhoto?'':'Optional: 1 Foto, wird statt der Skizze angezeigt.'}</span></div>
  <div class="crop" id="vcrop" hidden><div class="crop-st" id="vcst"><canvas id="vccv"></canvas><div class="crop-fr"></div></div>
   <div class="crop-z"><button class="btn sm" type="button" onclick="cropFit('contain')" title="Ganzes Foto zeigen">Ganzes Foto</button><input type="range" id="vczr" min="0" max="1000" value="0" aria-label="Zoom"><button class="btn sm" type="button" onclick="cropFit('cover')" title="Rahmen ausfüllen">Füllen</button><button class="btn sm" type="button" onclick="cropRot()" title="Drehen" aria-label="Um 90° drehen">↻</button></div>
   <span class="hint">Mit dem Finger verschieben, mit zwei Fingern, dem Regler oder dem Mausrad zoomen. So erscheint das Foto überall in der App.</span>
@@ -843,6 +853,38 @@ function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(
  <p class="hint" id="vplan"></p><p class="msg err" id="verr"></p></div>
  <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev();
  $('vph').addEventListener('change',e=>{pickPhoto(e.target.files&&e.target.files[0]);e.target.value=''})}
+/* ---------- Foto vergrößern (Fahrzeugseite) ---------- */
+const PHL={};/* geladene große Fotos */
+async function photoBig(fin){const v=veh(fin);if(!okPhoto(v.photo))return;
+ let o=$('lb');if(!o){o=document.createElement('div');o.id='lb';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');document.body.appendChild(o)}
+ o.innerHTML=`<div class="lb-top"><div><b>${vname(v)}</b><span class="mono">${E(fin)}</span></div><button class="lb-x" onclick="photoClose()" aria-label="Schließen">×</button></div>
+ <div class="lb-st" id="lbst"><img id="lbim" src="${v.photo}" alt="Foto ${E(v.brand)} ${E(v.model)}" draggable="false"></div>
+ <div class="lb-hint" id="lbh">${v.photoL?'Große Ansicht wird geladen …':''}${matchMedia('(pointer:coarse)').matches?' Mit zwei Fingern zoomen, doppelt tippen zum Vergrößern.':' Mausrad zum Zoomen, Doppelklick zum Vergrößern.'}</div>`;
+ o.hidden=false;document.body.classList.add('mopen');lbWire();
+ if(v.photoL){try{let d=PHL[fin];if(!d){const s=await db.doc('photos/'+fin).get();d=s.exists&&s.data().data;if(okPhotoL(d))PHL[fin]=d;else d=null}
+   if(d&&$('lbim')){const i=new Image();i.onload=()=>{if($('lbim'))$('lbim').src=d};i.src=d}
+   if($('lbh'))$('lbh').textContent=$('lbh').textContent.replace('Große Ansicht wird geladen …',d?'':'Große Ansicht nicht verfügbar.')}catch(e){if($('lbh'))$('lbh').textContent='Große Ansicht nicht verfügbar (offline?).'}}}
+const okPhotoL=p=>typeof p==='string'&&p.length<1000000&&/^data:image\/(jpeg|webp|png);base64,[A-Za-z0-9+/=]+$/.test(p);
+function photoClose(){const o=$('lb');if(o){o.hidden=true;o.innerHTML=''}document.body.classList.toggle('mopen',!!($('mod')&&!$('mod').hidden))}
+function lbWire(){const st=$('lbst'),im=$('lbim');if(!st)return;let z=1,tx=0,ty=0,last=null,lastTap=0;const pts=new Map();
+ const ap=()=>{z=Math.max(1,Math.min(5,z));const r=st.getBoundingClientRect(),w=im.clientWidth*z,hh=im.clientHeight*z,mx=Math.max(0,(w-r.width)/2),my=Math.max(0,(hh-r.height)/2);
+  tx=Math.max(-mx,Math.min(mx,tx));ty=Math.max(-my,Math.min(my,ty));im.style.transform=`translate(${tx}px,${ty}px) scale(${z})`;st.classList.toggle('zoomed',z>1.01)};
+ const zoomAt=(nz,px,py)=>{const r=st.getBoundingClientRect(),cx=px-r.left-r.width/2,cy=py-r.top-r.height/2,f=Math.max(1,Math.min(5,nz))/z;tx=cx-(cx-tx)*f;ty=cy-(cy-ty)*f;z*=f;ap()};
+ const mid=()=>{const a=[...pts.values()];return{x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2,d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}};
+ st.addEventListener('pointerdown',e=>{st.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY,t:Date.now(),x0:e.clientX,y0:e.clientY});last=pts.size===2?mid():{x:e.clientX,y:e.clientY}});
+ st.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;const p=pts.get(e.pointerId);p.x=e.clientX;p.y=e.clientY;
+  if(pts.size===2){const m=mid();if(last&&last.d){tx+=m.x-last.x;ty+=m.y-last.y;zoomAt(z*m.d/last.d,m.x,m.y)}last=m}
+  else if(pts.size===1&&last&&z>1){tx+=e.clientX-last.x;ty+=e.clientY-last.y;last={x:e.clientX,y:e.clientY};ap()}});
+ const up=e=>{const p=pts.get(e.pointerId);pts.delete(e.pointerId);
+  if(p&&!pts.size&&Math.hypot(p.x-p.x0,p.y-p.y0)<8&&Date.now()-p.t<300){const now=Date.now();
+   if(now-lastTap<320){zoomAt(z>1.01?1:2.5,e.clientX,e.clientY);if(z<=1.01){tx=ty=0;ap()}lastTap=0}
+   else{lastTap=now;const onImg=e.target===im;setTimeout(()=>{if(lastTap===now&&!onImg&&z<=1.01)photoClose()},330)}}
+  const a=[...pts.values()];last=a.length===1?{x:a[0].x,y:a[0].y}:null};
+ st.addEventListener('pointerup',up);st.addEventListener('pointercancel',up);
+ st.addEventListener('wheel',e=>{e.preventDefault();zoomAt(z*Math.exp(-e.deltaY*.0018),e.clientX,e.clientY)},{passive:false})}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('lb')&&!$('lb').hidden)photoClose()});
+document.addEventListener('click',e=>{const im=e.target.closest&&e.target.closest('.vhero img.photo');if(im&&S.sel)photoBig(S.sel)});
+
 /* ---------- Foto: laden, Ausschnitt wählen, verkleinern ----------
    Ausgabe 520×240 (gleiches Seitenverhältnis wie alle Anzeigen), JPEG meist 30–70 KB, direkt beim Fahrzeug gespeichert */
 const PW=520,PH=240;
@@ -873,6 +915,10 @@ function cropClose(){$('vcrop').hidden=true;$('vprev').hidden=false}
 function cropApply(){if(!crop)return;const c=document.createElement('canvas');c.width=PW;c.height=PH;cropPaint(c.getContext('2d'),PW,PH);
  let q=.84,d=c.toDataURL('image/jpeg',q);while(d.length>130000&&q>.45){q-=.08;d=c.toDataURL('image/jpeg',q)}
  if(!okPhoto(d))return $('vphs').textContent='Das Foto konnte nicht verarbeitet werden.';
+ /* große Version für die Vergrößerung (3-fach), max. ca. 450 KB */
+ const L=document.createElement('canvas');L.width=PW*3;L.height=PH*3;cropPaint(L.getContext('2d'),L.width,L.height);
+ let ql=.82,dl=L.toDataURL('image/jpeg',ql);while(dl.length>600000&&ql>.4){ql-=.08;dl=L.toDataURL('image/jpeg',ql)}
+ vPhotoL=dl.length<900000?dl:'';
  vPhoto=d;cropClose();$('vphx').hidden=false;$('vphe').hidden=false;$('vphl').textContent='Anderes Foto';
  $('vphs').textContent=`Foto übernommen (${Math.round(d.length*.75/1024)} KB) – wird mit „Speichern“ gesichert.`;vPrev()}
 /* Verschieben (1 Finger / Maus), Zoomen (2 Finger, Regler, Mausrad) */
@@ -890,7 +936,7 @@ function cropWire(){const st=$('vcst');if(!st||st.dataset.w)return;st.dataset.w=
  st.addEventListener('wheel',e=>{if(!crop)return;e.preventDefault();zoomAt(crop.z*Math.exp(-e.deltaY*.0015),e.clientX,e.clientY)},{passive:false});
  $('vczr').addEventListener('input',e=>{if(!crop)return;const lo=Math.log(.6),hi=Math.log(cropMax()),r=st.getBoundingClientRect();zoomAt(Math.exp(lo+(hi-lo)*e.target.value/1000),r.left+r.width/2,r.top+r.height/2)});
  addEventListener('resize',()=>{if($('vcrop')&&!$('vcrop').hidden)cropDraw()})}
-function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{photo:vPhoto,fin:$('vf').value.trim().toUpperCase(),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),spot:$('vsp').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),transp:!curV||curV.transp!==false,solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked}}
+function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{photo:vPhoto,photoL:vPhotoL===null?((curV&&curV.photoL)||0):(vPhotoL&&vPhoto?Date.now():0),fin:$('vf').value.trim().toUpperCase(),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),spot:$('vsp').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),transp:!curV||curV.transp!==false,solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked}}
 function vPrev(){if(!$('vprev'))return;$('vcw').hidden=$('vcol').value!=='__c';const v=formVeh();$('vprev').innerHTML=carSVG(v)+`<div><b>${vname(v)}</b><br><small>${BODIES[bodyOf(v)].l}${v.color?' · '+E(v.color):''}</small></div>`;
  const n=planFor({...v,archived:false}).length,b=planFor({...v,archived:false}).filter(x=>x.cat==='b12').length;$('vplan').textContent=v.deliv?`Pflegeplan: ${n} Termine bis ${fmt(planEnd(v))}, davon ${b}× 12V-Batterie (${v.transp?'Transportmodus an: vierteljährlich':'Transportmodus aus: alle 6 Wochen'}).`:'Ohne Eingangsdatum wird kein Pflegeplan erstellt.'}
 async function saveVeh(old){if(crop&&$('vcrop')&&!$('vcrop').hidden)cropApply();const f=formVeh(),fin=old||f.fin,err=t=>{$('verr').textContent=t};
@@ -901,6 +947,9 @@ async function saveVeh(old){if(crop&&$('vcrop')&&!$('vcrop').hidden)cropApply();
  const o=S.veh.find(v=>v.fin===old)||{},v={...o,...f,fin,archived:!!o.archived};delete v.zp8s;delete v.zp8i;delete v._id;
  busy('vsave',true,'Speichern …');
  try{await db.doc('vehicles/'+fin).set(v)}catch(e){busy('vsave',false,'Speichern');return err('Speichern nicht möglich: keine Schreibrechte.')}
+ if(vPhotoL!==null){const big=vPhotoL&&vPhoto;try{if(big)await db.doc('photos/'+fin).set({fin,data:vPhotoL,at:new Date().toISOString()});else await db.doc('photos/'+fin).delete()}
+  catch(e){if(big){await db.doc('vehicles/'+fin).update({photoL:0}).catch(()=>{});v.photoL=0;setTimeout(()=>toast('Foto gespeichert. Die große Ansicht konnte nicht gespeichert werden (Firebase-Regeln für „photos“ fehlen) – es wird die kleine Version vergrößert.'),400)}}
+  delete PHL[fin]}
  log(fin,old?'Stammdaten geändert':'Fahrzeug angelegt');const r=await sync(v);
  $('mod').hidden=true;$('mb').innerHTML='';if(!old){S.sel=fin;S.view='veh';S.tab='plan'}render();
  toast(old?`Gespeichert · Pflegeplan aktualisiert (+${r.add} / −${r.del})`:`Fahrzeug angelegt · ${r.total} Pflegetermine bis ${fmt(planEnd(v))} eingetragen`)}
