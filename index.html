@@ -1606,7 +1606,7 @@ function knownIn(txt){const ls=vnorm(txt).split(/\n/).map(l=>l.replace(/[^A-Z0-9
 function vinVote(reads){if(!reads.length)return null;let v='',conf=1;for(let i=0;i<17;i++){const c={};reads.forEach(r=>c[r[i]]=(c[r[i]]||0)+1);const [ch,n]=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];v+=ch;conf=Math.min(conf,n/reads.length)}return{v,conf,n:reads.length}}
 function scanTorch(){try{const tr=scanStream&&scanStream.getVideoTracks()[0];if(!tr)return;torchOn=!torchOn;tr.applyConstraints({advanced:[{torch:torchOn}]}).catch(()=>{});$('sct').classList.toggle('on',torchOn)}catch(e){}}
 /* Rückkameras: viele Android-Handys starten sonst mit der Weitwinkel-Kamera, die auf kurze Distanz nicht scharf stellt */
-let scanCams=[],scanCam=null,scanSid=0;
+let scanCams=[],scanCam=null,scanSid=0,scanPause=0;
 const camBad=l=>/wide|ultra|weitwinkel|tele|macro|depth|tiefe|infrared/i.test(l||'');
 async function backCams(){try{const ds=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
  const back=ds.filter(d=>/back|rear|rück|environment|hinten|traseira|arrière/i.test(d.label));return back.length?back:ds}catch(e){return[]}}
@@ -1632,7 +1632,17 @@ async function startScan(){const s=m=>{if($('scs'))$('scs').textContent=m},off=(
   if(cap.focusMode&&cap.focusMode.includes('continuous'))tr.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});
   if(cap.torch&&$('sct'))$('sct').hidden=false;
   if(cap.zoom&&cap.zoom.max>cap.zoom.min&&$('scz')){const z=$('sczr');z.min=cap.zoom.min;z.max=Math.min(cap.zoom.max,8);z.step=cap.zoom.step||0.1;z.value=cap.zoom.min;$('scz').hidden=false;
-   z.addEventListener('input',()=>tr.applyConstraints({advanced:[{zoom:+z.value}]}).catch(()=>{}))}}catch(e){}
+   /* Zoom: immer nur den neuesten Wert an die Kamera geben (sonst stauen sich dutzende Befehle und das Bild friert ein)
+      und währenddessen die Texterkennung kurz pausieren */
+   let zWant=null,zBusy=false;const zApply=async()=>{if(zBusy)return;zBusy=true;while(zWant!=null){const v=zWant;zWant=null;try{await tr.applyConstraints({advanced:[{zoom:v}]})}catch(e){}}zBusy=false};
+   const zSet=v=>{v=Math.max(+z.min,Math.min(+z.max,v));z.value=v;zWant=+z.value;scanPause=Date.now();zApply()};
+   z.addEventListener('input',()=>zSet(+z.value));
+   /* Zoomen mit zwei Fingern direkt im Kamerabild */
+   const pts=new Map();let d0=0,z0=1;const dist=()=>{const [a,b]=[...pts.values()];return Math.hypot(a.x-b.x,a.y-b.y)};
+   box.style.touchAction='none';
+   box.addEventListener('pointerdown',e=>{pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size===2){d0=dist();z0=+z.value}});
+   box.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pts.size===2&&d0>20)zSet(z0*dist()/d0)});
+   const up=e=>{pts.delete(e.pointerId);d0=0};box.addEventListener('pointerup',up);box.addEventListener('pointercancel',up)}}catch(e){}
  scanRun=true;const sid=++scanSid,live=()=>scanRun&&sid===scanSid&&!done,reads=[],sleep=ms=>new Promise(r=>setTimeout(r,ms));let det=null,k=0,pick=0,miss=0,lastV='',same=0,lastMsg=0,done=false;
  const say=(m,force)=>{const t=Date.now();if(force||t-lastMsg>700){lastMsg=t;s(m)}};
  if(!ocrReady)s('Texterkennung wird geladen …');
@@ -1641,7 +1651,7 @@ async function startScan(){const s=m=>{if($('scs'))$('scs').textContent=m},off=(
  const exact=fin=>{const m=S.veh.find(v=>v.fin===fin)||vinMatch(fin);return m?hit(m.fin,'Texterkennung'):false};
  /* Barcodes: nativ oft, Ersatzbibliothek selten (kostet sonst Rechenzeit für die Texterkennung) */
  const bc=async()=>{if(!live()||!$('scv'))return;const nat='BarcodeDetector' in window&&det&&!det.__pony;
-  try{if(vd.readyState>=2&&det){const r=await det.detect(vd);for(const c of r){const m=vnorm(c.rawValue).replace(/[^A-Z0-9]/g,' ').match(/[A-HJ-NPR-Z0-9]{17}/);if(m)return hit(m[0],'Barcode')}}}catch(e){}
+  try{if(vd.readyState>=2&&det&&Date.now()-scanPause>500){const r=await det.detect(vd);for(const c of r){const m=vnorm(c.rawValue).replace(/[^A-Z0-9]/g,' ').match(/[A-HJ-NPR-Z0-9]{17}/);if(m)return hit(m[0],'Barcode')}}}catch(e){}
   setTimeout(bc,nat?250:1500)};
  setTimeout(bc,400);
  const handle=txt=>{const cs=vinCands(txt);for(const c of cs)if(exact(c))return true;
@@ -1662,7 +1672,7 @@ async function startScan(){const s=m=>{if($('scs'))$('scs').textContent=m},off=(
   else{miss++;const t=txt.replace(/\s+/g,' ').trim();if(rd){rd.hidden=!t;rd.textContent=t?'gelesen: '+t.slice(0,24):''}if(t)say('Nur die FIN-Zeile waagrecht in den Rahmen halten.')}
   return false};
  const run=async w=>{while(live()&&$('scv')){
-  if(vd.readyState<2){await sleep(80);continue}
+  if(vd.readyState<2||Date.now()-scanPause<500){await sleep(80);continue}
   const vari=miss>=4?[0,1,0,2][k%4]:0;k++;let p=null;try{p=ocrPrep(vd,box,vari,pick)}catch(e){}
   if(!p){await sleep(100);continue}
   if(!p.cv){say(p.why==='small'?'Schrift zu klein: näher heran oder zoomen.':'Keine Schrift im Rahmen: FIN-Zeile in den gelben Rahmen halten.');await sleep(90);continue}
