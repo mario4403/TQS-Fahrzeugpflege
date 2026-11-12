@@ -341,6 +341,18 @@ td .car{width:84px;height:38px;display:block}
 .dl div span{display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mu)}
 .dl div b{font-weight:500}
 .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+/* Batterieladung: Diagramme schmal links, Tabelle daneben */
+.bt-wrap{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:16px;align-items:start}
+.bt-wrap>.charts{grid-template-columns:minmax(0,1fr);gap:12px}
+.bt-wrap .chart{padding:10px 10px 4px}.bt-wrap .chart h4{font-size:14px}
+.bt-wrap>.hint{margin:0}
+.bt-tab td,.bt-tab th{padding:8px 10px}.bt-tab .bar{width:70px}
+@media(max-width:1440px){.bt-tab .c-bar{display:none}}
+.bt-tab td:last-child{white-space:normal}
+@media(max-width:1180px){.bt-wrap{grid-template-columns:minmax(0,1fr)}.bt-wrap>.charts{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+.bt-tab .c-bs{display:none}
+@media(max-width:380px){.bt-tab td,.bt-tab th{padding:9px 5px!important;font-size:13.5px!important}.bt-tab th{font-size:10.5px!important}.bt-tab td .ic{display:none}}
+@media(max-width:560px){.bt-tab .c-who,.bt-tab .c-bn{display:none}.bt-tab .c-bs{display:inline}.bt-tab td,.bt-tab th{padding:9px 7px;font-size:14px}.bt-tab th{font-size:11px}.bt-wrap>.charts{grid-template-columns:minmax(0,1fr)}.bt-wrap .chart{max-width:420px}}
 .chart{border:1px solid var(--bd);border-radius:10px;padding:12px 12px 6px}
 .chart h4{margin:0 0 4px;font:600 15px var(--f-disp);display:flex;align-items:center;gap:6px}
 .chart svg{width:100%;height:auto;display:block}
@@ -1246,7 +1258,7 @@ function exportCsv(){const r=[['FIN','Marke','Modell','Variante','Karosserie','F
  const csv='﻿'+r.map(x=>x.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(';')).join('\n');
  const u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='fahrzeuge_'+TD()+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000)}
 
-function lineChart(pts,o){const W=600,H=210,L=46,R=16,T=16,B=30;if(!pts.length)return`<p class="empty">Noch keine Messwerte erfasst.</p>`;
+function lineChart(pts,o){const W=o.w||600,H=o.h||210,L=o.w?38:46,R=o.w?10:16,T=16,B=30;if(!pts.length)return`<p class="empty">Noch keine Messwerte erfasst.</p>`;
  const vs=pts.map(p=>p.v),mn=Math.min(o.min,...vs.map(x=>x-o.pad)),mx=Math.max(o.max,...vs.map(x=>x+o.pad));
  const ts=pts.map(p=>new Date(p.d+'T12:00:00').getTime()),t0=Math.min(...ts),t1=Math.max(...ts);
  const X=t=>t1===t0?(L+W-R)/2:L+(t-t0)/(t1-t0)*(W-L-R),Y=v=>T+(mx-v)/(mx-mn)*(H-T-B);
@@ -1266,11 +1278,11 @@ function lineChart(pts,o){const W=600,H=210,L=46,R=16,T=16,B=30;if(!pts.length)r
 function battTab(v){const rs=readings(v.fin),r12=rs.filter(r=>r.cat==='b12'),rhv=rs.filter(r=>r.cat==='hv'),hv=v.hyb||v.ev;
  const pts=a=>a.map(r=>({d:r.d,v:r.v}));
  const last=(a,u,d)=>a.length?`<span class="pill ${low(a[a.length-1])?'s-ba':'s-ok'}">zuletzt ${nf(a[a.length-1].v,d)} ${u}</span>`:'';
- return`<div class="pb" style="display:flex;flex-direction:column;gap:16px">
- <div class="charts"><div class="chart"><h4>${icon('b12')} 12V-Batterie <span style="margin-left:auto">${last(r12,'V',2)}</span></h4>${lineChart(pts(r12),{min:11.8,max:13.2,pad:.1,thr:S.cfg.v12,unit:'V',dec:1,label:'Verlauf Spannung 12V-Batterie'})}</div>
- ${hv||rhv.length?`<div class="chart"><h4>${icon('hv')} HV-Batterie <span style="margin-left:auto">${last(rhv,'%',0)}</span></h4>${lineChart(pts(rhv),{min:0,max:100,pad:0,thr:S.cfg.hv,unit:'%',dec:0,label:'Verlauf Ladezustand HV-Batterie'})}</div>`:''}</div>
- ${rs.length?`<div class="scroll" style="border:1px solid var(--bd);border-radius:10px"><table><tr><th>Datum</th><th>Batterie</th><th>Messwert</th><th>Ladung</th><th>Bewertung</th><th>Mitarbeiter:in</th></tr>
- ${rs.slice().reverse().map(r=>{const pct=r.cat==='hv'?r.v:Math.max(0,Math.min(100,(r.v-11.8)/(12.9-11.8)*100)),bad=low(r);return`<tr class="cl" onclick="taskModal('${r.t._id}')"><td class="num">${fmt(r.d)}</td><td>${icon(r.cat)} ${CAT[r.cat]}</td><td class="num"><b>${r.cat==='b12'?nf(r.v,2)+' V':nf(r.v)+' %'}</b></td><td><span class="bar"><i style="width:${pct}%;background:${bad?'var(--ba)':'var(--ok)'}"></i></span></td><td><span class="pill ${bad?'s-ba':'s-ok'}">${bad?'Bitte Laden!':'In Ordnung'}</span></td><td>${E(r.t.who)||'–'}</td></tr>`}).join('')}</table></div>`:`<p class="hint">Messwerte erscheinen hier, sobald eine Batterie-Maßnahme mit Spannung oder Ladezustand erledigt wurde.</p>`}</div>`}
+ return`<div class="pb bt-wrap">
+ <div class="charts"><div class="chart"><h4>${icon('b12')} 12V-Batterie <span style="margin-left:auto">${last(r12,'V',2)}</span></h4>${lineChart(pts(r12),{min:11.8,max:13.2,pad:.1,thr:S.cfg.v12,unit:'V',dec:1,w:360,h:190,label:'Verlauf Spannung 12V-Batterie'})}</div>
+ ${hv||rhv.length?`<div class="chart"><h4>${icon('hv')} HV-Batterie <span style="margin-left:auto">${last(rhv,'%',0)}</span></h4>${lineChart(pts(rhv),{min:0,max:100,pad:0,thr:S.cfg.hv,unit:'%',dec:0,w:360,h:190,label:'Verlauf Ladezustand HV-Batterie'})}</div>`:''}</div>
+ ${rs.length?`<div class="scroll bt-tab" style="border:1px solid var(--bd);border-radius:10px"><table><tr><th>Datum</th><th>Batterie</th><th><span class="c-bn">Messwert</span><span class="c-bs">Wert</span></th><th class="c-bar">Ladung</th><th><span class="c-bn">Bewertung</span><span class="c-bs">Status</span></th><th class="c-who">Mitarbeiter:in</th></tr>
+ ${rs.slice().reverse().map(r=>{const pct=r.cat==='hv'?r.v:Math.max(0,Math.min(100,(r.v-11.8)/(12.9-11.8)*100)),bad=low(r);return`<tr class="cl" onclick="taskModal('${r.t._id}')"><td class="num"><span class="c-bn">${fmt(r.d)}</span><span class="c-bs">${fmt(r.d).slice(0,6)+fmt(r.d).slice(8)}</span></td><td>${icon(r.cat)} <span class="c-bn">${CAT[r.cat]}</span><span class="c-bs">${r.cat==='b12'?'12V':'HV'}</span></td><td class="num"><b>${r.cat==='b12'?nf(r.v,2)+' V':nf(r.v)+' %'}</b></td><td class="c-bar"><span class="bar"><i style="width:${pct}%;background:${bad?'var(--ba)':'var(--ok)'}"></i></span></td><td><span class="pill ${bad?'s-ba':'s-ok'}"><span class="c-bn">${bad?'Bitte Laden!':'In Ordnung'}</span><span class="c-bs">${bad?'Laden!':'OK'}</span></span></td><td class="c-who">${E(r.t.who)||'–'}</td></tr>`}).join('')}</table></div>`:`<p class="hint">Messwerte erscheinen hier, sobald eine Batterie-Maßnahme mit Spannung oder Ladezustand erledigt wurde.</p>`}</div>`}
 function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug nicht gefunden.</p>';
  const ts=S.tasks.filter(t=>t.fin===v.fin).sort((a,b)=>a.due<b.due?-1:1),ps=S.prob.filter(p=>p.fin===v.fin),lg=S.log.filter(l=>l.fin===v.fin).sort((a,b)=>a.at<b.at?1:-1),op=ts.filter(t=>t.status!=='Erledigt'),rs=readings(v.fin);
  const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['log','Historie']];
