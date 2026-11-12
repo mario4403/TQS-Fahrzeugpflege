@@ -342,15 +342,25 @@ td .car{width:84px;height:38px;display:block}
 .dl div b{font-weight:500}
 .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
 /* Batterieladung: Diagramme schmal links, Tabelle daneben */
-.bt-wrap{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:16px;align-items:start}
+.bt-wrap{display:grid;grid-template-columns:minmax(400px,42%) minmax(0,1fr);gap:16px;align-items:start}
 .bt-wrap>.charts{grid-template-columns:minmax(0,1fr);gap:12px}
-.bt-wrap .chart{padding:10px 10px 4px}.bt-wrap .chart h4{font-size:14px}
+.bt-wrap .chart{padding:12px 12px 6px;position:relative}.bt-wrap .chart h4{font-size:15px}
 .bt-wrap>.hint{margin:0}
 .bt-tab td,.bt-tab th{padding:8px 10px}.bt-tab .bar{width:70px}
-@media(max-width:1440px){.bt-tab .c-bar{display:none}}
+@media(max-width:1360px){.bt-tab .c-bar{display:none}}
 .bt-tab td:last-child{white-space:normal}
 @media(max-width:1180px){.bt-wrap{grid-template-columns:minmax(0,1fr)}.bt-wrap>.charts{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
 .bt-tab .c-bs{display:none}
+.bt-wrap .chart svg text{font-size:13px}
+.chart .pt{cursor:pointer;outline:none}.chart .pt .dot{transition:r .12s}
+.chart .pt:hover .dot,.chart .pt.on .dot,.chart .pt:focus-visible .dot{r:8;stroke-width:3}
+.bt-tab tr.hl td{background:var(--acs)!important}
+#ctip:not([hidden]){position:fixed;z-index:70;min-width:200px;max-width:280px;background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:12px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.22);font-size:13px;pointer-events:none;animation:lbin .1s ease-out}
+#ctip .ct-h{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:6px}#ctip .ct-h b{font-size:18px}
+#ctip .ct-r{display:flex;justify-content:space-between;gap:12px;color:var(--mu);line-height:1.6}#ctip .ct-r span:last-child{color:var(--tx);font-weight:500;text-align:right}
+#ctip .ct-t{margin-top:6px;padding-top:6px;border-top:1px solid var(--bd);font-weight:500}
+#ctip .ct-n{color:var(--mu);font-style:italic;margin-top:2px}#ctip .ct-f{color:var(--mu);font-size:11.5px;margin-top:6px}
+@media(pointer:coarse){#ctip .ct-f::after{content:" (nochmal antippen)"}}
 @media(max-width:380px){.bt-tab td,.bt-tab th{padding:9px 5px!important;font-size:13.5px!important}.bt-tab th{font-size:10.5px!important}.bt-tab td .ic{display:none}}
 @media(max-width:560px){.bt-tab .c-who,.bt-tab .c-bn{display:none}.bt-tab .c-bs{display:inline}.bt-tab td,.bt-tab th{padding:9px 7px;font-size:14px}.bt-tab th{font-size:11px}.bt-wrap>.charts{grid-template-columns:minmax(0,1fr)}.bt-wrap .chart{max-width:420px}}
 .chart{border:1px solid var(--bd);border-radius:10px;padding:12px 12px 6px}
@@ -608,6 +618,31 @@ const IC={
 const CAT={b12:'12V-Batterie',hv:'HV-Batterie',reifen:'Reifendruck',bremse:'Bremsen',folie:'Folie',reinigung:'Säuberung',sonst:'Sonstiges'};
 const catOf=t=>t.cat||(t.k==='pflege'?'folie':(t.k==='hv0'||/^h\d/.test(t.k))?'hv':/^[bw]\d/.test(t.k)?'b12':/^f\d/.test(t.k)?'bremse':/^r\d/.test(t.k)?'reifen':/^s\d/.test(t.k)?'reinigung':'sonst');
 const icon=(c,cls)=>`<span class="cat-${c}" style="display:inline-flex">${IC[c]||IC.sonst}</span>`;
+
+/* ---------- Diagramm: Info beim Darüberfahren / Antippen ---------- */
+let lastPT='mouse',lastPD=0;addEventListener('pointerdown',e=>{lastPT=e.pointerType;lastPD=Date.now()},{passive:true,capture:true});
+function ctip(g){let t=$('ctip');if(!t){t=document.createElement('div');t.id='ctip';t.setAttribute('role','tooltip');document.body.appendChild(t)}
+ if(!g){t.hidden=true;document.querySelectorAll('.pt.on,.bt-tab tr.hl').forEach(e=>e.classList.remove('on','hl'));return}
+ let d;try{d=JSON.parse(g.dataset.tip)}catch(e){return}
+ document.querySelectorAll('.pt.on,.bt-tab tr.hl').forEach(e=>e.classList.remove('on','hl'));g.classList.add('on');
+ const row=document.querySelector(`.bt-tab tr[data-id="${g.dataset.id}"]`);if(row)row.classList.add('hl');
+ t.innerHTML=`<div class="ct-h"><b>${E(d.v)}</b><span class="pill ${d.bad?'s-ba':'s-ok'}">${d.bad?'Bitte Laden!':'In Ordnung'}</span></div>
+ <div class="ct-r"><span>${E(d.b)}</span><span>${E(d.d)}</span></div>
+ ${d.diff?`<div class="ct-r"><span>Veränderung</span><span>${E(d.diff)}</span></div>`:''}
+ <div class="ct-r"><span>Ladegrenze</span><span>${E(d.thr)}</span></div>
+ ${d.w?`<div class="ct-r"><span>Gemessen von</span><span>${E(d.w)}</span></div>`:''}
+ <div class="ct-t">${E(d.t)}</div>${d.n?`<div class="ct-n">${E(d.n)}</div>`:''}<div class="ct-f">Klicken für Details</div>`;
+ t.hidden=false;const r=g.querySelector('.dot').getBoundingClientRect(),tw=t.offsetWidth,th=t.offsetHeight,cx=r.left+r.width/2;
+ let x=Math.max(8,Math.min(innerWidth-tw-8,cx-tw/2)),y=r.top-th-12;if(y<8)y=r.bottom+12;t.style.left=x+'px';t.style.top=y+'px'}
+document.addEventListener('pointerover',e=>{if(e.pointerType!=='mouse'&&e.pointerType!=='pen')return;const g=e.target.closest&&e.target.closest('.chart .pt[data-tip]');if(g)ctip(g)});
+document.addEventListener('pointerout',e=>{const g=e.target.closest&&e.target.closest('.chart .pt[data-tip]');if(g&&!(e.relatedTarget&&g.contains(e.relatedTarget))&&e.pointerType==='mouse')ctip(null)});
+document.addEventListener('click',e=>{const g=e.target.closest&&e.target.closest('.chart .pt[data-id]');if(g){if((lastPT==='touch'||matchMedia('(hover:none)').matches)&&!g.classList.contains('on')){ctip(g);return}ctip(null);taskModal(g.dataset.id)}else if(!(e.target.closest&&e.target.closest('#ctip')))ctip(null)});
+document.addEventListener('focusin',e=>{if(Date.now()-lastPD<600)return;const g=e.target.closest&&e.target.closest('.chart .pt[data-tip]');if(g)ctip(g)});
+document.addEventListener('keydown',e=>{const g=e.target.closest&&e.target.closest('.chart .pt[data-id]');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();ctip(null);taskModal(g.dataset.id)}});
+addEventListener('scroll',()=>{const t=$('ctip');if(t&&!t.hidden)ctip(null)},{passive:true});
+/* Tabellenzeile überfahren = Punkt im Diagramm hervorheben */
+document.addEventListener('pointerover',e=>{const tr=e.target.closest&&e.target.closest('.bt-tab tr[data-id]');if(!tr)return;const g=document.querySelector(`.chart .pt[data-id="${tr.dataset.id}"]`);if(g&&e.pointerType==='mouse')ctip(g)});
+document.addEventListener('pointerout',e=>{const tr=e.target.closest&&e.target.closest('.bt-tab tr[data-id]');if(tr&&!(e.relatedTarget&&tr.contains(e.relatedTarget))&&e.pointerType==='mouse')ctip(null)});
 
 /* ---------- Fahrzeugskizzen ---------- */
 const COLORS=[['Weiß','#f3f3f1'],['Schwarz','#1c1f23'],['Silber','#b8bec5'],['Grau','#6b727a'],['Blau','#1f5096'],['Dunkelblau','#1b2a4a'],['Rot','#b5202b'],['Grün','#2e6a46'],['Gelb','#e6b722'],['Orange','#e06e1c'],['Braun','#6a4a35'],['Beige','#cdbb94']];
@@ -1272,17 +1307,20 @@ function lineChart(pts,o){const W=o.w||600,H=o.h||210,L=o.w?38:46,R=o.w?10:16,T=
  <line x1="${L}" x2="${W-R}" y1="${thrY}" y2="${thrY}" stroke="var(--ba)" stroke-width="1.5" stroke-dasharray="5 4"/>
  <text x="${W-R}" y="${thrY-6}" text-anchor="end" style="fill:var(--ba);font-weight:600">Ladegrenze ${nf(o.thr,o.dec)} ${o.unit}</text>
  ${area?`<path d="${area}" fill="var(--ac)" opacity=".10"/>`:''}<path d="${line}" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linejoin="round"/>
- ${pts.map((p,i)=>`<circle cx="${X(ts[i])}" cy="${Y(p.v)}" r="5" fill="${p.v<o.thr?'var(--ba)':'var(--ac)'}" stroke="var(--sf)" stroke-width="2"><title>${fmt(p.d)}: ${nf(p.v,o.dec)} ${o.unit}${p.v<o.thr?' (Bitte Laden!)':''}</title></circle>`).join('')}
+ ${pts.map((p,i)=>{const tip=p.tip?E(JSON.stringify(p.tip)):'';return`<g class="pt" ${tip?`data-tip="${tip}"`:''} ${p.id?`data-id="${p.id}" tabindex="0" role="button" aria-label="${fmt(p.d)}: ${nf(p.v,o.dec+(o.unit==='V'?1:0))} ${o.unit}"`:''}><circle class="hit" cx="${X(ts[i])}" cy="${Y(p.v)}" r="16" fill="transparent"/><circle class="dot" cx="${X(ts[i])}" cy="${Y(p.v)}" r="5.5" fill="${p.v<o.thr?'var(--ba)':'var(--ac)'}" stroke="var(--sf)" stroke-width="2"/>${p.tip?'':`<title>${fmt(p.d)}: ${nf(p.v,o.dec)} ${o.unit}</title>`}</g>`}).join('')}
  <text x="${X(t0)}" y="${H-8}" text-anchor="${t1===t0?'middle':'start'}">${fmt(pts[0].d)}</text>${t1!==t0?`<text x="${X(t1)}" y="${H-8}" text-anchor="end">${fmt(pts[pts.length-1].d)}</text>`:''}
  </svg>`}
 function battTab(v){const rs=readings(v.fin),r12=rs.filter(r=>r.cat==='b12'),rhv=rs.filter(r=>r.cat==='hv'),hv=v.hyb||v.ev;
- const pts=a=>a.map(r=>({d:r.d,v:r.v}));
+ const pts=a=>a.map((r,i)=>{const pv=a[i-1],u=r.cat==='b12'?'V':'%',dd=r.cat==='b12'?2:0;
+  return{d:r.d,v:r.v,id:r.t._id,tip:{d:fmt(r.d),v:nf(r.v,dd)+' '+u,bad:low(r),thr:(r.cat==='b12'?nf(S.cfg.v12,1):nf(S.cfg.hv))+' '+u,
+   diff:pv?((r.v-pv.v>=0?'+':'−')+nf(Math.abs(r.v-pv.v),dd)+' '+u+' seit '+fmt(pv.d)):'',t:r.t.title,w:r.t.who||'',n:r.t.note||'',b:CAT[r.cat]}}});
+ const two=hv||rhv.length>0,ch=two?250:380;
  const last=(a,u,d)=>a.length?`<span class="pill ${low(a[a.length-1])?'s-ba':'s-ok'}">zuletzt ${nf(a[a.length-1].v,d)} ${u}</span>`:'';
  return`<div class="pb bt-wrap">
- <div class="charts"><div class="chart"><h4>${icon('b12')} 12V-Batterie <span style="margin-left:auto">${last(r12,'V',2)}</span></h4>${lineChart(pts(r12),{min:11.8,max:13.2,pad:.1,thr:S.cfg.v12,unit:'V',dec:1,w:360,h:190,label:'Verlauf Spannung 12V-Batterie'})}</div>
- ${hv||rhv.length?`<div class="chart"><h4>${icon('hv')} HV-Batterie <span style="margin-left:auto">${last(rhv,'%',0)}</span></h4>${lineChart(pts(rhv),{min:0,max:100,pad:0,thr:S.cfg.hv,unit:'%',dec:0,w:360,h:190,label:'Verlauf Ladezustand HV-Batterie'})}</div>`:''}</div>
- ${rs.length?`<div class="scroll bt-tab" style="border:1px solid var(--bd);border-radius:10px"><table><tr><th>Datum</th><th>Batterie</th><th><span class="c-bn">Messwert</span><span class="c-bs">Wert</span></th><th class="c-bar">Ladung</th><th><span class="c-bn">Bewertung</span><span class="c-bs">Status</span></th><th class="c-who">Mitarbeiter:in</th></tr>
- ${rs.slice().reverse().map(r=>{const pct=r.cat==='hv'?r.v:Math.max(0,Math.min(100,(r.v-11.8)/(12.9-11.8)*100)),bad=low(r);return`<tr class="cl" onclick="taskModal('${r.t._id}')"><td class="num"><span class="c-bn">${fmt(r.d)}</span><span class="c-bs">${fmt(r.d).slice(0,6)+fmt(r.d).slice(8)}</span></td><td>${icon(r.cat)} <span class="c-bn">${CAT[r.cat]}</span><span class="c-bs">${r.cat==='b12'?'12V':'HV'}</span></td><td class="num"><b>${r.cat==='b12'?nf(r.v,2)+' V':nf(r.v)+' %'}</b></td><td class="c-bar"><span class="bar"><i style="width:${pct}%;background:${bad?'var(--ba)':'var(--ok)'}"></i></span></td><td><span class="pill ${bad?'s-ba':'s-ok'}"><span class="c-bn">${bad?'Bitte Laden!':'In Ordnung'}</span><span class="c-bs">${bad?'Laden!':'OK'}</span></span></td><td class="c-who">${E(r.t.who)||'–'}</td></tr>`}).join('')}</table></div>`:`<p class="hint">Messwerte erscheinen hier, sobald eine Batterie-Maßnahme mit Spannung oder Ladezustand erledigt wurde.</p>`}</div>`}
+ <div class="charts"><div class="chart"><h4>${icon('b12')} 12V-Batterie <span style="margin-left:auto">${last(r12,'V',2)}</span></h4>${lineChart(pts(r12),{min:11.8,max:13.2,pad:.1,thr:S.cfg.v12,unit:'V',dec:1,w:600,h:ch,label:'Verlauf Spannung 12V-Batterie'})}</div>
+ ${hv||rhv.length?`<div class="chart"><h4>${icon('hv')} HV-Batterie <span style="margin-left:auto">${last(rhv,'%',0)}</span></h4>${lineChart(pts(rhv),{min:0,max:100,pad:0,thr:S.cfg.hv,unit:'%',dec:0,w:600,h:ch,label:'Verlauf Ladezustand HV-Batterie'})}</div>`:''}</div>
+ ${rs.length?`<div class="scroll bt-tab" style="border:1px solid var(--bd);border-radius:10px"><table><tr><th>Datum</th><th>Batterie</th><th><span class="c-bn">Messwert</span><span class="c-bs">Wert</span></th><th class="c-bar">Ladung</th><th><span class="c-bn">Bewertung</span><span class="c-bs">Status</span></th></tr>
+ ${rs.slice().reverse().map(r=>{const pct=r.cat==='hv'?r.v:Math.max(0,Math.min(100,(r.v-11.8)/(12.9-11.8)*100)),bad=low(r);return`<tr class="cl" data-id="${r.t._id}" onclick="taskModal('${r.t._id}')"><td class="num"><span class="c-bn">${fmt(r.d)}</span><span class="c-bs">${fmt(r.d).slice(0,6)+fmt(r.d).slice(8)}</span></td><td>${icon(r.cat)} <span class="c-bn">${CAT[r.cat]}</span><span class="c-bs">${r.cat==='b12'?'12V':'HV'}</span></td><td class="num"><b>${r.cat==='b12'?nf(r.v,2)+' V':nf(r.v)+' %'}</b></td><td class="c-bar"><span class="bar"><i style="width:${pct}%;background:${bad?'var(--ba)':'var(--ok)'}"></i></span></td><td><span class="pill ${bad?'s-ba':'s-ok'}"><span class="c-bn">${bad?'Bitte Laden!':'In Ordnung'}</span><span class="c-bs">${bad?'Laden!':'OK'}</span></span></td></tr>`}).join('')}</table></div>`:`<p class="hint">Messwerte erscheinen hier, sobald eine Batterie-Maßnahme mit Spannung oder Ladezustand erledigt wurde.</p>`}</div>`}
 function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug nicht gefunden.</p>';
  const ts=S.tasks.filter(t=>t.fin===v.fin).sort((a,b)=>a.due<b.due?-1:1),ps=S.prob.filter(p=>p.fin===v.fin),lg=S.log.filter(l=>l.fin===v.fin).sort((a,b)=>a.at<b.at?1:-1),op=ts.filter(t=>t.status!=='Erledigt'),rs=readings(v.fin);
  const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['log','Historie']];
