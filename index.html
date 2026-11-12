@@ -239,6 +239,30 @@ main{padding-bottom:110px}
 #lb .lb-st.zoomed{cursor:grab}
 #lb img{max-width:min(100%,1100px);max-height:100%;width:auto;height:auto;border-radius:10px;user-select:none;-webkit-user-select:none;transform-origin:center;will-change:transform}
 #lb .lb-hint{text-align:center;font-size:13px;opacity:.65;padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px))}
+.fleet td.f-img{width:176px;padding-block:12px}
+.fleet td .car{width:160px;height:74px;border-radius:10px}
+.fleet td svg.car{width:160px;height:74px}
+.fleet td.f-name{white-space:normal;min-width:180px}
+.fleet .f-l{display:none}
+.fleet tr.cl:hover td.f-img img.photo{filter:brightness(1.04)}
+@media(max-width:760px){
+ .fleet,.fleet tbody{display:block}.fleet tr:first-child{display:none}
+ .panel:has(.fleet) .scroll{overflow:visible}
+ .fleet tr.cl{display:grid;grid-template-columns:minmax(0,47%) minmax(0,1fr);column-gap:12px;row-gap:3px;align-items:start;padding:12px 14px;border-bottom:1px solid var(--bd)}
+ .fleet tr.cl:last-child{border-bottom:0}
+ .fleet tr.cl td{display:block;min-width:0;padding:0;border:0;white-space:normal;text-align:left;background:none!important}
+ .fleet td.f-img{grid-column:1;grid-row:1/span 3;width:auto;padding:0;align-self:center}
+ .fleet td .car,.fleet td svg.car{width:100%;height:auto;aspect-ratio:520/240}
+ .fleet td.f-name{grid-column:2;grid-row:1}.fleet td.f-name b{font-size:15.5px;line-height:1.25}.fleet td.f-name .muted{font-size:12.5px}
+ .fleet td.f-fin{grid-column:2;grid-row:2;font-size:11.5px;overflow:hidden;text-overflow:ellipsis}
+ .fleet td.f-loc{grid-column:2;grid-row:3;font-size:13px;line-height:1.35}
+ .fleet td.f-col{display:none!important}
+ .fleet td.f-in{grid-column:1;grid-row:4;font-size:12.5px;color:var(--mu);margin-top:6px}
+ .fleet td.f-tr{grid-column:2;grid-row:4;font-size:12.5px;color:var(--mu);margin-top:4px}
+ .fleet td.f-nx{grid-column:1/-1;grid-row:5;font-size:13.5px;line-height:1.5;margin-top:2px}
+ .fleet .f-l{display:inline}
+ .fleet tr.cl:active{background:var(--sf2)}
+}
 .crop{display:flex;flex-direction:column;gap:10px;background:var(--sf2);border-radius:12px;padding:12px}
 .crop-st{position:relative;width:100%;aspect-ratio:520/240;border-radius:10px;overflow:hidden;touch-action:none;cursor:grab;background:#000;user-select:none;-webkit-user-select:none}
 .crop-st:active{cursor:grabbing}.crop-st canvas{width:100%;height:100%;display:block}
@@ -1215,8 +1239,8 @@ function vlist(){const q=S.q.toLowerCase(),T=TD();const l=S.veh.filter(v=>{const
  return{'':1,late:o.some(t=>t.due<T),transp:v.transp,notransp:!v.transp,show:!!v.show,hv:v.hyb||v.ev,low:battLow().includes(v.fin),prob:S.prob.some(p=>p.fin===v.fin&&p.status==='Offen')}[S.fl]||0});
  return`<div class="head"><h2>Fahrzeuge</h2><button class="btn" onclick="scanModal()">${IC.scan} FIN scannen</button><button class="btn" onclick="exportCsv()">CSV-Export</button><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button></div>
  <div class="tools"><input id="q" placeholder="Suchen: FIN, Marke, Modell, Farbe, Kennzeichen, Stellplatz …" value="${E(S.q)}"><select id="fl">${[['','Alle aktiven'],['late','Mit überfälligen Maßnahmen'],['low','Batterie laden'],['transp','Transportmodus an'],['notransp','Transportmodus aus'],['show','Schauraummodus an'],['hv','Hybrid / Elektro'],['prob','Mit offenen Problemen'],['arch','Archiviert']].map(o=>`<option value="${o[0]}" ${S.fl===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></div>
- <section class="panel"><div class="scroll"><table><tr><th></th><th>Fahrzeug</th><th>FIN</th><th>Farbe</th><th>Standort / Stellplatz</th><th>Eingang</th><th>Transportmodus</th><th>Nächste Maßnahme</th></tr>
- ${l.map(v=>{const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0];return`<tr class="cl" onclick="openVeh('${v.fin}')"><td style="--carbg:var(--sf)">${carSVG(v)}</td><td><b>${vname(v)}</b><br><span class="muted">${E(v.variant)}</span></td><td>${finCopy(v.fin)}</td><td><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}</td><td>${E(v.loc)||'–'}${v.spot?`<br><span class="muted">${IC.pin} ${E(v.spot)}</span>`:''}</td><td class="num">${fmt(v.deliv)}</td><td>${v.transp?'<span class="pill s-gr">an</span>':'<span class="pill s-wa">aus</span>'}</td><td>${nx?`<span class="pill ${st(nx)[0]}">${fmt(nx.due)}</span> ${E(nx.title)}`:'–'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Keine Fahrzeuge gefunden.</td></tr>'}</table></div></section>`}
+ <section class="panel"><div class="scroll"><table class="fleet"><tr><th></th><th>Fahrzeug</th><th>FIN</th><th>Farbe</th><th>Standort / Stellplatz</th><th>Eingang</th><th>Transportmodus</th><th>Nächste Maßnahme</th></tr>
+ ${l.map(v=>{const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0];return`<tr class="cl" onclick="openVeh('${v.fin}')"><td class="f-img" style="--carbg:var(--sf)">${carSVG(v)}</td><td class="f-name"><b>${vname(v)}</b><br><span class="muted">${E(v.variant)}</span></td><td class="f-fin">${finCopy(v.fin)}</td><td class="f-col"><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}</td><td class="f-loc">${E(v.loc)||'–'}${v.spot?`<br><span class="muted">${IC.pin} ${E(v.spot)}</span>`:''}</td><td class="num f-in"><span class="f-l">Eingang </span>${fmt(v.deliv)}</td><td class="f-tr"><span class="f-l">Transportmodus </span>${v.transp?'<span class="pill s-gr">an</span>':'<span class="pill s-wa">aus</span>'}</td><td class="f-nx">${nx?`<span class="pill ${st(nx)[0]}">${fmt(nx.due)}</span> <span class="f-t">${E(nx.title)}</span>`:'<span class="muted">keine offene Maßnahme</span>'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Keine Fahrzeuge gefunden.</td></tr>'}</table></div></section>`}
 function exportCsv(){const r=[['FIN','Marke','Modell','Variante','Karosserie','Farbe','Standort','Stellplatz','Eingang','Kennzeichen','Nr','Transportmodus','Schauraummodus','Hybrid','Elektro','Offene Maßnahmen','Nächste Fälligkeit']];
  S.veh.forEach(v=>{const o=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1);r.push([v.fin,v.brand,v.model,v.variant,BODIES[bodyOf(v)].l,v.color,v.loc,v.spot,fmt(v.deliv),v.plate,v.nr,v.transp?'an':'aus seit '+fmt(v.transpOff||v.deliv),showTxt(v),v.hyb?'ja':'nein',v.ev?'ja':'nein',o.length,o[0]?fmt(o[0].due):''])});
  const csv='﻿'+r.map(x=>x.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(';')).join('\n');
