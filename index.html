@@ -208,10 +208,10 @@ main{padding-bottom:110px}
 /* Scanner */
 .scanbox{position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;max-height:52vh}
 .scanbox video{width:100%;height:100%;object-fit:cover;display:block}
-.scanframe{position:absolute;left:5%;right:5%;top:32%;height:36%;border:3px solid #f0a92e;border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.42);pointer-events:none}
+.scanframe{position:absolute;left:4%;right:4%;top:35%;height:30%;border:3px solid #f0a92e;border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.42);pointer-events:none}
 .scanline{position:absolute;left:4%;right:4%;top:50%;height:2px;background:#f0a92e;box-shadow:0 0 10px #f0a92e;opacity:.7;animation:scl 1.8s ease-in-out infinite}
 @keyframes scl{0%,100%{transform:translateY(-18px)}50%{transform:translateY(18px)}}
-.scantorch{position:absolute;right:10px;top:10px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(0,0,0,.55);font-size:20px;cursor:pointer}.scantorch.on{background:#f0a92e}
+.scantorch{position:absolute;right:10px;top:10px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(0,0,0,.55);font-size:20px;cursor:pointer}.scantorch.on{background:#f0a92e}.scansw{right:auto;left:10px}
 .scanread{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;font:600 13px var(--f-mono);padding:4px 10px;border-radius:6px;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
 .scl{list-style:none;margin:0;padding:0;border:1px solid var(--bd);border-radius:10px;overflow:hidden}
 .scl li{display:grid;grid-template-columns:80px minmax(0,1fr);gap:12px;align-items:center;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--bd)}.scl li:last-child{border-bottom:0}.scl li:hover{background:var(--sf2)}.scl .thumb{width:80px;height:36px}
@@ -1463,8 +1463,8 @@ async function saveCfg(){const c={wk:+$('s_wk').value||42,v12:+$('s_v12').value|
 const SCANF=['code_39','code_128','data_matrix','qr_code','pdf417'];
 const SCAN_LIB='https://cdn.jsdelivr.net/npm/barcode-detector@3.2.3/dist/es/ponyfill.min.js';
 let scanStream=null,scanRun=false,scanDet=null,scanTyped=false,torchOn=false;
-function scanModal(){modal(`<header><div style="flex:1"><h3>FIN scannen oder suchen</h3><span class="muted">FIN-Schild, Aufkleber oder Barcode in den Rahmen halten</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
- <div class="sb"><div class="scanbox" id="scb"><video id="scv" playsinline muted></video><div class="scanframe"><div class="scanline"></div></div><div class="scanread" id="scrd" hidden></div><button class="scantorch" id="sct" hidden onclick="scanTorch()" aria-label="Licht">💡</button></div>
+function scanModal(){modal(`<header><div style="flex:1"><h3>FIN scannen oder suchen</h3><span class="muted">FIN-Zeile waagrecht in den gelben Rahmen halten</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><div class="scanbox" id="scb"><video id="scv" playsinline muted></video><div class="scanframe"><div class="scanline"></div></div><div class="scanread" id="scrd" hidden></div><button class="scantorch" id="sct" hidden onclick="scanTorch()" aria-label="Licht">💡</button><button class="scantorch scansw" id="scsw" hidden onclick="scanSwitch()" aria-label="Kamera wechseln" title="Andere Kamera (falls das Bild unscharf bleibt)">🔄</button></div>
  <label class="f" id="scz" hidden>Zoom<input type="range" id="sczr" min="1" max="1" step="0.1" value="1"></label><span class="hint" id="scs">Kamera wird gestartet …</span>
  <label class="f">Oder eintippen: FIN, letzte Stellen, Kennzeichen oder Nr.<input id="scq" class="mono" style="text-transform:uppercase" placeholder="z. B. 000123" autocomplete="off" enterkeyhint="search"></label><div id="scr"></div></div>
  <footer><button class="btn" onclick="closeM()">Schließen</button></footer>`);
@@ -1473,82 +1473,207 @@ function scanModal(){modal(`<header><div style="flex:1"><h3>FIN scannen oder suc
  startScan()}
 async function scanDetector(){if(scanDet)return scanDet;
  if('BarcodeDetector' in window){try{const f=await BarcodeDetector.getSupportedFormats(),use=SCANF.filter(x=>f.includes(x));if(use.length)return scanDet=new BarcodeDetector({formats:use})}catch(e){}}
- const m=await import(SCAN_LIB);return scanDet=new m.BarcodeDetector({formats:SCANF})}
-/* Texterkennung (OCR) direkt im Browser, kostenlos: Tesseract.js lädt beim ersten Scannen einmalig ~3 MB und merkt sie sich */
+ const m=await import(SCAN_LIB);scanDet=new m.BarcodeDetector({formats:SCANF});scanDet.__pony=1;return scanDet}
+/* Texterkennung (OCR) direkt im Browser, kostenlos: Tesseract.js lädt beim ersten Scannen einmalig einige MB und merkt sie sich.
+   Ablauf je Bild: FIN-Zeile im Rahmen finden → nur diese Zeile in optimaler Schriftgröße ausschneiden → als einzelne Zeile lesen.
+   Das ist ein Vielfaches schneller als das ganze Rahmenbild zu lesen. */
 const OCR_LIB='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js',VINCH='ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
-let ocrW=null,ocrP=null;
+let ocrWs=[],ocrP=null,ocr2=false;
 function loadScript(src){return new Promise((ok,no)=>{if([...document.scripts].some(s=>s.src===src))return ok();const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
-function ocrWorker(onPct){if(ocrW)return Promise.resolve(ocrW);if(ocrP)return ocrP;
- ocrP=(async()=>{await loadScript(OCR_LIB);const w=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status&&/load|initializ/.test(m.status)&&onPct)onPct(m.progress)}});
-  await w.setParameters({tessedit_char_whitelist:VINCH,tessedit_pageseg_mode:'6',user_defined_dpi:'300',load_system_dawg:'0',load_freq_dawg:'0'});return ocrW=w})();
- ocrP.catch(()=>{ocrP=null});return ocrP}
-/* Bildausschnitt im Rahmen holen, in Graustufen umwandeln und Kontrast verstärken */
-/* Variante 0: normal; 1 und 2: Punktschrift (verkleinern und wieder vergrößern verbindet die Punkte zu Strichen) */
-function ocrFrame(vd,box,vari){vari=vari||0;const vw=vd.videoWidth,vh=vd.videoHeight;if(!vw||!vh)return null;
+async function ocrMake(onPct){const w=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status&&/load|initializ/.test(m.status)&&onPct)onPct(m.progress)}},{load_system_dawg:'0',load_freq_dawg:'0',load_number_dawg:'0',load_punc_dawg:'0',load_unambig_dawg:'0',load_bigram_dawg:'0'});
+ await w.setParameters({tessedit_char_whitelist:VINCH,tessedit_pageseg_mode:'7',user_defined_dpi:'300'});w._psm='7';return w}
+function ocrWorker(onPct){if(ocrWs.length)return Promise.resolve(ocrWs[0]);if(ocrP)return ocrP;
+ ocrP=(async()=>{await loadScript(OCR_LIB);const w=await ocrMake(onPct);ocrWs.push(w);try{localStorage.setItem('tqsOcr','1')}catch(e){}return w})();ocrP.catch(()=>{ocrP=null});return ocrP}
+/* Zweiter Leser parallel auf Handys mit mehreren Kernen: doppelt so viele Lesungen pro Sekunde */
+function ocrSecond(){if(ocr2||ocrWs.length!==1||(navigator.hardwareConcurrency||2)<4)return Promise.resolve(null);ocr2=true;
+ return ocrMake().then(w=>{ocrWs.push(w);return w}).catch(()=>null)}
+/* Rahmen im Kamerabild (Anteile der sichtbaren Fläche, passend zu .scanframe) */
+const FR={x:.04,y:.35,w:.92,h:.3};
+function frameRect(vd,box){const vw=vd.videoWidth||vd.width,vh=vd.videoHeight||vd.height;if(!vw||!vh)return null;
  const cw=box.clientWidth,ch=box.clientHeight,sc=Math.max(cw/vw,ch/vh),ox=(vw*sc-cw)/2,oy=(vh*sc-ch)/2;
- const sx=(cw*.05+ox)/sc,sy=(ch*.32+oy)/sc,sw=cw*.9/sc,sh=ch*.36/sc,W=1200,H=Math.max(40,Math.round(sh*W/sw)),P=24;
+ return{x:(cw*FR.x+ox)/sc,y:(ch*FR.y+oy)/sc,w:cw*FR.w/sc,h:ch*FR.h/sc,bx:ox/sc,bw:cw/sc,vw,vh}}
+/* Graustufen + Kontrast strecken; helle Schrift auf dunklem Grund wird umgekehrt */
+function grayStretch(x,W,H,P){P=P||0;const d=x.getImageData(P,P,W,H),a=d.data,hs=new Uint32Array(256);
+ for(let i=0;i<a.length;i+=4){const g=(a[i]*299+a[i+1]*587+a[i+2]*114)/1000|0;a[i]=g;hs[g]++}
+ const n=W*H;let lo=0,hi=255,acc=0,med=128;for(let k=0;k<256;k++){acc+=hs[k];if(acc>=n*.02){lo=k;break}}
+ acc=0;for(let k=0;k<256;k++){acc+=hs[k];if(acc>=n*.5){med=k;break}}acc=0;for(let k=255;k>=0;k--){acc+=hs[k];if(acc>=n*.02){hi=k;break}}
+ const f=255/Math.max(1,hi-lo),inv=(med-lo)*f<110;
+ for(let i=0;i<a.length;i+=4){let g=Math.max(0,Math.min(255,(a[i]-lo)*f));if(inv)g=255-g;a[i]=a[i+1]=a[i+2]=g;a[i+3]=255}
+ x.putImageData(d,P,P);return a}
+/* Textzeilen im Rahmen finden: Bild lokal binarisieren (helle und dunkle Schrift), zusammenhängende Flecken = Zeichen,
+   nebeneinanderliegende gleich hohe Zeichen = Zeile. Zeilen mit ~17 Zeichen (FIN) werden bevorzugt. */
+function inkMask(g,W,H,dark,rad){const N=W*H,I=new Float64Array((W+1)*(H+1)),I2=new Float64Array((W+1)*(H+1));
+ for(let y=0;y<H;y++){let s=0,s2=0;for(let x=0;x<W;x++){const v=g[y*W+x];s+=v;s2+=v*v;const p=(y+1)*(W+1)+x+1;I[p]=I[p-W-1]+s;I2[p]=I2[p-W-1]+s2}}
+ const m=new Uint8Array(N),R=rad;
+ for(let y=0;y<H;y++){const y0=Math.max(0,y-R),y1=Math.min(H,y+R+1);for(let x=0;x<W;x++){const x0=Math.max(0,x-R),x1=Math.min(W,x+R+1),n=(y1-y0)*(x1-x0);
+  const a=(y1*(W+1)+x1),b=(y0*(W+1)+x1),c=(y1*(W+1)+x0),d=(y0*(W+1)+x0),mu=(I[a]-I[b]-I[c]+I[d])/n,va=(I2[a]-I2[b]-I2[c]+I2[d])/n-mu*mu,sd=Math.sqrt(Math.max(0,va)),v=g[y*W+x];
+  if(sd<7)continue;const t=Math.max(9,sd*.45);if(dark?v<mu-t:v>mu+t)m[y*W+x]=1}}
+ return m}
+function comps(m,W,H){const lab=new Int32Array(W*H),out=[],st=[];let id=0;
+ for(let p=0;p<W*H;p++){if(!m[p]||lab[p])continue;id++;let x0=W,x1=0,y0=H,y1=0,n=0;st.push(p);lab[p]=id;
+  while(st.length){const q=st.pop(),x=q%W,y=(q-x)/W;n++;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
+   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=W||yy>=H)continue;const r=yy*W+xx;if(m[r]&&!lab[r]){lab[r]=id;st.push(r)}}}
+  out.push({x0,x1,y0,y1,w:x1-x0+1,h:y1-y0+1,n,cx:(x0+x1)/2,cy:(y0+y1)/2})}
+ return out}
+function groupLines(cs,H){const ok=cs.filter(c=>c.h>=5&&c.h<=H*.7&&!(c.w<2&&c.h<7)&&(c.w<=c.h*2.6?c.n>=c.w*c.h*.12:c.w<=c.h*12&&c.n>=c.w*c.h*.3)).sort((a,b)=>a.x0-b.x0),L=[];
+ for(const c of ok){let best=null,bd=1e9;
+  for(const l of L){const last=l.c[l.c.length-1],gap=c.x0-last.x1,mh=l.mh;if(gap<-mh*.3||gap>mh*2.6)continue;
+   if(c.h<mh*.55||c.h>mh*1.8)continue;const dy=Math.abs(c.cy-(last.cy+l.sl*(c.cx-last.cx)));if(dy>mh*.45)continue;if(dy+gap*.1<bd){bd=dy+gap*.1;best=l}}
+  if(best){best.c.push(c);const hs=best.c.map(q=>q.h).sort((a,b)=>a-b);best.mh=hs[hs.length>>1];
+   if(best.c.length>=3){const n=best.c.length,mx=best.c.reduce((s,q)=>s+q.cx,0)/n,my=best.c.reduce((s,q)=>s+q.cy,0)/n;let a=0,b=0;best.c.forEach(q=>{a+=(q.cx-mx)*(q.cy-my);b+=(q.cx-mx)**2});best.sl=b?Math.max(-.12,Math.min(.12,a/b)):0}}
+  else L.push({c:[c],mh:c.h,sl:0})}
+ /* Bruchstücke derselben Zeile zusammenführen (Lücken, abweichende Einzelzeichen) */
+ const fit=l=>{const hs=l.c.map(q=>q.h).sort((a,b)=>a-b);l.mh=hs[hs.length>>1];const n=l.c.length;if(n<3){l.sl=l.sl||0;return}
+  const mx=l.c.reduce((s,q)=>s+q.cx,0)/n,my=l.c.reduce((s,q)=>s+q.cy,0)/n;let a=0,b=0;l.c.forEach(q=>{a+=(q.cx-mx)*(q.cy-my);b+=(q.cx-mx)**2});l.sl=b?Math.max(-.12,Math.min(.12,a/b)):0};
+ for(let ch=true;ch;){ch=false;L.sort((p,q)=>p.c[0].x0-q.c[0].x0);
+  for(let i=0;i<L.length&&!ch;i++)for(let j=0;j<L.length&&!ch;j++){if(i===j)continue;const A=L[i],B=L[j],ea=A.c[A.c.length-1],fb=B.c[0],gap=fb.x0-ea.x1,mh=Math.max(A.mh,B.mh);
+   if(gap<-mh*.3||gap>mh*3.2||A.mh>B.mh*1.45||B.mh>A.mh*1.45)continue;if(Math.abs(fb.cy-(ea.cy+A.sl*(fb.cx-ea.cx)))>mh*.5)continue;
+   A.c=A.c.concat(B.c);fit(A);L.splice(j,1);ch=true}}
+ /* FIN-Zeile: ~17–21 Zeichen, alle gleich hoch (nur Großbuchstaben/Ziffern), kaum Lücken */
+ L.forEach(l=>{const n=l.c.reduce((s,q)=>s+Math.max(1,Math.round(q.w/(l.mh*.75))),0),uni=l.c.filter(q=>Math.abs(q.h-l.mh)<=l.mh*.16).length/l.c.length;
+  let gaps=0;for(let i=1;i<l.c.length;i++)if(l.c[i].x0-l.c[i-1].x1>l.mh*.5)gaps++;
+  const cy=l.c.reduce((s,q)=>s+q.cy,0)/l.c.length;
+  l.n=n;l.sc=(n>=14&&n<=24?40:0)-Math.abs(n-18)+uni*40-Math.max(0,gaps-2)*6+12*(1-Math.min(1,Math.abs(cy-H/2)/(H/2)))});
+ return L.filter(l=>l.n>=6).sort((a,b)=>b.sc-a.sc)}
+function findLines(vd,r0,blur){const r={...r0,x:r0.bx,w:r0.bw};const A=Math.min(800,Math.round(r.w)),k=r.w/A,HA=Math.max(16,Math.round(r.h/k)),c=document.createElement('canvas');c.width=A;c.height=HA;
+ const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(vd,r.x,r.y,r.w,r.h,0,0,A,HA);const d=x.getImageData(0,0,A,HA).data,g=new Uint8Array(A*HA);
+ for(let i=0,p=0;p<g.length;i+=4,p++)g[p]=(d[i]*299+d[i+1]*587+d[i+2]*114)/1000|0;
+ let G=g;if(blur){const R=blur,T=new Float32Array(g.length);G=new Uint8Array(g.length);/* Kastenfilter, getrennt waagrecht/senkrecht */
+ for(let y=0;y<HA;y++){const o=y*A;for(let xx=0;xx<A;xx++){let s=0,n=0;for(let d=-R;d<=R;d++){const x2=xx+d;if(x2>=0&&x2<A){s+=g[o+x2];n++}}T[o+xx]=s/n}}
+ for(let y=0;y<HA;y++)for(let xx=0;xx<A;xx++){let s=0,n=0;for(let d=-R;d<=R;d++){const yy=y+d;if(yy>=0&&yy<HA){s+=T[yy*A+xx];n++}}G[y*A+xx]=s/n}}
+ const rad=12;let L=[];
+ for(const dark of[true,false]){const ls=groupLines(comps(inkMask(G,A,HA,dark,rad),A,HA),HA);ls.forEach(l=>l.dark=dark);L=L.concat(ls)}
+ L.sort((a,b)=>b.sc-a.sc);
+ return L.slice(0,3).map(l=>{const f=l.c[0],e=l.c[l.c.length-1],ang=Math.atan(l.sl),cx=(f.x0+e.x1)/2,cy=(f.cy+e.cy)/2;
+  return{cx:r.x+cx*k,cy:r.y+cy*k,len:(Math.hypot(e.x1-f.x0,e.cy-f.cy)+l.mh*1.6)*k,ch:l.mh*k,ang,n:l.n,sc:l.sc,dark:l.dark,small:l.mh<8}})}
+/* Bild für die Texterkennung: nur die gefundene Zeile, gerade gedreht, Großbuchstaben ca. 34 px hoch.
+   vari 1/2: Punktschrift (weichzeichnen verbindet die Punkte zu Strichen) */
+function ocrPrep(vd,box,vari,pick){const r=frameRect(vd,box);if(!r)return null;
+ let ls=findLines(vd,r,0);if(vari||!ls.length||ls[0].sc<20)ls=ls.concat(findLines(vd,r,vari===2?3:2)).sort((a,b)=>b.sc-a.sc);
+ if(!ls.length)return{why:'none'};const L=ls[(pick||0)%ls.length];
+ let s=34/L.ch;if(L.len*s>1500)s=1500/L.len;const W=Math.round(L.len*s),H=Math.round(L.ch*s*1.9),P=12;
  const c=document.createElement('canvas');c.width=W+2*P;c.height=H+2*P;const x=c.getContext('2d',{willReadFrequently:true});
- if(vari){const f=vari===1?5:6,sm=document.createElement('canvas');sm.width=Math.round(W/f);sm.height=Math.max(8,Math.round(H/f));const y=sm.getContext('2d');y.imageSmoothingEnabled=true;y.imageSmoothingQuality='high';y.drawImage(vd,sx,sy,sw,sh,0,0,sm.width,sm.height);x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(sm,0,0,sm.width,sm.height,P,P,W,H)}else x.drawImage(vd,sx,sy,sw,sh,P,P,W,H);
- const d=x.getImageData(P,P,W,H),a=d.data,hi_=new Uint32Array(256);let sum=0;
- for(let i=0;i<a.length;i+=4){const g=(a[i]*299+a[i+1]*587+a[i+2]*114)/1000|0;a[i]=g;hi_[g]++;sum+=g}
- const n=W*H;let lo=0,hi=255,acc=0;for(let k=0;k<256;k++){acc+=hi_[k];if(acc>=n*.02){lo=k;break}}acc=0;for(let k=255;k>=0;k--){acc+=hi_[k];if(acc>=n*.02){hi=k;break}}
- const f=255/Math.max(1,hi-lo),inv=sum/n<110;/* helle Schrift auf dunklem Grund umkehren */
- for(let i=0;i<a.length;i+=4){let g=Math.max(0,Math.min(255,(a[i]-lo)*f));if(inv)g=255-g;a[i]=a[i+1]=a[i+2]=g}
- x.fillStyle=`rgb(${a[0]},${a[0]},${a[0]})`;x.fillRect(0,0,c.width,c.height);x.putImageData(d,P,P);return c}
+ x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';
+ const draw=(ctx,sc,ox,oy)=>{ctx.save();ctx.translate(ox,oy);ctx.rotate(-L.ang);ctx.scale(sc,sc);ctx.translate(-L.cx,-L.cy);ctx.drawImage(vd,0,0);ctx.restore()};
+ if(vari){const f=vari===1?4:5,sm=document.createElement('canvas');sm.width=Math.max(8,Math.round(W/f));sm.height=Math.max(6,Math.round(H/f));
+  const y=sm.getContext('2d');y.imageSmoothingEnabled=true;y.imageSmoothingQuality='high';draw(y,s/f,sm.width/2,sm.height/2);x.drawImage(sm,0,0,sm.width,sm.height,P,P,W,H)}
+ else{x.save();x.beginPath();x.rect(P,P,W,H);x.clip();draw(x,s,P+W/2,P+H/2);x.restore()}
+ const a=grayStretch(x,W,H,P);x.fillStyle=`rgb(${a[0]},${a[0]},${a[0]})`;
+ x.fillRect(0,0,c.width,P);x.fillRect(0,P+H,c.width,P);x.fillRect(0,0,P,c.height);x.fillRect(P+W,0,P,c.height);
+ return{cv:c,psm:'7',small:L.small,n:ls.length}}
 /* Aus erkanntem Text mögliche FINs (17 Zeichen) herausziehen; O/Q/I gibt es in FINs nicht.
    Bevorzugt werden Kandidaten, die als eigenes Wort stehen oder mit einem bekannten Herstellercode beginnen. */
 const WMI=['WVW','WV1','WV2','WVG','WAU','WUA','WP0','WP1','TMB','VSS','VWV','WMW','WBA','WDD','WDB','W0L','WF0','VF1','VF3','VF7','ZFA','YV1','SAL','SAJ','JTD','JMZ','KMH','KNA','TRU','LSV','LFV','3VW','1VW'];
-function vinCands(t){t=String(t||'').toUpperCase().replace(/[OQ]/g,'0').replace(/I/g,'1');const sc=new Map(),add=(c,s)=>{if(WMI.includes(c.slice(0,3)))s+=2;if((sc.get(c)??-1)<s)sc.set(c,s)};
+const VAG=['WVW','WV1','WV2','WVG','WAU','WUA','TMB','VSS','WP0','WP1','TRU','LSV','LFV'];
+const vnorm=t=>String(t||'').toUpperCase().replace(/[OQ]/g,'0').replace(/I/g,'1');
+/* Typische Lesefehler an Stellen korrigieren, an denen nur Ziffern bzw. nur „Z" stehen dürfen (ISO 3779, VW-Konzern) */
+const L2D={B:'8',S:'5',D:'0',U:'0',C:'0',G:'6',Z:'2',L:'1',T:'7',J:'1',A:'4',E:'8'};
+function fixVin(v){if(!v||v.length!==17)return v;const a=v.split('');
+ const zf=[3,4,5].filter(i=>a[i]==='Z').length>=2;
+ if(zf){[3,4,5].forEach(i=>{if('27'.includes(a[i]))a[i]='Z'})}
+ const vag=VAG.includes(a.slice(0,3).join(''))&&zf;if(vag&&'27'.includes(a[8]))a[8]='Z';
+ for(let i=vag?11:13;i<17;i++)if(L2D[a[i]])a[i]=L2D[a[i]];
+ return a.join('')}
+const vinOk=v=>/^[A-HJ-NPR-Z0-9]{13}[0-9]{4}$/.test(v||'');
+/* Sehr plausible FIN: bekannter Herstellercode, beim VW-Konzern zusätzlich Z an Stelle 9 und 6-stellige Seriennummer */
+const vinStrong=v=>vinOk(v)&&WMI.includes(v.slice(0,3))&&(!(VAG.includes(v.slice(0,3))&&v.slice(3,6)==='ZZZ')||(v[8]==='Z'&&/^[0-9]{6}$/.test(v.slice(11))));
+function vinCands(t){t=vnorm(t);const sc=new Map(),add=(c,s)=>{c=fixVin(c);if(WMI.includes(c.slice(0,3)))s+=2;if(vinOk(c))s+=1;if((sc.get(c)??-1)<s)sc.set(c,s)};
  for(const l of t.split(/\n/)){const tk=l.split(/[^A-Z0-9]+/).filter(Boolean);
   for(let a=0;a<tk.length;a++){let s='';for(let b=a;b<tk.length&&s.length<17;b++){s+=tk[b];if(s.length===17)add(s,3)}}
   const all=tk.join('');for(let i=0;i+17<=all.length;i++)add(all.slice(i,i+17),0)}
  return[...sc.entries()].sort((x,y)=>y[1]-x[1]).map(e=>e[0])}
 /* Bester Kandidat für ein noch unbekanntes Fahrzeug: muss als eigenes Wort stehen oder einen Herstellercode haben */
-function vinTop(t){t=String(t||'').toUpperCase().replace(/[OQ]/g,'0').replace(/I/g,'1');let best=null,bs=-1;
+function vinTop(t){t=vnorm(t);let best=null,bs=-1;
  for(const l of t.split(/\n/)){const tk=l.split(/[^A-Z0-9]+/).filter(Boolean);
-  for(let a=0;a<tk.length;a++){let s='';for(let b=a;b<tk.length&&s.length<17;b++){s+=tk[b];if(s.length===17){const v=3+(WMI.includes(s.slice(0,3))?2:0);if(v>bs){bs=v;best=s}}}}
-  const all=tk.join('');for(let i=0;i+17<=all.length;i++){const s=all.slice(i,i+17);if(WMI.includes(s.slice(0,3))&&2>bs){bs=2;best=s}}}
+  for(let a=0;a<tk.length;a++){let s='';for(let b=a;b<tk.length&&s.length<17;b++){s+=tk[b];if(s.length===17){s=fixVin(s);const v=3+(WMI.includes(s.slice(0,3))?2:0)+(vinOk(s)?1:0);if(v>bs){bs=v;best=s}}}}
+  const all=tk.join('');for(let i=0;i+17<=all.length;i++){const s=fixVin(all.slice(i,i+17));const v=WMI.includes(s.slice(0,3))?2+(vinOk(s)?1:0):-1;if(v>bs){bs=v;best=s}}}
  return best}
 /* Leicht verwechselbare Zeichen beim Lesen (8/B, 5/S, 0/D …) */
-const VCONF=['0D','0G','0C','8B','5S','2Z','6G','1L','1T','7T','4A','UV','MN','HN','3B','0U','EF','KX'];
+const VCONF=['0D','0G','0C','8B','5S','2Z','6G','1L','1T','7T','4A','UV','MN','HN','3B','0U','EF','KX','7Z','1J','8S','6B','9G','0Q'];
+const vconf=(x,y)=>VCONF.some(p=>p.includes(x)&&p.includes(y));
 /* Nur typische Lesefehler werden toleriert (max. 4). Echte andere Zeichen (z. B. …001 statt …002) zählen nie als Treffer,
    damit ein neues Auto derselben Serie nicht mit einem vorhandenen verwechselt wird. */
-function vinDist(a,b){let d=0;for(let i=0;i<17;i++){const x=a[i],y=b[i];if(x===y)continue;if(!VCONF.some(p=>p.includes(x)&&p.includes(y)))return 99;d++;if(d>4)return 99}return d}
+function vinDist(a,b){let d=0;for(let i=0;i<17;i++){const x=a[i],y=b[i];if(x===y)continue;if(!vconf(x,y))return 99;d++;if(d>4)return 99}return d}
 function vinMatch(c){const hits=S.veh.filter(v=>vinDist(c,v.fin)<99);return hits.length===1?hits[0]:null}
+/* Vorhandene FIN im gelesenen Text suchen, auch wenn ein Zeichen fehlt oder zu viel ist (max. 1) – echte andere Zeichen nie */
+function finCost(t,f){const n=t.length;if(n<15)return 99;let prev=new Array(n+1).fill(0);
+ for(let i=1;i<=17;i++){const cur=new Array(n+1);cur[0]=prev[0]+2.5;
+  for(let j=1;j<=n;j++){const a=f[i-1],b=t[j-1],sub=a===b?0:vconf(a,b)?1:99;cur[j]=Math.min(prev[j-1]+sub,prev[j]+2.5,cur[j-1]+2.5)}prev=cur}
+ return Math.min(...prev)}
+function knownIn(txt){const ls=vnorm(txt).split(/\n/).map(l=>l.replace(/[^A-Z0-9]/g,'')).filter(l=>l.length>=15);if(!ls.length)return null;
+ const hits=S.veh.filter(v=>v.fin&&v.fin.length===17&&ls.some(l=>finCost(l,v.fin)<=3.5));return hits.length===1?hits[0]:null}
 /* Mehrheitsentscheid je Stelle über die letzten Lesungen: einzelne Lesefehler heben sich auf */
 function vinVote(reads){if(!reads.length)return null;let v='',conf=1;for(let i=0;i<17;i++){const c={};reads.forEach(r=>c[r[i]]=(c[r[i]]||0)+1);const [ch,n]=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];v+=ch;conf=Math.min(conf,n/reads.length)}return{v,conf,n:reads.length}}
 function scanTorch(){try{const tr=scanStream&&scanStream.getVideoTracks()[0];if(!tr)return;torchOn=!torchOn;tr.applyConstraints({advanced:[{torch:torchOn}]}).catch(()=>{});$('sct').classList.toggle('on',torchOn)}catch(e){}}
+/* Rückkameras: viele Android-Handys starten sonst mit der Weitwinkel-Kamera, die auf kurze Distanz nicht scharf stellt */
+let scanCams=[],scanCam=null,scanSid=0;
+const camBad=l=>/wide|ultra|weitwinkel|tele|macro|depth|tiefe|infrared/i.test(l||'');
+async function backCams(){try{const ds=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput');
+ const back=ds.filter(d=>/back|rear|rück|environment|hinten|traseira|arrière/i.test(d.label));return back.length?back:ds}catch(e){return[]}}
+async function openCam(id){const v={width:{ideal:1920},height:{ideal:1080}};
+ return navigator.mediaDevices.getUserMedia({video:id?{...v,deviceId:{exact:id}}:{...v,facingMode:{ideal:'environment'}},audio:false})}
+async function scanSwitch(){const i=scanCams.findIndex(c=>c.deviceId===scanCam);const n=scanCams[(i+1)%scanCams.length];if(!n)return;
+ try{localStorage.setItem('tqsCam',n.deviceId)}catch(e){}stopScan();setTimeout(startScan,80)}
 async function startScan(){const s=m=>{if($('scs'))$('scs').textContent=m},off=()=>{if($('scb'))$('scb').hidden=true};scanTyped=false;torchOn=false;
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){off();return s('Kamera hier nicht verfügbar. Bitte die FIN eintippen.')}
- try{scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false})}catch(e){off();return s('Kein Kamerazugriff. Bitte im Browser erlauben oder die FIN eintippen.')}
+ /* OCR schon laden, während die Kamera startet */
+ let ocrReady=null;const ocrL=ocrWorker(p=>{if(scanRun&&!ocrReady&&p!=null)s(`Texterkennung wird geladen … ${Math.round(p*100)} %`)}).then(w=>ocrReady=w);ocrL.catch(()=>{});
+ let want=null;try{want=localStorage.getItem('tqsCam')}catch(e){}
+ try{scanStream=await openCam(want).catch(()=>openCam(null))}catch(e){off();return s('Kein Kamerazugriff. Bitte im Browser erlauben oder die FIN eintippen.')}
+ if(!$('scv')){stopScan();return}
+ try{scanCams=await backCams();const cur=scanStream.getVideoTracks()[0],st=cur.getSettings?cur.getSettings():{};scanCam=st.deviceId||null;
+  /* beim ersten Mal: Hauptkamera statt Weitwinkel wählen */
+  if(!want&&scanCams.length>1){const curL=(scanCams.find(c=>c.deviceId===scanCam)||{}).label||'';
+   if(camBad(curL)||/camera2 [1-9]/.test(curL)){const best=scanCams.find(c=>!camBad(c.label)&&/camera2 0|camera 0/.test(c.label))||scanCams.find(c=>!camBad(c.label));
+    if(best&&best.deviceId!==scanCam){scanStream.getTracks().forEach(t=>t.stop());scanStream=await openCam(best.deviceId);scanCam=best.deviceId}}}
+  if($('scsw'))$('scsw').hidden=scanCams.length<2}catch(e){}
  const vd=$('scv'),box=$('scb');if(!vd){stopScan();return}vd.srcObject=scanStream;try{await vd.play()}catch(e){}
  try{const tr=scanStream.getVideoTracks()[0],cap=tr.getCapabilities?tr.getCapabilities():{};
   if(cap.focusMode&&cap.focusMode.includes('continuous'))tr.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});
   if(cap.torch&&$('sct'))$('sct').hidden=false;
   if(cap.zoom&&cap.zoom.max>cap.zoom.min&&$('scz')){const z=$('sczr');z.min=cap.zoom.min;z.max=Math.min(cap.zoom.max,8);z.step=cap.zoom.step||0.1;z.value=cap.zoom.min;$('scz').hidden=false;
    z.addEventListener('input',()=>tr.applyConstraints({advanced:[{zoom:+z.value}]}).catch(()=>{}))}}catch(e){}
- scanRun=true;const reads=[];let det=null,ocr=null,busy=false,vari=0,lastV='',same=0;
- s('Texterkennung wird geladen … (beim ersten Mal ca. 3 MB)');
+ scanRun=true;const sid=++scanSid,live=()=>scanRun&&sid===scanSid&&!done,reads=[],sleep=ms=>new Promise(r=>setTimeout(r,ms));let det=null,k=0,pick=0,miss=0,lastV='',same=0,lastMsg=0,done=false;
+ const say=(m,force)=>{const t=Date.now();if(force||t-lastMsg>700){lastMsg=t;s(m)}};
+ if(!ocrReady)s('Texterkennung wird geladen …');
  scanDetector().then(d=>det=d).catch(()=>{});
- ocrWorker(p=>{if(scanRun&&!ocr&&p!=null)s(`Texterkennung wird geladen … ${Math.round(p*100)} %`)}).then(w=>{ocr=w;if(scanRun)s('FIN waagrecht und möglichst groß in den gelben Rahmen halten.')})
-  .catch(()=>{if(scanRun)s(det?'Texterkennung nicht verfügbar (Internet nötig). Barcodes werden weiter erkannt.':'Texterkennung konnte nicht geladen werden (Internet nötig). Bitte die FIN eintippen.')});
- const exact=fin=>{const m=S.veh.find(v=>v.fin===fin)||vinMatch(fin);if(m){scanHit(m.fin,'Texterkennung');return true}return false};
- const loop=async()=>{if(!scanRun||!$('scv'))return;
-  try{if(vd.readyState>=2&&det){const r=await det.detect(vd);for(const c of r){const m=String(c.rawValue||'').toUpperCase().replace(/[^A-Z0-9]/g,' ').match(/[A-HJ-NPR-Z0-9]{17}/);if(m){scanHit(m[0],'Barcode');return}}}}catch(e){}
-  if(ocr&&!busy&&vd.readyState>=2){busy=true;try{const cv=ocrFrame(vd,box,vari);vari=(vari+1)%3;if(cv){const r=await ocr.recognize(cv);if(!scanRun)return;
-    const txt=r.data.text||'',cs=vinCands(txt);
-    for(const c of cs)if(exact(c))return;
-    const top=vinTop(txt)||cs[0];const rd=$('scrd');
-    if(top){reads.push(top);while(reads.length>9)reads.shift();
-     const vo=vinVote(reads);if(exact(vo.v))return;
-     if(rd){rd.hidden=false;rd.textContent='gelesen: '+vo.v}
-     if(!scanTyped&&$('scq')){$('scq').value=vo.v;scanSearch(vo.v,true)}
-     same=vo.v===lastV?same+1:0;lastV=vo.v;
-     if(vo.n>=4&&vo.conf>=.6&&same>=2){scanHit(vo.v,'Texterkennung');return}
-     s(vo.n<3?'Lese … bitte ruhig halten.':`Lese … ${Math.round(vo.conf*100)} % sicher. Stimmt die FIN unten schon, einfach übernehmen.`)}
-    else if(rd){const t=txt.replace(/\s+/g,' ').trim();rd.hidden=!t;rd.textContent=t?'gelesen: '+t.slice(0,24):''}}}catch(e){}busy=false}
-  setTimeout(loop,ocr?60:200)};
- loop()}
+ const hit=(fin,how)=>{if(!live())return true;done=true;scanHit(fin,how);return true};
+ const exact=fin=>{const m=S.veh.find(v=>v.fin===fin)||vinMatch(fin);return m?hit(m.fin,'Texterkennung'):false};
+ /* Barcodes: nativ oft, Ersatzbibliothek selten (kostet sonst Rechenzeit für die Texterkennung) */
+ const bc=async()=>{if(!live()||!$('scv'))return;const nat='BarcodeDetector' in window&&det&&!det.__pony;
+  try{if(vd.readyState>=2&&det){const r=await det.detect(vd);for(const c of r){const m=vnorm(c.rawValue).replace(/[^A-Z0-9]/g,' ').match(/[A-HJ-NPR-Z0-9]{17}/);if(m)return hit(m[0],'Barcode')}}}catch(e){}
+  setTimeout(bc,nat?250:1500)};
+ setTimeout(bc,400);
+ const handle=txt=>{const cs=vinCands(txt);for(const c of cs)if(exact(c))return true;
+  const kn=knownIn(txt);if(kn)return hit(kn.fin,'Texterkennung');
+  /* Für die automatische Übernahme nur eigenständige 17-stellige Wörter oder Kandidaten mit Herstellercode;
+     Ausschnitte aus zu langen Lesungen werden nur angezeigt */
+  const sure=vinTop(txt),top=sure||cs[0],rd=$('scrd');
+  if(top){if(sure)miss=0;else miss++;reads.push(top);while(reads.length>8)reads.shift();
+   const vo=vinVote(reads);if(exact(vo.v))return true;
+   if(rd){rd.hidden=false;rd.textContent='gelesen: '+vo.v}
+   if(!scanTyped&&$('scq')){$('scq').value=vo.v;scanSearch(vo.v,true)}
+   same=vo.v===lastV?same+1:0;lastV=vo.v;
+   /* zwei gleiche Lesungen einer gültigen FIN genügen */
+   const agree=reads.slice(-5,-1).filter(x=>x===top).length;
+   if(sure&&(vinStrong(top)&&agree>=1||vinOk(top)&&agree>=2))return hit(top,'Texterkennung');
+   if(vo.n>=3&&vo.conf>=.6&&same>=1&&vinStrong(vo.v))return hit(vo.v,'Texterkennung');
+   say(vo.n<2?'Lese … bitte ruhig halten.':`Lese … ${Math.round(vo.conf*100)} % sicher. Stimmt die FIN unten schon, einfach übernehmen.`)}
+  else{miss++;const t=txt.replace(/\s+/g,' ').trim();if(rd){rd.hidden=!t;rd.textContent=t?'gelesen: '+t.slice(0,24):''}if(t)say('Nur die FIN-Zeile waagrecht in den Rahmen halten.')}
+  return false};
+ const run=async w=>{while(live()&&$('scv')){
+  if(vd.readyState<2){await sleep(80);continue}
+  const vari=miss>=4?[0,1,0,2][k%4]:0;k++;let p=null;try{p=ocrPrep(vd,box,vari,pick)}catch(e){}
+  if(!p){await sleep(100);continue}
+  if(!p.cv){say(p.why==='small'?'Schrift zu klein: näher heran oder zoomen.':'Keine Schrift im Rahmen: FIN-Zeile in den gelben Rahmen halten.');await sleep(90);continue}
+  if(p.small)say('Etwas näher heran oder zoomen – die Schrift ist sehr klein.');
+  try{   const r=await w.recognize(p.cv);if(!live())return;const m0=miss;if(handle(r.data.text||''))return;
+   /* keine FIN in dieser Zeile → beim nächsten Bild die nächste Zeile im Rahmen probieren */
+   if(miss>m0)pick=(pick+1)%Math.max(1,Math.min(3,p.n||1))}catch(e){await sleep(150)}}};
+ ocrL.then(()=>{if(!scanRun)return;say('FIN-Zeile waagrecht in den gelben Rahmen halten.',true);ocrWs.forEach(run);ocrSecond().then(w2=>{if(w2&&live())run(w2)})})
+  .catch(()=>{if(scanRun)s(det?'Texterkennung nicht verfügbar (Internet nötig). Barcodes werden weiter erkannt.':'Texterkennung konnte nicht geladen werden (Internet nötig). Bitte die FIN eintippen.')})}
+/* Wer den Scanner schon benutzt hat: Texterkennung im Hintergrund vorbereiten, damit sie sofort bereit ist */
+setTimeout(()=>{try{if(localStorage.getItem('tqsOcr')&&matchMedia('(pointer:coarse)').matches)(window.requestIdleCallback||setTimeout)(()=>ocrWorker().catch(()=>{}))}catch(e){}},5000);
 function stopScan(){scanRun=false;if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null}}
 function scanHit(fin,how){stopScan();try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}const v=S.veh.find(x=>x.fin===fin);
  if(v){closeM();openVeh(fin);toast(`FIN ${fin} erkannt${how?' ('+how+')':''}`);return}
