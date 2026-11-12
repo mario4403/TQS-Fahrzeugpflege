@@ -1,0 +1,59 @@
+name: Erinnerungs-E-Mails
+
+# Läuft stündlich. Das Skript entscheidet selbst, wer gerade (Uhrzeit erreicht, heute noch keine E-Mail) dran ist.
+# Ohne eingerichtete Secrets passiert nichts. Anleitung: tools/reminder/README.md
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Nur testen (nichts verschicken, Inhalt im Protokoll anzeigen)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: erinnerungen
+  cancel-in-progress: false
+
+jobs:
+  senden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      MAIL_FROM: ${{ secrets.MAIL_FROM }}
+      DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+    steps:
+      - name: Prüfen, ob eingerichtet
+        id: cfg
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT fehlt – Versand ist noch nicht eingerichtet (siehe tools/reminder/README.md)."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.cfg.outputs.ok == 'true'
+        with:
+          sparse-checkout: tools/reminder
+      - uses: actions/setup-node@v4
+        if: steps.cfg.outputs.ok == 'true'
+        with:
+          node-version: 20
+      - name: Abhängigkeiten installieren
+        if: steps.cfg.outputs.ok == 'true'
+        working-directory: tools/reminder
+        run: npm install --no-audit --no-fund --loglevel=error
+      - name: E-Mails verschicken
+        if: steps.cfg.outputs.ok == 'true'
+        working-directory: tools/reminder
+        run: node send.mjs

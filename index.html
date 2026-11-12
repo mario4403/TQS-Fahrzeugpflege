@@ -271,6 +271,7 @@ main{padding-bottom:110px}
 .crop-z{display:flex;align-items:center;gap:8px}.crop-z input[type=range]{flex:1;min-width:60px;min-height:0!important}
 .crop-b{display:flex;gap:8px;justify-content:flex-end}.crop-b .btn{flex:0 1 auto}
 .phrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 4px}.phrow .hint{flex:1 1 180px}
+.mp td,.mp th{padding:8px 10px;vertical-align:top}.mp .mp-loc{background:var(--sf2);font-weight:600}.mp .mp-loc .ic{width:14px;height:14px;vertical-align:-2px}
 .steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px;line-height:1.45}
 .pf-seg{display:inline-grid;grid-auto-flow:column;gap:4px;background:var(--grb);border-radius:9px;padding:3px}
 .pf-seg button{border:0;background:transparent;padding:6px 11px;border-radius:7px;font-weight:600;font-size:13px;color:var(--mu);display:flex;align-items:center;gap:6px}
@@ -1368,6 +1369,7 @@ function sett(){const c=S.cfg;
  <div class="th-seg" role="radiogroup" aria-label="Erscheinungsbild">${[['light','☀︎ Hell'],['dark','☾ Dunkel'],['auto','Automatisch']].map(o=>`<button role="radio" aria-checked="${th===o[0]}" class="${th===o[0]?'on':''}" onclick="setTheme('${o[0]}')">${o[1]}</button>`).join('')}</div>
  <span class="hint">„Automatisch“ folgt der Einstellung deines Geräts. Die Auswahl gilt für dieses Gerät und diesen Browser.</span></div></section>
  ${appPanel()}
+ ${mailPanel()}
  <section class="panel"><div class="ph"><h3>Pflegeprogramm Neufahrzeuge</h3><span class="muted">TQS Anlage 1, Abschnitt 3.2 · Fristen ab Eingangsdatum</span></div>
  <div class="scroll"><table class="mx"><tr><th>Termin</th><th>Reifendruck</th><th>12V-Batterie</th><th>HV-Batterie</th><th>Bremsen</th><th>Folie</th><th>Säuberung</th></tr>
  ${rows.map(r=>`<tr><td><b>${r[0]}</b></td>${r[1]==='wdh'?`<td colspan="6" class="muted" style="text-align:center">${r[2]}</td>`:r[1].map(x=>`<td>${x?icon(x):''}</td>`).join('')}</tr>`).join('')}</table></div>
@@ -1384,6 +1386,42 @@ function sett(){const c=S.cfg;
 async function setTranspFree(on){if(on&&!confirm('Freie Bearbeitung des Transportmodus wirklich einschalten? Das gilt für alle Benutzer.'))return;
  try{await db.doc('settings/cfg').set({transpFree:on},{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}
  S.cfg={...S.cfg,transpFree:on};log('',`Freie Bearbeitung des Transportmodus ${on?'eingeschaltet':'ausgeschaltet'}`);render();toast(on?'Transportmodus ist jetzt frei bearbeitbar.':'Freie Bearbeitung ausgeschaltet.')}
+/* ---------- Erinnerungs-E-Mails ----------
+   Gespeichert in settings/reminders → r.<Benutzer-ID>. Verschickt werden sie von einem GitHub-Actions-Zeitplan
+   (tools/reminder), der stündlich prüft, wem heute noch keine E-Mail geschickt wurde. Standard: aus. */
+const myRem=()=>{const u=S.acct&&S.acct.uid,r=(S.rem&&S.rem.r&&u&&S.rem.r[u])||{};return{on:!!r.on,email:r.email||(S.acct&&S.acct.email)||'',hour:r.hour??6,overdue:r.overdue!==false,empty:!!r.empty,last:r.last||'',lastN:r.lastN??null,err:r.err||''}};
+function mailToday(o){const T=TD(),ts=activeTasks().filter(t=>t.status!=='Erledigt'&&(t.due===T||(o.overdue&&t.due<T)));
+ return ts.map(t=>({t,v:veh(t.fin)})).sort((a,b)=>NAT.compare(a.v.loc||'~',b.v.loc||'~')||NAT.compare(a.v.spot||'~',b.v.spot||'~')||NAT.compare(a.v.fin,b.v.fin)||(a.t.due<b.t.due?-1:1))}
+function mailPanel(){const m=myRem(),run=S.rem&&S.rem.run,ok=run&&run.at&&(Date.now()-new Date(run.at).getTime())<26*3600e3,n=mailToday(m).length;
+ const st=!m.on?'':m.err?`<p class="msg err" style="display:block;margin:0">Letzter Versand fehlgeschlagen: ${E(m.err)}</p>`:
+  !ok?`<p class="msg err" style="display:block;margin:0">Der automatische Versand ist noch nicht eingerichtet bzw. lief seit über einem Tag nicht. Das muss einmalig der Administrator erledigen (Anleitung im Repository unter <span class="mono">tools/reminder</span>).</p>`:
+  `<p class="hint" style="margin:0">Versand aktiv. ${m.last?`Letzte E-Mail an dich: ${fmt(m.last)}${m.lastN!=null?` (${m.lastN} ${m.lastN===1?'Maßnahme':'Maßnahmen'})`:''}.`:'Noch keine E-Mail an dich verschickt.'}</p>`;
+ return`<section class="panel" style="max-width:640px"><div class="ph"><h3>Erinnerungs-E-Mails</h3>${m.on?'<span class="pill s-ok">an</span>':'<span class="pill s-gr">aus</span>'}</div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
+ <p style="margin:0">Jeden Tag eine E-Mail mit allen Maßnahmen, die an diesem Tag fällig sind – sortiert nach Standort und Stellplatz wie im Rundgang. An Tagen ohne fällige Maßnahmen kommt keine E-Mail.</p>
+ <button class="toggle ${m.on?'on':''}" onclick="saveRem({on:${!m.on}})" aria-pressed="${m.on}"><span class="sw-t"></span><span><b>Erinnerungs-E-Mails ${m.on?'an':'aus'}</b><small>${m.on?`täglich um ca. ${m.hour}:00 Uhr an ${E(m.email)}`:'standardmäßig ausgeschaltet'}</small></span></button>
+ ${m.on?`<div class="fg">
+  <label class="f full">E-Mail-Adresse<input type="email" id="rem-mail" value="${E(m.email)}" autocomplete="email" inputmode="email"></label>
+  <label class="f">Uhrzeit<select id="rem-hour">${[5,6,7,8,9,10,12,14].map(x=>`<option value="${x}" ${x===m.hour?'selected':''}>ca. ${x}:00 Uhr</option>`).join('')}</select></label>
+  <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="rem-od" ${m.overdue?'checked':''}> Überfällige Maßnahmen mitschicken</label>
+  <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="rem-empty" ${m.empty?'checked':''}> Auch eine kurze E-Mail schicken, wenn nichts ansteht</label>
+ </div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" id="rem-save" onclick="saveRemForm()">Speichern</button><button class="btn" onclick="mailPreview()">Vorschau der heutigen E-Mail (${n})</button></div>
+ <span class="hint">Die Uhrzeit ist ungefähr: Der Versand läuft stündlich und kann sich um bis zu eine Stunde verzögern.</span>`:''}
+ ${st}</div></section>`}
+async function saveRem(p){const u=S.acct&&S.acct.uid;if(!u)return;const cur=myRem(),d={on:cur.on,email:cur.email,hour:cur.hour,overdue:cur.overdue,empty:cur.empty,name:me(),...p,changed:new Date().toISOString()};
+ try{await db.doc('settings/reminders').set({r:{[u]:d}},{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}
+ S.rem=S.rem||{};S.rem.r=S.rem.r||{};S.rem.r[u]={...(S.rem.r[u]||{}),...d};render();
+ if('on' in p)toast(p.on?'Erinnerungs-E-Mails eingeschaltet.':'Erinnerungs-E-Mails ausgeschaltet.')}
+async function saveRemForm(){const em=$('rem-mail').value.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))return toast('Bitte eine gültige E-Mail-Adresse eingeben.');
+ await saveRem({email:em,hour:+$('rem-hour').value,overdue:$('rem-od').checked,empty:$('rem-empty').checked});toast('Gespeichert.')}
+function mailPreview(){const m=myRem(),l=mailToday({overdue:$('rem-od')?$('rem-od').checked:m.overdue}),T=TD(),late=l.filter(x=>x.t.due<T).length;
+ let last=null,rows='';l.forEach(({t,v})=>{const loc=v.loc||'Ohne Standort';if(loc!==last){rows+=`<tr><td colspan="4" class="mp-loc">${IC.pin} ${E(loc)}</td></tr>`;last=loc}
+  rows+=`<tr><td class="mono">${E(v.spot)||'–'}</td><td><b>${vname(v)}</b><br><span class="mono muted">${E(v.fin)}</span></td><td>${E(t.title)}</td><td>${t.due<T?`<span class="pill s-ba">${rel(t.due)}</span>`:'heute'}</td></tr>`});
+ modal(`<header><div style="flex:1"><h3>Vorschau: E-Mail von heute</h3><span class="muted">an ${E($('rem-mail')?$('rem-mail').value:m.email)}</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><p style="margin:0 0 10px"><b>Betreff:</b> TQS Fahrzeugpflege: ${l.length} ${l.length===1?'Maßnahme':'Maßnahmen'} am ${fmt(T)}${late?` (davon ${late} überfällig)`:''}</p>
+ ${l.length?`<div class="scroll" style="border:1px solid var(--bd);border-radius:10px"><table class="mp"><tr><th>Stellplatz</th><th>Fahrzeug</th><th>Maßnahme</th><th>Fällig</th></tr>${rows}</table></div>`:`<p class="empty">Heute steht nichts an – ${m.empty?'es kommt eine kurze E-Mail.':'es wird keine E-Mail verschickt.'}</p>`}</div>
+ <footer><button class="btn p" onclick="closeM()">Schließen</button></footer>`)}
+
 /* ---------- Als App installieren ---------- */
 let installEvt=null;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;if(S.view==='set')soon()});
@@ -1559,10 +1597,10 @@ function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=
  if(!subscribed){subscribed=true;
   const sub=(n,k)=>unsubs.push(db.collection(n).onSnapshot(s=>{S[k]=s.docs.map(d=>({...d.data(),_id:d.id}));if(k==='tasks'){S.taskAll=S.tasks;S.tasks=S.taskAll.filter(t=>!t.removed)}if(k in S.ready)S.ready[k]=1;migrate();soon()},e=>{console.error(n,e);if(e.code==='permission-denied')toast('Kein Zugriff auf die Datenbank. Sind die Firestore-Regeln eingetragen?')}));
   sub('vehicles','veh');sub('tasks','tasks');sub('problems','prob');sub('log','log');
-  unsubs.push(db.doc('settings/cfg').onSnapshot(s=>{S.cfg={...DEF,...(s.data()||{})};soon()},e=>console.error(e)))}
+  unsubs.push(db.doc('settings/cfg').onSnapshot(s=>{S.cfg={...DEF,...(s.data()||{})};soon()},e=>console.error(e)),db.doc('settings/reminders').onSnapshot(s=>{S.rem=s.data()||{};if(S.view==='set')soon()},e=>console.warn('Erinnerungen',e)))}
  render()}
 async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks)return;S.migrated=true;try{for(const v of S.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
-function signedIn(u){S.acct={email:u.email,name:u.displayName||u.email.split('@')[0]};enterApp()}
+function signedIn(u){S.acct={email:u.email,uid:u.uid,name:u.displayName||u.email.split('@')[0]};enterApp()}
 function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.taskAll=[];S.prob=[];S.log=[];
  const was=!!S.acct;S.acct=null;$('mod').hidden=true;$('mb').innerHTML='';$('app').hidden=true;$('boot').hidden=true;$('auth').hidden=false;if(was){authTab('login');msg('mLogin','Du wurdest abgemeldet.',1)}}
 
