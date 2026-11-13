@@ -128,7 +128,12 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 
 /* App shell */
-#app:not([hidden]){display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+/* Aktualisieren-Knopf: am Computer oben rechts auf der Seite, am Handy in der oberen Leiste */
+.relb{display:inline-flex;align-items:center;justify-content:center;border:0;background:none;color:var(--mu);width:34px;height:34px;border-radius:8px;cursor:pointer;padding:0}
+.relb:hover{background:rgba(127,127,127,.14);color:var(--tx)}.relb svg{width:18px;height:18px}
+.relb.spin svg{animation:relspin .8s linear infinite}@keyframes relspin{to{transform:rotate(360deg)}}
+.relb-d{position:absolute;top:8px;right:12px;z-index:5}.relb-m{display:none}
+#app:not([hidden]){position:relative;display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
 nav{background:var(--nav);color:var(--navtx);display:flex;flex-direction:column;gap:22px;padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:20px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:14px;position:sticky;top:0;height:100vh;height:100dvh}
 nav .brand{padding:0 6px}
 .nl{display:flex;flex-direction:column;gap:2px}
@@ -465,6 +470,7 @@ body.mopen{overflow:hidden}
  .nl a .cnt{position:absolute;top:2px;right:0}
  nav .scanb{display:none}
  .me{width:44px;height:44px;justify-content:center;margin:0;flex:0 0 auto}
+ .relb-d{display:none}.relb-m{display:inline-flex;width:44px;height:44px;color:var(--navtx);flex:0 0 auto;order:9}
  /* untere Navigationsleiste */
  html{scroll-padding-top:calc(76px + env(safe-area-inset-top,0px));scroll-padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
  #tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--nav);border-top:1px solid rgba(255,255,255,.08);
@@ -568,7 +574,7 @@ body.mopen{overflow:hidden}
  </section>
 </div>
 
-<div id="app" hidden><nav id="nav"></nav><main id="main"></main><div id="tabbar" role="navigation" aria-label="Hauptnavigation"></div></div>
+<div id="app" hidden><button class="relb relb-d" onclick="appReload(this)" title="App aktualisieren (neueste Version laden)" aria-label="App aktualisieren"></button><nav id="nav"></nav><main id="main"></main><div id="tabbar" role="navigation" aria-label="Hauptnavigation"></div></div>
 <div id="mod" hidden><div class="sheet" id="mb"></div></div>
 <div id="alrt" hidden><div class="alert-box" id="ab"></div></div>
 <div id="toast" hidden></div>
@@ -592,6 +598,7 @@ const ls={get(k,s){try{return JSON.parse((s?sessionStorage:localStorage).getItem
 /* ---------- Icons ---------- */
 const SV=(p,c)=>`<svg class="ic ${c||''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const IC={
+ reload:SV('<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>'),
  b12:SV('<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h2v2M15 7V5h2v2M6.5 13h3M14.5 13h3M16 11.5v3"/>'),
  hv:SV('<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h2v2M15 7V5h2v2M13 9.5l-2.5 3.5h3L11 16.5"/>'),
  reifen:SV('<circle cx="10" cy="13" r="7"/><circle cx="10" cy="13" r="3"/><circle cx="18" cy="5" r="2.5"/><path d="M16.5 7l-2 2.5"/>'),
@@ -1748,13 +1755,21 @@ document.addEventListener('change',e=>{if(e.target.id==='tourL'){S.tourL=e.targe
 /* ---------- Rahmen ---------- */
 const NAV=[['dash','Dashboard',IC.dash],['tour','Rundgang',IC.route],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car],['prob','Probleme',IC.warn],['set','Einstellungen',IC.set]];
 function renderNav(){const late=activeTasks().filter(t=>t.status!=='Erledigt'&&t.due<TD()).length,pr=S.prob.filter(p=>p.status==='Offen').length;
+ {const d=document.querySelector('.relb-d');if(d&&!d.innerHTML)d.innerHTML=IC.reload}
  $('nav').innerHTML=`<div class="brand"><img class="mk" src="icon-192.png?v=3" alt="TQS Fahrzeugpflege" width="34" height="34"><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
  <div class="nl">${NAV.map(n=>`<a data-v="${n[0]}" class="${(S.view===n[0]||(S.view==='veh'&&n[0]==='veh_l'))?'on':''}" onclick="go('${n[0]}')" title="${n[1]}">${n[2]}<span class="lb">${n[1]}</span>${n[0]==='dash'&&late?`<span class="cnt">${late}</span>`:n[0]==='prob'&&pr?`<span class="cnt">${pr}</span>`:''}</a>`).join('')}</div>
  <button class="scanb" onclick="scanModal()" title="FIN scannen oder suchen">${IC.scan}<span class="lb">FIN scannen</span></button>
+ <button class="relb relb-m" onclick="appReload(this)" title="App aktualisieren" aria-label="App aktualisieren">${IC.reload}</button>
  <button class="me" onclick="profileModal()" title="Profil"><span class="av">${E(initials(me()))}</span><div><b>${E(me())}</b><small>${E(S.acct.email)}</small></div></button>`;
  const on=v=>S.view===v||(S.view==='veh'&&v==='veh_l'),TB=[['dash','Start',IC.dash,late],['tour','Rundgang',IC.route],['scan','Scannen',IC.scan],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car]];
  $('tabbar').innerHTML=TB.map(([v,l,ic,c])=>v==='scan'?`<button class="tb-scan" onclick="scanModal()" aria-label="FIN scannen"><span class="tb-c">${ic}</span><span>${l}</span></button>`:
   `<button class="${on(v)?'on':''}" aria-current="${on(v)?'page':'false'}" onclick="go('${v}')">${ic}<span>${l}</span>${c?`<span class="tb-n">${c>99?'99+':c}</span>`:''}</button>`).join('')}
+/* Neueste Version laden: Browser-Zwischenspeicher für die Seite umgehen, dann neu laden (Daten bleiben erhalten) */
+async function appReload(b){if(b)b.classList.add('spin');
+ try{const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(reg)await reg.update().catch(()=>{});
+  await Promise.all([fetch('./',{cache:'reload'}),fetch('./index.html',{cache:'reload'})].map(p=>p.catch(()=>{})));
+  if(window.caches)for(const k of await caches.keys()){const c=await caches.open(k);await c.delete('./');await c.delete('./index.html')}}catch(e){}
+ location.reload()}
 function go(v){const same=S.view===v;S.view=v;render();if(!same)window.scrollTo(0,0)}
 /* Datenänderungen kommen oft in Schüben: einmal gesammelt neu zeichnen, und nie mitten im Antippen,
    damit sich nichts unter dem Finger verschiebt */
