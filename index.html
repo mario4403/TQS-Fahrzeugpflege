@@ -87,6 +87,7 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 .s-ok{background:var(--okb);color:var(--ok)}.s-wa{background:var(--wab);color:var(--wa)}.s-ba{background:var(--bab);color:var(--ba)}.s-gr{background:var(--grb);color:var(--gr)}
 .toggle.used .sw-t{display:none}
 .used-chk{align-items:flex-start;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;margin:4px 0 10px}.used-chk span{display:flex;flex-direction:column;gap:2px}.used-chk small{opacity:.75;font-weight:400}
+@keyframes nudge{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}.nudge{animation:nudge .25s ease}
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--grb);color:var(--gr)}
 .tag.ac{background:var(--acs);color:var(--ac)}
 .ic{width:18px;height:18px;flex-shrink:0}
@@ -746,11 +747,14 @@ const low=r=>r.cat==='b12'?r.v<S.cfg.v12:r.v<S.cfg.hv;
 function battLow(){const last={};readings().forEach(r=>{if(!veh(r.t.fin).archived)last[r.t.fin+r.cat]=r});return[...new Set(Object.values(last).filter(low).map(r=>r.t.fin))]}
 
 /* ---------- Modal / Alert / Toast ---------- */
-function modal(h){$('mb').innerHTML=h;$('mod').hidden=false;$('mb').scrollTop=0;const s=$('mb').querySelector('.sb');if(s)s.scrollTop=0}
+let modalLock=false;
+function modal(h){modalLock=false;$('mb').innerHTML=h;$('mod').hidden=false;$('mb').scrollTop=0;const s=$('mb').querySelector('.sb');if(s)s.scrollTop=0}
 ['mod','alrt'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(()=>document.body.classList.toggle('mopen',['mod','alrt'].some(i=>{const x=document.getElementById(i);return x&&!x.hidden}))).observe(el,{attributes:true,attributeFilter:['hidden']})});
-function closeM(){if(typeof stopScan==='function')stopScan();$('mod').hidden=true;$('mb').innerHTML='';render()}
-$('mod').addEventListener('click',e=>{if(e.target.id==='mod')closeM()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('alrt').hidden)closeA();else if(!$('mod').hidden)closeM()}});
+function closeM(){modalLock=false;if(typeof stopScan==='function')stopScan();$('mod').hidden=true;$('mb').innerHTML='';render()}
+/* Gesperrte Fenster (Fahrzeug anlegen/bearbeiten) schließen nur über „Abbrechen“ – Klick daneben oder Esc wackelt nur kurz */
+function modalNudge(){const b=$('mb');b.classList.remove('nudge');void b.offsetWidth;b.classList.add('nudge')}
+$('mod').addEventListener('click',e=>{if(e.target.id==='mod'){if(modalLock)modalNudge();else closeM()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('alrt').hidden)closeA();else if(!$('mod').hidden){if(modalLock)modalNudge();else closeM()}}});
 function chargeAlert(cat,v,fin){const x=veh(fin);$('ab').innerHTML=`<div class="top">${IC.warn}<h3>Bitte Laden!</h3></div><div class="bd">
  <div class="val num">${cat==='b12'?nf(v,2)+' V':nf(v)+' %'}</div>
  <p style="margin:0">${cat==='b12'?`Die 12V-Batterie liegt unter <b>${nf(S.cfg.v12,1)} V</b>.`:`Die HV-Batterie liegt unter <b>${nf(S.cfg.hv)} %</b>.`}<br>${vname(x)} · <span class="mono">${E(fin)}</span></p>
@@ -927,7 +931,7 @@ function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(
  <div style="display:flex;gap:18px;flex-wrap:wrap"><label class="chk"><input type="checkbox" id="c3" ${v.hyb?'checked':''}>Hybrid</label><label class="chk"><input type="checkbox" id="c4" ${v.ev?'checked':''}>Elektro</label><label class="chk"><input type="checkbox" id="c2" ${v.solar?'checked':''}>Solarpanel</label></div>
  <p class="hint" id="vhint"></p>
  <p class="hint" id="vplan"></p><p class="msg err" id="verr"></p></div>
- <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev();
+ <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev();modalLock=true;
  $('vph').addEventListener('change',e=>{pickPhoto(e.target.files&&e.target.files[0]);e.target.value=''})}
 /* ---------- Foto vergrößern (Fahrzeugseite) ---------- */
 const PHL={};/* geladene große Fotos */
