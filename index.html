@@ -1759,7 +1759,7 @@ function renderNav(){const late=activeTasks().filter(t=>t.status!=='Erledigt'&&t
  $('nav').innerHTML=`<div class="brand"><img class="mk" src="icon-192.png?v=3" alt="TQS Fahrzeugpflege" width="34" height="34"><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
  <div class="nl">${NAV.map(n=>`<a data-v="${n[0]}" class="${(S.view===n[0]||(S.view==='veh'&&n[0]==='veh_l'))?'on':''}" onclick="go('${n[0]}')" title="${n[1]}">${n[2]}<span class="lb">${n[1]}</span>${n[0]==='dash'&&late?`<span class="cnt">${late}</span>`:n[0]==='prob'&&pr?`<span class="cnt">${pr}</span>`:''}</a>`).join('')}</div>
  <button class="scanb" onclick="scanModal()" title="FIN scannen oder suchen">${IC.scan}<span class="lb">FIN scannen</span></button>
- <button class="relb relb-m" onclick="appReload(this)" title="App aktualisieren" aria-label="App aktualisieren">${IC.reload}</button>
+ <button class="relb relb-m${syncWait.size?' spin':''}" onclick="appReload(this)" title="App aktualisieren" aria-label="App aktualisieren">${IC.reload}</button>
  <button class="me" onclick="profileModal()" title="Profil"><span class="av">${E(initials(me()))}</span><div><b>${E(me())}</b><small>${E(S.acct.email)}</small></div></button>`;
  const on=v=>S.view===v||(S.view==='veh'&&v==='veh_l'),TB=[['dash','Start',IC.dash,late],['tour','Rundgang',IC.route],['scan','Scannen',IC.scan],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car]];
  $('tabbar').innerHTML=TB.map(([v,l,ic,c])=>v==='scan'?`<button class="tb-scan" onclick="scanModal()" aria-label="FIN scannen"><span class="tb-c">${ic}</span><span>${l}</span></button>`:
@@ -1786,9 +1786,25 @@ document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;r
 document.addEventListener('change',e=>{if(e.target.id==='fl'){S.fl=e.target.value;render()}});
 
 let subscribed=false,unsubs=[];
+/* Aktualität: Beim Öffnen zeigt Firebase sofort den gespeicherten Stand und holt dann den neuen vom Server.
+   Solange der Server noch nicht geantwortet hat, dreht sich das Aktualisieren-Symbol. */
+const SYNC_K=['veh','tasks','prob','log'];let syncWait=new Set(SYNC_K),syncTO=0;
+function syncMark(){const on=syncWait.size>0;document.querySelectorAll('.relb').forEach(b=>b.classList.toggle('spin',on))}
+function syncStart(){syncWait=new Set(SYNC_K);syncMark();clearTimeout(syncTO);syncTO=setTimeout(()=>{syncWait.clear();syncMark()},20000)}
+function syncSeen(k,s){if(!s.metadata.fromCache&&syncWait.delete(k))syncMark()}
+/* App kommt aus dem Hintergrund zurück (Handy): Verbindung neu aufbauen, damit sofort der aktuelle Stand geladen wird,
+   statt des Stands vom letzten Mal. Nach langer Pause oder an einem neuen Tag die App ganz neu laden. */
+let hiddenAt=0,hiddenDay='';
+function appResume(){if(!hiddenAt||!S.acct)return;const away=Date.now()-hiddenAt;hiddenAt=0;
+ if((away>6*3600e3||hiddenDay!==TD())&&$('mod').hidden&&!scanRun){location.reload();return}
+ render();if(away<15e3)return;syncStart();
+ try{db.disableNetwork().then(()=>db.enableNetwork()).catch(()=>{})}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=Date.now();hiddenDay=TD()}else appResume()});
+addEventListener('pageshow',e=>{if(e.persisted){hiddenAt=hiddenAt||Date.now()-6*3600e3-1;appResume()}});
+addEventListener('online',()=>{if(S.acct){syncStart();try{db.enableNetwork()}catch(e){}}});
 function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=false;
- if(!subscribed){subscribed=true;
-  const sub=(n,k)=>unsubs.push(db.collection(n).onSnapshot(s=>{S[k]=s.docs.map(d=>({...d.data(),_id:d.id}));if(k==='tasks'){S.taskAll=S.tasks;S.tasks=S.taskAll.filter(t=>!t.removed)}if(k in S.ready)S.ready[k]=1;migrate();soon()},e=>{console.error(n,e);if(e.code==='permission-denied')toast('Kein Zugriff auf die Datenbank. Sind die Firestore-Regeln eingetragen?')}));
+ if(!subscribed){subscribed=true;syncStart();
+  const sub=(n,k)=>{let got=false;unsubs.push(db.collection(n).onSnapshot({includeMetadataChanges:true},s=>{syncSeen(k,s);/* nur Statuswechsel (Cache → Server), keine geänderten Daten: nicht neu zeichnen */if(got&&!s.docChanges().length)return;got=true;S[k]=s.docs.map(d=>({...d.data(),_id:d.id}));if(k==='tasks'){S.taskAll=S.tasks;S.tasks=S.taskAll.filter(t=>!t.removed)}if(k in S.ready)S.ready[k]=1;migrate();soon()},e=>{console.error(n,e);if(e.code==='permission-denied')toast('Kein Zugriff auf die Datenbank. Sind die Firestore-Regeln eingetragen?')}));}
   sub('vehicles','veh');sub('tasks','tasks');sub('problems','prob');sub('log','log');
   unsubs.push(db.doc('settings/cfg').onSnapshot(s=>{S.cfg={...DEF,...(s.data()||{})};soon()},e=>console.error(e)),db.doc('settings/reminders').onSnapshot(s=>{S.rem=s.data()||{};if(S.view==='set')soon()},e=>console.warn('Erinnerungen',e)))}
  render()}
