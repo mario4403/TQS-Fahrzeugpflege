@@ -1773,11 +1773,17 @@ async function appReload(b){if(b)b.classList.add('spin');
 function go(v){const same=S.view===v;S.view=v;render();if(!same)window.scrollTo(0,0)}
 /* Datenänderungen kommen oft in Schüben: einmal gesammelt neu zeichnen, und nie mitten im Antippen,
    damit sich nichts unter dem Finger verschiebt */
-let rT=0,touching=false,pend=false;
+let rT=0,touching=false,pend=false,touchT=0,blocked=false;
 function soon(){if(touching){pend=true;return}clearTimeout(rT);rT=setTimeout(()=>{pend=false;render()},90)}
-addEventListener('pointerdown',()=>{touching=true},{passive:true,capture:true});
-['pointerup','pointercancel'].forEach(e=>addEventListener(e,()=>{touching=false;if(pend)setTimeout(soon,250)},{passive:true,capture:true}));
-function render(){if(!db||!S.acct||$('app').hidden)return;if(!$('mod').hidden||!$('alrt').hidden)return;
+const touchEnd=()=>{touching=false;clearTimeout(touchT);if(pend)setTimeout(soon,250)};
+/* Sicherheitsnetz: kommt das Loslassen nie an (Maus aus dem Fenster gezogen, App gewechselt), nach 2 s trotzdem weiterzeichnen */
+addEventListener('pointerdown',()=>{touching=true;clearTimeout(touchT);touchT=setTimeout(touchEnd,2000)},{passive:true,capture:true});
+['pointerup','pointercancel'].forEach(e=>addEventListener(e,touchEnd,{passive:true,capture:true}));
+addEventListener('blur',touchEnd);document.addEventListener('visibilitychange',touchEnd);
+/* Während ein Fenster offen ist, wird die Seite dahinter nicht neu gezeichnet – sobald es zu ist, sofort nachholen,
+   sonst bleiben alte Zahlen stehen (z. B. nach dem Abhaken einer Maßnahme im Fenster) */
+{const mo=new MutationObserver(()=>{if(blocked&&$('mod').hidden&&$('alrt').hidden){blocked=false;soon()}});['mod','alrt'].forEach(id=>mo.observe($(id),{attributes:true,attributeFilter:['hidden']}))}
+function render(){if(!db||!S.acct||$('app').hidden)return;if(!$('mod').hidden||!$('alrt').hidden){blocked=true;return}
  S.vis=[];if(S.selMode&&S.selKey!==S.view+'|'+S.sel+'|'+S.tab){S.selMode=false;S.pick=new Set()}
  renderNav();const f={dash,tour,cal,veh_l:vlist,veh:vdet,prob:()=>`<div class="head"><h2>Probleme</h2><button class="btn p" onclick="probModal()">${IC.plus} Problem melden</button></div><section class="panel">${probTbl(S.prob.slice(),1)}</section>`,set:sett}[S.view]||dash;
  const a=document.activeElement&&document.activeElement.id;$('main').innerHTML=f()+(S.selMode?selBar():'');document.body.classList.toggle('has-sel',S.selMode);
