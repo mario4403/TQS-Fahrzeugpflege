@@ -91,6 +91,32 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 /* Skizzen im dunklen Design: Konturen aufhellen, damit dunkle Autos sichtbar bleiben */
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]) svg.car [stroke="#262626"]{stroke:#aab3bd}}
 :root[data-theme=dark] svg.car [stroke="#262626"]{stroke:#aab3bd}
+/* Aufklapp-Menüs */
+.dd{position:relative;display:inline-flex}
+.ddm{position:absolute;right:0;top:calc(100% + 6px);min-width:240px;background:var(--sf);border:1px solid var(--bd);border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.2);padding:6px;z-index:45;display:none;flex-direction:column}
+.dd.left .ddm{right:auto;left:0}.dd.open .ddm{display:flex}
+.ddm button{display:flex;align-items:center;gap:10px;border:0;background:none;padding:10px 12px;border-radius:8px;text-align:left;color:var(--tx);font:inherit;font-weight:500;cursor:pointer;min-height:42px;white-space:nowrap}
+.ddm button:hover,.ddm button:focus-visible{background:var(--grb);outline:0}.ddm button.d{color:var(--ba)}.ddm button .ic{flex:0 0 auto;width:18px;height:18px;color:var(--mu)}.ddm button.d .ic{color:var(--ba)}
+.ddm small{display:block;color:var(--mu);font-size:12px;font-weight:400}.ddm hr{border:0;border-top:1px solid var(--bd);margin:4px 2px}
+.split{display:inline-flex}.split>.btn{border-top-right-radius:0;border-bottom-right-radius:0}.split>.dd>.btn{border-top-left-radius:0;border-bottom-left-radius:0;padding-inline:9px;border-left:1px solid rgba(255,255,255,.35)}
+/* Filter-Leiste Fahrzeuge */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 14px}
+.chips button{border:1px solid var(--bd);background:var(--sf);color:var(--tx);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;gap:6px;align-items:center;min-height:34px}
+.chips button.on{background:var(--ac);border-color:var(--ac);color:#fff}.chips .n{font-size:11px;opacity:.75}.chips button.miss:not(.on) .n{color:var(--ba);opacity:1;font-weight:700}
+/* fehlende Daten */
+.tag.tag-miss{background:var(--bab);color:var(--ba);border-color:transparent;font-weight:600}
+.missbox{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:8px 12px;border-radius:10px;background:var(--bab);color:var(--ba);font-size:13px;font-weight:500}
+/* Import */
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px dashed var(--bd);border-radius:14px;padding:30px 16px;cursor:pointer;text-align:center}
+.drop .ic{width:30px;height:30px;color:var(--ac)}.drop.on{border-color:var(--ac);background:var(--grb)}.drop.busy{opacity:.6;pointer-events:none}
+.sheet.wide{max-width:min(860px,96vw);width:860px}
+.imp-t{max-height:46vh;border:1px solid var(--bd);border-radius:10px;margin-top:10px}.imp-t table{width:100%;border-collapse:collapse;font-size:13px}
+.imp-t th{position:sticky;top:0;background:var(--sf2,var(--sf));text-align:left;padding:8px;font-size:11px;text-transform:uppercase;color:var(--mu)}
+.imp-t td{padding:7px 8px;border-top:1px solid var(--bd);vertical-align:top}.imp-t tr.off td{opacity:.5}
+/* Navigation: Gruppen und Unterpunkte */
+.nsec{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navtx);opacity:.55;padding:14px 10px 4px}
+.nl a.sub{padding:6px 10px 6px 38px;font-size:13px;font-weight:400}.nl a.sub.on::before{display:none}.nl a.sub.on{background:rgba(255,255,255,.06)}
+.nl a.sub .n{margin-left:auto;font-size:11px;opacity:.7}.nl a.sub .n.r{background:var(--ba);color:#fff;opacity:1;border-radius:999px;padding:0 6px;font-weight:600}
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--grb);color:var(--gr)}
 .tag.ac{background:var(--acs);color:var(--ac)}
 .ic{width:18px;height:18px;flex-shrink:0}
@@ -345,6 +371,7 @@ td .car{width:84px;height:38px;display:block}
 .toggle.dim{opacity:.6}.toggle.on.show .sw-t{background:#7b65c8}
 .toggle b{display:block;font-size:13px}
 .toggle small{display:block;font-size:12px;color:var(--mu)}
+.set-tabs{margin:-6px 0 16px;padding:0}
 .tabs{display:flex;gap:2px;border-bottom:1px solid var(--bd);padding:0 8px;overflow-x:auto}
 .tabs button{border:0;background:none;padding:12px 12px 10px;font-weight:600;color:var(--mu);border-bottom:2px solid transparent;white-space:nowrap;display:flex;gap:6px;align-items:center}
 .tabs button.on{color:var(--tx);border-bottom-color:var(--ac)}
@@ -444,6 +471,7 @@ td .car{width:84px;height:38px;display:block}
  #app:not([hidden]){grid-template-columns:minmax(0,1fr)}
  nav{position:sticky;top:0;height:auto;flex-direction:row;align-items:center;gap:8px;padding-top:calc(8px + env(safe-area-inset-top,0px));padding-bottom:8px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));z-index:20;overflow-x:auto}
  nav .brand b,nav .brand small{display:none}
+ .nsec,.nl a.sub,.nl a[data-v="imp"]{display:none!important}
  .nl{flex-direction:row}.nl a{padding:8px 10px;white-space:nowrap}.nl a.on::before{display:none}.nl a span.lb{display:none}.nl a.on span.lb{display:inline}
  .me{margin:0 0 0 auto;width:auto;padding:4px;background:none}.me div{display:none}
  main{padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -473,6 +501,7 @@ body.mopen{overflow:hidden}
  .nl a .cnt{position:absolute;top:2px;right:0}
  nav .scanb{display:none}
  .me{width:44px;height:44px;justify-content:center;margin:0;flex:0 0 auto}
+ .split{flex:1 1 auto}.split>.btn{flex:1 1 auto;justify-content:center}.split>.dd>.btn{flex:0 0 auto}.head .dd>.btn{flex:0 0 auto}
  .relb-d{display:none}.relb-m{display:inline-flex;width:44px;height:44px;color:var(--navtx);flex:0 0 auto;order:9}
  /* untere Navigationsleiste */
  html{scroll-padding-top:calc(76px + env(safe-area-inset-top,0px));scroll-padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
@@ -601,6 +630,12 @@ const ls={get(k,s){try{return JSON.parse((s?sessionStorage:localStorage).getItem
 /* ---------- Icons ---------- */
 const SV=(p,c)=>`<svg class="ic ${c||''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const IC={
+ up:SV('<path d="M12 15V4M7 9l5-5 5 5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>'),
+ dl:SV('<path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>'),
+ more:SV('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'),
+ chevd:SV('<path d="M6 9l6 6 6-6"/>'),
+ edit:SV('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>'),
+ arch:SV('<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>'),
  reload:SV('<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>'),
  b12:SV('<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h2v2M15 7V5h2v2M6.5 13h3M14.5 13h3M16 11.5v3"/>'),
  hv:SV('<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h2v2M15 7V5h2v2M13 9.5l-2.5 3.5h3L11 16.5"/>'),
@@ -743,7 +778,7 @@ function battLow(){const last={};readings().forEach(r=>{if(!veh(r.t.fin).archive
 
 /* ---------- Modal / Alert / Toast ---------- */
 let modalLock=false;
-function modal(h){modalLock=false;$('mb').innerHTML=h;$('mod').hidden=false;$('mb').scrollTop=0;const s=$('mb').querySelector('.sb');if(s)s.scrollTop=0}
+function modal(h){modalLock=false;$('mb').classList.remove('wide');$('mb').innerHTML=h;$('mod').hidden=false;$('mb').scrollTop=0;const s=$('mb').querySelector('.sb');if(s)s.scrollTop=0}
 ['mod','alrt'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(()=>document.body.classList.toggle('mopen',['mod','alrt'].some(i=>{const x=document.getElementById(i);return x&&!x.hidden}))).observe(el,{attributes:true,attributeFilter:['hidden']})});
 function closeM(){modalLock=false;if(typeof stopScan==='function')stopScan();$('mod').hidden=true;$('mb').innerHTML='';render()}
 /* Gesperrte Fenster (Fahrzeug anlegen/bearbeiten) schließen nur über „Abbrechen“ – Klick daneben oder Esc wackelt nur kurz */
@@ -1129,6 +1164,142 @@ async function delVeh(fin){const v=veh(fin);if(!v.fin||!v.archived)return;busy('
  delete PHL[fin];$('mod').hidden=true;$('mb').innerHTML='';S.sel=null;S.view='list';render();toast('Fahrzeug und alle zugehörigen Daten gelöscht.')}
 async function archive(fin){const v=veh(fin);v.archived=!v.archived;await db.doc('vehicles/'+fin).update({archived:v.archived});log(fin,v.archived?'Archiviert':'Reaktiviert');await sync(v);toast(v.archived?'Archiviert. Offene Termine wurden entfernt.':'Reaktiviert. Pflegeplan neu erstellt.')}
 
+/* ---------- Fahrzeugliste importieren (Excel .xlsx, CSV oder PDF-Tabelle) ---------- */
+const PDFJS_V='6.2.108',PDFJS=`https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_V}/legacy/build/pdf.min.mjs`,PDFJS_W=`https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_V}/legacy/build/pdf.worker.min.mjs`;
+/* Spaltenüberschriften → Felder (Überschrift klein, ohne Leer-/Sonderzeichen) */
+const IMPF=[['fin',/fahrgestell|^fin|^vin|identifizierungsnummer/],['brand',/^marke|hersteller|fabrikat/],['model',/modell|bezeichnung|^typ$/],['variant',/variante|ausstattung/],
+ ['color',/farbe|lackierung/],['plate',/kennzeichen/],['km',/kilomet|kmstand|laufleistung|^km$/],['ez',/erstzul|^ez$/],['deliv',/eingang|anliefer|zugang|lagerdatum/],
+ ['days',/standtag|standzeit/],['stock',/lagerstand|bestandsstatus/],['fuel',/kraftstoff|treibstoff|antriebsart/],['loc',/standort|filiale/],['spot',/stellplatz|parkplatz/]];
+const hkey=h=>String(h||'').toLowerCase().replace(/[^a-zäöüß0-9]/g,'');
+function impCols(hs){const m={};hs.forEach((h,i)=>{const k=hkey(h);if(!k)return;const f=IMPF.find(([n,re])=>!(n in m)&&re.test(k));if(f)m[f[0]]=i});return m}
+/* Mehrzeilige Zellen (PDF): Wörter mit Leerzeichen, getrennte Wörter („e-“ / „Hybrid“) ohne */
+const jl=t=>String(t||'').split('\n').map(s=>s.trim()).filter(Boolean).reduce((a,s)=>a?(/-$/.test(a)?a+s:a+' '+s):s,'');
+const jc=t=>String(t||'').replace(/\s+/g,'');
+const IMPB={vw:'Volkswagen',volkswagen:'Volkswagen',vwn:'VW Nutzfahrzeuge',vwnutzfahrzeuge:'VW Nutzfahrzeuge',audi:'Audi',skoda:'Škoda',škoda:'Škoda',seat:'Seat',cupra:'Cupra',porsche:'Porsche',bentley:'Bentley'};
+const MODEL2=/^(sp|combi|variant|avant|sportback|sportstourer|sportsvan|allspace|alltrack|kombi|coupe|coupé|st|sportwagon|cross|gte|gti|gtd|r|e-tron)$/i;
+const titleW=w=>/^[A-ZÄÖÜŠ]{4,}$/.test(w)&&!/^(TDI|TSI|TFSI|DSG|GTI|GTD|GTE|HYBRID|QUATTRO|MOTION)$/.test(w)?w[0]+w.slice(1).toLowerCase():w;
+/* Datum aus 31.01.2024 / 2024-01-31 / Excel-Seriennummer */
+function impDate(t){t=String(t||'').trim();let m;
+ if((m=t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/))){const y=m[3].length===2?'20'+m[3]:m[3];return`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`}
+ if((m=t.match(/^(\d{4})-(\d{2})-(\d{2})/)))return`${m[1]}-${m[2]}-${m[3]}`;
+ if(/^\d{4,5}(\.\d+)?$/.test(t)&&+t>20000&&+t<80000){const d=new Date(Date.UTC(1899,11,30)+Math.floor(+t)*864e5);return d.toISOString().slice(0,10)}
+ return''}
+const impNum=t=>{const s=jc(t).replace(/km$/i,'').replace(/[.'](?=\d{3}(\D|$))/g,'').replace(',','.');return/^\d+(\.\d+)?$/.test(s)?Math.round(+s):null};
+/* Eine Tabellenzeile → Fahrzeugdaten */
+function impRow(cells,m,T){const g=k=>m[k]!=null?cells[m[k]]:'';
+ const fin=jc(g('fin')).toUpperCase().replace(/[OQ]/g,'0').replace(/I/g,'1');
+ const bRaw=jl(g('brand')),brand=IMPB[hkey(bRaw)]||bRaw;
+ let name=jl(g('model'));const bw=name.split(' ');if(bw.length>1&&(IMPB[hkey(bw[0])]||hkey(bw[0])===hkey(bRaw)))name=bw.slice(1).join(' ');
+ const ws=name.split(' ').filter(Boolean);let n=1;while(n<ws.length&&n<3&&MODEL2.test(ws[n]))n++;
+ const model=ws.slice(0,n).map(titleW).join(' '),variant=jl(g('variant'))||ws.slice(n).join(' ');
+ const stockT=jc(g('stock')).toLowerCase(),stock=/^erw/.test(stockT)?'Erwartet':/^auf|bestand/.test(stockT)?'Auf Bestand':jl(g('stock'));
+ const fuel=jl(g('fuel')),days=impNum(g('days')),km=impNum(g('km'));
+ let deliv=impDate(jc(g('deliv')));if(!deliv&&days!=null&&stock!=='Erwartet')deliv=addD(T,-days);
+ return{fin,brand,model,variant,color:jl(g('color')),plate:jl(g('plate')),km,ez:impDate(jc(g('ez'))),deliv,stock,fuel,
+  ev:/elektro|electric|^bev/i.test(fuel),hyb:/hybr/i.test(fuel),loc:jl(g('loc')),spot:jl(g('spot'))}}
+/* Was bei einem importierten Fahrzeug fehlt (verschwindet, sobald es ergänzt ist) */
+function missingOf(v){if(!v||!v.imp)return[];const m=[];if(!v.brand||!v.model)m.push('Marke/Modell');if(!v.deliv)m.push('Eingangsdatum');if(!hasKm(v))m.push('Kilometerstand');if(!v.color)m.push('Farbe');return m}
+const missTag=v=>{const m=missingOf(v);return m.length?`<span class="tag tag-miss" title="Fehlt: ${E(m.join(', '))}">fehlende Daten</span>`:''};
+
+/* --- CSV --- */
+function csvRows(txt){txt=txt.replace(/^﻿/,'');const first=txt.split(/\r?\n/)[0]||'',d=[';','\t',','].sort((a,b)=>first.split(b).length-first.split(a).length)[0];
+ const rows=[];let row=[],c='',q=false;for(let i=0;i<txt.length;i++){const ch=txt[i];
+  if(q){if(ch==='"'){if(txt[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}
+  else if(ch==='"')q=true;else if(ch===d){row.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&txt[i+1]==='\n')i++;row.push(c);rows.push(row);row=[];c=''}else c+=ch}
+ if(c||row.length){row.push(c);rows.push(row)}return rows}
+/* --- Excel (.xlsx): ZIP mit Bordmitteln des Browsers entpacken, erstes Tabellenblatt lesen --- */
+async function xlsxRows(buf){const u=new Uint8Array(buf),dv=new DataView(buf),td=new TextDecoder();let e=u.length-22;while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;
+ if(e<0)throw new Error('Keine gültige Excel-Datei (.xlsx). Ältere .xls-Dateien bitte in Excel als .xlsx speichern.');
+ const n=dv.getUint16(e+10,true),files={};let p=dv.getUint32(e+16,true);
+ for(let i=0;i<n;i++){const fl=dv.getUint16(p+28,true),name=td.decode(u.subarray(p+46,p+46+fl));files[name]={m:dv.getUint16(p+10,true),cs:dv.getUint32(p+20,true),lo:dv.getUint32(p+42,true)};p+=46+fl+dv.getUint16(p+30,true)+dv.getUint16(p+32,true)}
+ const read=async name=>{const f=files[name];if(!f)return null;const st=f.lo+30+dv.getUint16(f.lo+26,true)+dv.getUint16(f.lo+28,true),data=u.subarray(st,st+f.cs);
+  if(f.m===0)return td.decode(data);if(!window.DecompressionStream)throw new Error('Dieser Browser kann Excel-Dateien nicht öffnen. Bitte als CSV speichern.');
+  return td.decode(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())};
+ const X=s=>new DOMParser().parseFromString(s,'application/xml'),tx=el=>[...el.getElementsByTagName('t')].map(t=>t.textContent).join('');
+ const ssx=await read('xl/sharedStrings.xml'),ss=ssx?[...X(ssx).getElementsByTagName('si')].map(tx):[];
+ let sheet='xl/worksheets/sheet1.xml';try{const wb=X(await read('xl/workbook.xml')),rid=wb.getElementsByTagName('sheet')[0].getAttribute('r:id'),rel=X(await read('xl/_rels/workbook.xml.rels'));
+  const t=[...rel.getElementsByTagName('Relationship')].find(r=>r.getAttribute('Id')===rid).getAttribute('Target');sheet=t.startsWith('/')?t.slice(1):'xl/'+t.replace(/^\.\//,'')}catch(err){}
+ const sx=await read(sheet)||await read(Object.keys(files).find(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k)));if(!sx)throw new Error('Kein Tabellenblatt gefunden.');
+ const col=r=>{let c=0;for(const ch of r.replace(/\d+$/,''))c=c*26+ch.charCodeAt(0)-64;return c-1};
+ return[...X(sx).getElementsByTagName('row')].map(r=>{const a=[];for(const c of r.getElementsByTagName('c')){const t=c.getAttribute('t'),v=c.getElementsByTagName('v')[0];
+  a[col(c.getAttribute('r')||'A1')]=t==='s'?(ss[+(v&&v.textContent)]||''):t==='inlineStr'?tx(c):(v?v.textContent:'')}return Array.from(a,x=>x==null?'':String(x))})}
+/* --- PDF: Text mit Position lesen und Tabelle anhand der Spaltenüberschriften rekonstruieren --- */
+async function pdfItems(buf){const lib=await import(PDFJS);lib.GlobalWorkerOptions.workerSrc=PDFJS_W;
+ const doc=await lib.getDocument({data:new Uint8Array(buf)}).promise,pages=[];
+ for(let i=1;i<=doc.numPages;i++){const pg=await doc.getPage(i),vp=pg.getViewport({scale:1}),tc=await pg.getTextContent();
+  pages.push({h:vp.height,items:tc.items.filter(it=>it.str&&it.str.trim()).map(it=>({s:it.str,x:it.transform[4],y:vp.height-it.transform[5]}))})}
+ return pages}
+function pdfTable(pages){const KEY=/fahrgest|^fin|^vin|modell|marke|kilomet|erstzul|kennzeichen|farbe/i;let cols=null;const recs=[];
+ pages.forEach((pg,pi)=>{const its=pg.items.slice().sort((a,b)=>a.y-b.y||a.x-b.x),lines=[];
+  for(const it of its){const l=lines[lines.length-1];if(l&&Math.abs(it.y-l.y)<2.5)l.its.push(it);else lines.push({y:it.y,its:[it]})}
+  const gaps=lines.slice(1).map((l,i)=>l.y-lines[i].y).filter(g=>g>3).sort((a,b)=>a-b),sp=gaps[Math.floor(gaps.length*.3)]||9,blocks=[];let cur=null;
+  lines.forEach((l,i)=>{if(!cur||l.y-lines[i-1].y>sp*1.45){cur=[];blocks.push(cur)}cur.push(l)});
+  let start=0;const hi=blocks.findIndex(b=>b.flatMap(l=>l.its).filter(it=>KEY.test(it.s.trim())).length>=2);
+  if(hi>=0){const top=blocks[hi][0].its.slice().sort((a,b)=>a.x-b.x);cols=top.map(it=>({x:it.x,name:''}));
+   blocks[hi].forEach(l=>l.its.forEach(it=>{const c=colOf(cols,it.x);if(c>=0)cols[c].name+=it.s.trim()}));start=hi+1}
+  else if(!cols)return;
+  blocks.slice(start).forEach((b,bi)=>{const txt=b.flatMap(l=>l.its.map(i=>i.s)).join(' ');if(/page \d+ of \d+|seite \d+ (von|\/) \d+/i.test(txt)||b[0].y>pg.h-30)return;
+   const cells=cols.map(()=>[]);b.forEach(l=>{const pl={};l.its.forEach(it=>{const c=colOf(cols,it.x);if(c>=0)(pl[c]=pl[c]||[]).push(it.s.trim())});Object.entries(pl).forEach(([c,a])=>cells[c].push(a.join(' ')))});
+   /* Zeile über den Seitenumbruch: Rest ohne eigene Hauptdaten an die vorige Zeile anhängen */
+   const filled=cells.filter(c=>c.length).length;
+   if(pi>0&&bi===0&&recs.length&&filled<cols.length*.4){const p=recs[recs.length-1];cells.forEach((c,i)=>{if(c.length)p[i]=(p[i]?p[i]+'\n':'')+c.join('\n')})}
+   else recs.push(cells.map(c=>c.join('\n')))})});
+ if(!cols)return null;return{head:cols.map(c=>c.name),rows:recs}}
+function colOf(cols,x){let c=-1;for(let i=0;i<cols.length;i++)if(x>=cols[i].x-2)c=i;return c}
+/* Datei → {head,rows}; ohne erkennbare Tabelle: nur FINs aus dem Text */
+async function impParse(file){const name=file.name.toLowerCase(),buf=await file.arrayBuffer();let t=null,rows=null;
+ if(/\.pdf$/.test(name)||file.type==='application/pdf'){const pages=await pdfItems(buf);t=pdfTable(pages);
+  if(!t||!t.rows.length){const all=pages.flatMap(p=>p.items.map(i=>i.s)).join(' ');const fins=[...new Set((all.toUpperCase().replace(/\s+/g,'').match(/[A-HJ-NPR-Z0-9]{17}/g)||[]))];return{head:['FIN'],rows:fins.map(f=>[f])}}
+  return t}
+ if(/\.(xlsx|xlsm)$/.test(name))rows=await xlsxRows(buf);
+ else if(/\.(csv|txt)$/.test(name)){let s=new TextDecoder('utf-8').decode(buf);if(s.includes('�'))s=new TextDecoder('windows-1252').decode(buf);rows=csvRows(s)}
+ else if(/\.xls$/.test(name))throw new Error('Alte Excel-Dateien (.xls) bitte in Excel als .xlsx oder CSV speichern.');
+ else throw new Error('Bitte eine Excel- (.xlsx), CSV- oder PDF-Datei wählen.');
+ const hi=rows.findIndex(r=>r.some(c=>/fahrgestell|^fin|^vin/.test(hkey(c))));if(hi<0)throw new Error('In der Tabelle wurde keine Spalte „FIN“ bzw. „Fahrgestellnummer“ gefunden.');
+ return{head:rows[hi],rows:rows.slice(hi+1).filter(r=>r.some(c=>String(c).trim()))}}
+/* Ergebnis prüfen: neu / schon vorhanden / ungültig */
+function impCheck(t){const m=impCols(t.head),T=TD(),seen=new Set(),have=new Set(S.veh.map(v=>v.fin));
+ return t.rows.map(r=>{const x=impRow(r,m,T);x.st=!/^[A-HJ-NPR-Z0-9]{17}$/.test(x.fin)?'bad':have.has(x.fin)?'have':seen.has(x.fin)?'dup':'new';seen.add(x.fin);
+  x.miss=missingOf({...x,imp:1});return x})}
+let impData=null;
+function importModal(){impData=null;
+ modal(`<header><div style="flex:1"><h3>Fahrzeugliste importieren</h3><span class="muted">Excel (.xlsx), CSV oder PDF – z. B. die Fahrzeugliste aus dem Gebrauchtwagen-Portal</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb" id="impb"><label class="drop" id="impd"><input type="file" id="impf" accept=".xlsx,.xlsm,.csv,.txt,.pdf,application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+  ${IC.up||IC.plus}<b>Datei auswählen</b><span class="muted">oder hierher ziehen</span></label>
+  <p class="hint">Fahrzeuge, deren FIN schon in der App ist, werden übersprungen. Was in der Liste fehlt, bleibt leer und das Fahrzeug bekommt den roten Hinweis <span class="tag tag-miss">fehlende Daten</span>, bis es ergänzt ist. Eingangsdatum: aus „Eingang“ oder aus den Standtagen berechnet.</p>
+  <p class="msg err" id="imperr"></p></div>
+ <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="impsv" disabled onclick="impSave()">Fahrzeuge anlegen</button></footer>`);$('mb').classList.add('wide');
+ const f=$('impf'),d=$('impd');f.onchange=()=>f.files[0]&&impLoad(f.files[0]);
+ d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('on')});d.addEventListener('dragleave',()=>d.classList.remove('on'));
+ d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('on');const x=e.dataTransfer.files[0];if(x)impLoad(x)})}
+async function impLoad(file){const err=$('imperr');err.textContent='';$('impd').classList.add('busy');$('impd').querySelector('b').textContent='Wird gelesen …';
+ try{const t=await impParse(file),rs=impCheck(t);impData={file:file.name,rs};impShow()}
+ catch(e){console.error(e);err.textContent=e&&e.message&&!/import|fetch|module/i.test(e.message)?e.message:'Die Datei konnte nicht gelesen werden'+(/pdf/i.test(file.name)?' (für PDF ist eine Internetverbindung nötig).':'.');
+  $('impd').classList.remove('busy');$('impd').querySelector('b').textContent='Datei auswählen'}}
+function impShow(){const{rs,file}=impData,nw=rs.filter(r=>r.st==='new'),hv=rs.filter(r=>r.st==='have').length,bad=rs.filter(r=>r.st==='bad'||r.st==='dup').length;
+ const lab={new:'',have:'schon vorhanden',bad:'keine gültige FIN',dup:'doppelt in der Liste'};
+ $('impb').innerHTML=`<p style="margin:0 0 8px"><b>${E(file)}</b>: ${rs.length} ${rs.length===1?'Zeile':'Zeilen'} · <b>${nw.length} neu</b>${hv?` · ${hv} schon vorhanden (werden übersprungen)`:''}${bad?` · ${bad} ohne gültige FIN`:''}</p>
+ <label class="chk"><input type="checkbox" id="impu" ${S.cfg.usedDef||rs.some(r=>r.ez)?'checked':''}> Als <b>Gebrauchtwagen</b> anlegen (kein Transport- und Schauraummodus)</label>
+ <label class="chk"><input type="checkbox" id="impp" checked> Termine vor dem heutigen Tag <b>nicht als überfällig</b> anlegen (Pflegeplan zählt ab heute)</label>
+ <div class="scroll imp-t"><table class="tbl"><tr><th><input type="checkbox" id="impall" checked aria-label="Alle"></th><th>Fahrzeug</th><th>FIN</th><th>Eingang · km</th></tr>
+ ${rs.map((r,i)=>`<tr class="${r.st==='new'?'':'off'}"><td>${r.st==='new'?`<input type="checkbox" class="impc" data-i="${i}" checked>`:''}</td><td><b>${E([r.brand,r.model].filter(Boolean).join(' '))||'–'}</b> <span class="muted">${E(r.variant)}${r.stock?` · ${E(r.stock)}`:''}</span><br>
+  ${r.st!=='new'?`<span class="muted">${lab[r.st]}</span>`:r.miss.length?`<span class="tag tag-miss">fehlt: ${E(r.miss.join(', '))}</span>`:'<span class="pill s-ok">vollständig</span>'}</td>
+  <td class="mono">${E(r.fin)||'–'}</td><td style="white-space:nowrap">${r.deliv?fmt(r.deliv):'–'}<br><span class="muted">${r.km!=null?kmFmt(r.km)+' km':'–'}</span></td></tr>`).join('')}</table></div>
+ <p class="msg err" id="imperr"></p>`;
+ const upd=()=>{const n=document.querySelectorAll('.impc:checked').length;$('impsv').disabled=!n;$('impsv').textContent=n?`${n} ${n===1?'Fahrzeug':'Fahrzeuge'} anlegen`:'Keine neuen Fahrzeuge'};
+ document.querySelectorAll('.impc').forEach(c=>c.onchange=upd);$('impall').onchange=e=>{document.querySelectorAll('.impc').forEach(c=>c.checked=e.target.checked);upd()};upd()}
+async function impSave(){if(!impData)return;const used=$('impu').checked,past=$('impp').checked,T=TD(),sel=[...document.querySelectorAll('.impc:checked')].map(c=>impData.rs[+c.dataset.i]).filter(r=>!S.veh.some(v=>v.fin===r.fin));
+ if(!sel.length)return;const b=$('impsv');b.disabled=true;let done=0,fail=0;
+ const docs=sel.map(r=>({fin:r.fin,brand:r.brand,model:r.model,variant:r.variant,body:'',color:r.color,colorHex:'',loc:r.loc,spot:r.spot,plate:r.plate,nr:'',km:r.km==null?'':r.km,kmAt:r.km==null?'':T,
+  deliv:r.deliv,ez:r.ez,fuel:r.fuel,solar:false,hyb:r.hyb&&!r.ev,ev:r.ev,used,transp:!used,transpOff:'',show:false,showOn:'',showOff:'',archived:false,photo:'',photoL:0,imp:{at:T,file:impData.file,stock:r.stock||''}}));
+ await pool(docs.map(v=>async()=>{try{await db.doc('vehicles/'+v.fin).set(v);log(v.fin,`Fahrzeug importiert aus „${impData.file}“`);if(v.deliv){await sync(v);
+   /* Bereits vergangene Termine still entfernen, damit nicht jedes importierte Auto mit überfälligen Maßnahmen startet */
+   if(past)await pool(planFor(v).filter(x=>x.due<T).map(x=>()=>db.doc('tasks/'+v.fin+'_'+x.k).update({removed:true,removedAt:new Date().toISOString(),removedBy:'Import'}).catch(()=>{})),4)}done++}catch(e){console.error(e);fail++}
+  b.textContent=`Anlegen … ${done+fail} / ${docs.length}`}),4);
+ if(!done)return $('imperr').textContent='Speichern nicht möglich: keine Schreibrechte.';
+ log('',`Fahrzeugliste importiert: ${done} Fahrzeuge aus „${impData.file}“`);$('mod').hidden=true;$('mb').innerHTML='';
+ const miss=docs.filter(v=>missingOf(v).length).length;S.view='veh_l';S.fl=miss?'miss':'';render();
+ toast(`${done} ${done===1?'Fahrzeug':'Fahrzeuge'} angelegt${miss?` · ${miss} mit fehlenden Daten`:''}${fail?` · ${fail} fehlgeschlagen`:''}.`)}
 /* ---------- PDF-Protokoll (eigener PDF-Erzeuger, ohne externe Bibliothek) ---------- */
 const PDFW={r:[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,350,556,350,222,556,333,1000,556,556,333,1000,667,333,1000,350,611,350,350,222,222,333,333,350,556,1000,333,1000,500,333,944,350,500,667,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500],b:[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,350,556,350,278,556,500,1000,556,556,333,1000,667,333,1000,350,611,350,350,278,278,500,500,350,556,1000,333,1000,556,333,944,350,500,667,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556]};
 const WIN={8364:128,8218:130,402:131,8222:132,8230:133,8224:134,8225:135,710:136,8240:137,352:138,8249:139,338:140,381:142,8216:145,8217:146,8220:147,8221:148,8226:149,8211:150,8212:151,732:152,8482:153,353:154,8250:155,339:156,382:158,376:159};
@@ -1204,7 +1375,7 @@ async function pdfProtokoll(fin){const v=veh(fin);if(!v.fin)return;
   doc.text(W-M,y+15,`Stand ${fmt(T)}`,{size:8,color:C.mu,align:'right'});y+=24};
  head();
  doc.text(M,y+10,[`${v.brand||''} ${v.model||''}`.trim(),v.variant].filter(Boolean).join(' · '),{size:12,bold:true,maxW:W-2*M});y+=18;
- const info=[['FIN',v.fin],['Eingang',fmt(v.deliv)],['Standort',v.loc||'–'],['Stellplatz',v.spot||'–'],['Kennzeichen',v.plate||'–'],['Interne Nr.',v.nr||'–'],['Kilometerstand',kmTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Fahrzeugart',v.used?'Gebrauchtwagen':'Neufahrzeug'],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Farbe',v.color||'–']];
+ const info=[['FIN',v.fin],['Eingang',fmt(v.deliv)],['Standort',v.loc||'–'],['Stellplatz',v.spot||'–'],['Kennzeichen',v.plate||'–'],['Interne Nr.',v.nr||'–'],['Kilometerstand',kmTxt(v)],...(v.ez?[['Erstzulassung',fmt(v.ez)]]:[]),['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Fahrzeugart',v.used?'Gebrauchtwagen':'Neufahrzeug'],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Farbe',v.color||'–']];
  /* mit Foto: Bild links, Stammdaten rechts daneben in 3 Spalten; ohne Foto wie bisher 4 Spalten über die ganze Breite */
  const nc=ph?3:4,ih=Math.ceil(info.length/nc)*23+4,pwid=ph?Math.min(260,ih*ph.w/ph.h):0,ix=M+(ph?pwid+10:0),cw=(W-M-ix)/nc;
  if(ph){doc.rect(M,y,pwid,ih,C.z);const s=Math.min(pwid/ph.w,ih/ph.h),dw=ph.w*s,dh=ph.h*s;doc.img(M+(pwid-dw)/2,y+(ih-dh)/2,dw,dh,ph.jpg,ph.w,ph.h);doc.rect(M,y,pwid,ih,null,C.bd,.6)}
@@ -1321,7 +1492,7 @@ function dash(){const T=TD(),a=S.veh.filter(v=>!v.archived),op=activeTasks().fil
  const gs={};late.forEach(t=>{(gs[t.fin]=gs[t.fin]||[]).push(t)});const gl=Object.entries(gs).map(([f,l])=>[f,l.sort((x,y)=>x.due<y.due?-1:1)]).sort((x,y)=>x[1][0].due<y[1][0].due?-1:1);
  const K=(n,l,c,go)=>`<div class="kpi ${c}" ${go?`style="cursor:pointer" onclick="${go}"`:''}><b>${n}</b><span>${l}</span></div>`;
  const hr=new Date().getHours(),greet=hr<11?'Guten Morgen':hr<18?'Servus':'Guten Abend';
- return`<div class="head"><h2><span class="eye">${new Date().toLocaleDateString('de-AT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>${greet}, ${E(me().split(' ')[0])}</h2><button class="btn" onclick="scanModal()">${IC.scan} FIN scannen</button><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button></div>
+ return`<div class="head"><h2><span class="eye">${new Date().toLocaleDateString('de-AT',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>${greet}, ${E(me().split(' ')[0])}</h2><button class="btn" onclick="scanModal()">${IC.scan} FIN scannen</button>${addBtn()}</div>
  <div class="kpis">${K(op.filter(t=>t.due<T).length,'Maßnahmen überfällig','ba',"S.view='cal';S.cv='agenda';render()")}${K(op.filter(t=>t.due>=T&&t.due<=addD(T,7)).length,'fällig in den nächsten 7 Tagen','wa')}${K(bl.length,'Fahrzeuge: Batterie laden','ba')}${K(pr.length,'offene Probleme','',"S.view='prob';render()")}${K(a.length,'Fahrzeuge im Bestand','ac',"S.view='veh_l';render()")}</div>
  <div class="dash">
   <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
@@ -1337,11 +1508,13 @@ function dash(){const T=TD(),a=S.veh.filter(v=>!v.archived),op=activeTasks().fil
 function vlist(){const q=S.q.toLowerCase(),T=TD();const l=S.veh.filter(v=>{const x=S.tasks.filter(t=>t.fin===v.fin),o=x.filter(t=>t.status!=='Erledigt');
  if(S.fl==='arch')return v.archived;if(v.archived)return false;
  if(q&&![v.fin,v.brand,v.model,v.nr,v.plate,v.color,v.loc,v.spot].some(s=>(s||'').toLowerCase().includes(q)))return false;
- return{'':1,late:o.some(t=>t.due<T),transp:v.transp,notransp:!v.transp&&!v.used,used:!!v.used,show:!!v.show,hv:v.hyb||v.ev,low:battLow().includes(v.fin),prob:S.prob.some(p=>p.fin===v.fin&&p.status==='Offen')}[S.fl]||0});
- return`<div class="head"><h2>Fahrzeuge</h2><button class="btn" onclick="scanModal()">${IC.scan} FIN scannen</button><button class="btn" onclick="exportCsv()">CSV-Export</button><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button></div>
- <div class="tools"><input id="q" placeholder="Suchen: FIN, Marke, Modell, Farbe, Kennzeichen, Stellplatz …" value="${E(S.q)}"><select id="fl">${[['','Alle aktiven'],['late','Mit überfälligen Maßnahmen'],['low','Batterie laden'],['transp','Transportmodus an'],['notransp','Transportmodus aus'],['used','Gebrauchtwagen'],['show','Schauraummodus an'],['hv','Hybrid / Elektro'],['prob','Mit offenen Problemen'],['arch','Archiviert']].map(o=>`<option value="${o[0]}" ${S.fl===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></div>
+ return{'':1,new:!v.used,miss:missingOf(v).length>0,late:o.some(t=>t.due<T),transp:v.transp,notransp:!v.transp&&!v.used,used:!!v.used,show:!!v.show,hv:v.hyb||v.ev,low:battLow().includes(v.fin),prob:S.prob.some(p=>p.fin===v.fin&&p.status==='Offen')}[S.fl]||0});
+ return`<div class="head"><h2>Fahrzeuge</h2><button class="btn" onclick="scanModal()">${IC.scan} FIN scannen</button>${dd(IC.more+' Mehr',[[IC.up,'Liste importieren<small>Excel, CSV oder PDF</small>','importModal()'],[IC.dl,'Als CSV exportieren<small>für Excel</small>','exportCsv()']])}${addBtn()}</div>
+ ${(()=>{const A=S.veh.filter(v=>!v.archived),c={'':A.length,new:A.filter(v=>!v.used).length,used:A.filter(v=>v.used).length,show:A.filter(v=>v.show).length,miss:A.filter(v=>missingOf(v).length).length,arch:S.veh.length-A.length};
+  return`<div class="chips" role="tablist" aria-label="Fahrzeuge filtern">${[['','Alle'],...VSUB].filter(([f])=>!(f==='show'||f==='miss')||c[f]||S.fl===f).map(([f,l])=>`<button role="tab" aria-selected="${S.fl===f}" class="${S.fl===f?'on':''} ${f==='miss'?'miss':''}" onclick="S.fl='${f}';render()">${l} <span class="n">${c[f]}</span></button>`).join('')}</div>`})()}
+ <div class="tools"><input id="q" placeholder="Suchen: FIN, Marke, Modell, Farbe, Kennzeichen, Stellplatz …" value="${E(S.q)}"><select id="fl" aria-label="Weitere Filter">${[['','Weitere Filter …'],['late','Mit überfälligen Maßnahmen'],['low','Batterie laden'],['transp','Transportmodus an'],['notransp','Transportmodus aus'],['hv','Hybrid / Elektro'],['prob','Mit offenen Problemen']].map(o=>`<option value="${o[0]}" ${S.fl===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></div>
  <section class="panel"><div class="scroll"><table class="fleet"><tr><th></th><th>Fahrzeug</th><th>FIN</th><th>Farbe</th><th>Standort / Stellplatz</th><th>Eingang</th><th>Transportmodus</th><th>Nächste Maßnahme</th></tr>
- ${l.map(v=>{const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0];return`<tr class="cl" onclick="openVeh('${v.fin}')"><td class="f-img" style="--carbg:var(--sf)">${carSVG(v)}</td><td class="f-name"><b>${vname(v)}</b><br><span class="muted">${E(v.variant)}</span></td><td class="f-fin">${finCopy(v.fin)}</td><td class="f-col"><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}</td><td class="f-loc">${E(v.loc)||'–'}${v.spot?`<br><span class="muted">${IC.pin} ${E(v.spot)}</span>`:''}</td><td class="num f-in"><span class="f-l">Eingang </span>${fmt(v.deliv)}</td><td class="f-tr"><span class="f-l">Transportmodus </span>${v.used?'<span class="pill">gebraucht</span>':v.transp?'<span class="pill s-gr">an</span>':'<span class="pill s-wa">aus</span>'}</td><td class="f-nx">${nx?`<span class="pill ${st(nx)[0]}">${fmt(nx.due)}</span> <span class="f-t">${E(nx.title)}</span>`:'<span class="muted">keine offene Maßnahme</span>'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Keine Fahrzeuge gefunden.</td></tr>'}</table></div></section>`}
+ ${l.map(v=>{const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1)[0];return`<tr class="cl" onclick="openVeh('${v.fin}')"><td class="f-img" style="--carbg:var(--sf)">${carSVG(v)}</td><td class="f-name"><b>${vname(v)}</b>${missTag(v)}<br><span class="muted">${E(v.variant)}</span></td><td class="f-fin">${finCopy(v.fin)}</td><td class="f-col"><span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}</td><td class="f-loc">${E(v.loc)||'–'}${v.spot?`<br><span class="muted">${IC.pin} ${E(v.spot)}</span>`:''}</td><td class="num f-in"><span class="f-l">Eingang </span>${fmt(v.deliv)}</td><td class="f-tr"><span class="f-l">Transportmodus </span>${v.used?'<span class="pill">gebraucht</span>':v.transp?'<span class="pill s-gr">an</span>':'<span class="pill s-wa">aus</span>'}</td><td class="f-nx">${nx?`<span class="pill ${st(nx)[0]}">${fmt(nx.due)}</span> <span class="f-t">${E(nx.title)}</span>`:'<span class="muted">keine offene Maßnahme</span>'}</td></tr>`}).join('')||'<tr><td colspan="8" class="empty">Keine Fahrzeuge gefunden.</td></tr>'}</table></div></section>`}
 function exportCsv(){const r=[['FIN','Marke','Modell','Variante','Karosserie','Farbe','Standort','Stellplatz','Eingang','Kennzeichen','Nr','Kilometerstand','Gebrauchtwagen','Transportmodus','Schauraummodus','Hybrid','Elektro','Offene Maßnahmen','Nächste Fälligkeit']];
  S.veh.forEach(v=>{const o=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt').sort((a,b)=>a.due<b.due?-1:1);r.push([v.fin,v.brand,v.model,v.variant,BODIES[bodyOf(v)].l,v.color,v.loc,v.spot,fmt(v.deliv),v.plate,v.nr,hasKm(v)?v.km:'',v.used?'ja':'nein',v.used?'–':v.transp?'an':'aus seit '+fmt(v.transpOff||v.deliv),showTxt(v),v.hyb?'ja':'nein',v.ev?'ja':'nein',o.length,o[0]?fmt(o[0].due):''])});
  const csv='﻿'+r.map(x=>x.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(';')).join('\n');
@@ -1385,7 +1558,7 @@ function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug ni
  else if(S.tab==='prob')body=`<div class="ph"><span style="flex:1"></span><button class="btn sm" onclick="probModal('${v.fin}')">${IC.plus} Problem melden</button></div>${probTbl(ps)}`;
  else body=lg.length?`<div class="scroll"><table><tr><th>Zeitpunkt</th><th>Mitarbeiter:in</th><th>Änderung</th></tr>${lg.map(l=>`<tr><td class="num">${new Date(l.at).toLocaleString('de-AT',{dateStyle:'short',timeStyle:'short'})}</td><td>${E(l.by)}</td><td style="white-space:normal">${E(l.text)}</td></tr>`).join('')}</table></div>`:'<p class="empty">Noch keine Einträge.</p>';
  return`<div><button class="link" onclick="S.view='veh_l';render()">← Alle Fahrzeuge</button></div>
- <section class="panel"><div class="vhero" style="--carbg:var(--sf)">${carSVG(v)}<div style="min-width:0"><span class="mono muted">${v.fin}</span><h2>${vname(v)}</h2><span class="muted">${E(v.variant)}${v.variant?' · ':''}${E(v.color||'')}${v.loc?' · '+E(v.loc):''}${v.spot?' · '+E(v.spot):''} · Eingang ${fmt(v.deliv)}</span>
+ <section class="panel"><div class="vhero" style="--carbg:var(--sf)">${carSVG(v)}<div style="min-width:0"><span class="mono muted">${v.fin}</span><h2>${vname(v)}</h2><span class="muted">${[v.variant,v.color,v.loc,v.spot].filter(Boolean).map(E).join(' · ')}${v.variant||v.color||v.loc||v.spot?' · ':''}Eingang ${v.deliv?fmt(v.deliv):'–'}</span>${missingOf(v).length?`<div class="missbox">Fehlende Daten: ${E(missingOf(v).join(', '))}<button class="btn sm" onclick="vehModal('${v.fin}')">Jetzt ergänzen</button></div>`:''}
   <div class="chips">${v.archived?'<span class="pill s-gr">Archiviert</span>':''}${v.ev?'<span class="tag ac">Elektro</span>':v.hyb?'<span class="tag ac">Hybrid</span>':''}${v.solar?'<span class="tag">Solarpanel</span>':''}${battLow().includes(v.fin)?'<span class="pill s-ba">Batterie laden</span>':''}${op.some(t=>t.due<TD())?`<span class="pill s-ba">${op.filter(t=>t.due<TD()).length} überfällig</span>`:''}</div></div>
   <div class="acts">${v.used?`<div class="toggle locked used" aria-disabled="true"><span class="sw-t"></span><span><b>Gebrauchtwagen</b><small>kein Transport- / Schauraummodus · 12V-Batterie alle ${Math.round((+S.cfg.wk||42)/7)} Wochen ab Eingang</small></span></div>`:''}${v.used?'':(()=>{const wk=Math.round((+S.cfg.wk||42)/7),free=!!S.cfg.transpFree;
    if(v.transp)return`<button class="toggle dim" onclick="toggleShow('${v.fin}')" aria-pressed="false" title="Nur möglich, wenn der Transportmodus aus ist"><span class="sw-t"></span><span><b>Schauraummodus aus</b><small>erst möglich, wenn der Transportmodus aus ist</small></span></button>`;
@@ -1393,7 +1566,7 @@ function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug ni
    if(v.showOn&&!free)return`<div class="toggle locked" aria-disabled="true"><span class="sw-t"></span><span><b>Schauraummodus beendet</b><small>${showTxt(v)} · 12V-Batterie alle ${wk} Wochen</small></span></div>`;
    return`<button class="toggle" onclick="toggleShow('${v.fin}')" aria-pressed="false"><span class="sw-t"></span><span><b>Schauraummodus aus</b><small>${v.showOn?showTxt(v)+' · tippen zum Bearbeiten':'zum Einschalten tippen'}</small></span></button>`})()}
   ${v.used?'':v.transp?`<button class="toggle on" onclick="toggleTransp('${v.fin}')" aria-pressed="true" title="Transportmodus ausschalten"><span class="sw-t"></span><span><b>Transportmodus an</b><small>12V-Batterie vierteljährlich · zum Ausschalten tippen</small></span></button>`:(S.cfg.transpFree?`<button class="toggle" onclick="toggleTransp('${v.fin}')" aria-pressed="false"><span class="sw-t"></span><span><b>Transportmodus aus</b><small>${offTxt(v)} · tippen zum Bearbeiten</small></span></button>`:`<div class="toggle locked" aria-disabled="true"><span class="sw-t"></span><span><b>Transportmodus entfernt</b><small>${offTxt(v)} · 12V-Batterie alle ${Math.round((+S.cfg.wk||42)/7)} Wochen</small></span></div>`)}
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="vehModal('${v.fin}')">Bearbeiten</button><button class="btn sm" onclick="spotModal('${v.fin}')" title="Standort / Stellplatz ändern">${IC.pin} Umparken</button><button class="btn sm" onclick="kmModal('${v.fin}')" title="Kilometerstand eintragen">${hasKm(v)?kmFmt(v.km)+' km':'Kilometerstand'}</button><button class="btn sm" onclick="probModal('${v.fin}')">Problem melden</button><button class="btn sm" onclick="pdfProtokoll('${v.fin}')" title="Komplette Historie bis heute als PDF">${IC.pdf} PDF-Protokoll</button><button class="btn sm d" onclick="archive('${v.fin}')">${v.archived?'Reaktivieren':'Archivieren'}</button>${v.archived?`<button class="btn sm d" onclick="delVehModal('${v.fin}')" title="Fahrzeug mit allen Daten endgültig löschen">${IC.trash||''} Endgültig löschen</button>`:''}</div></div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm p" onclick="vehModal('${v.fin}')">${IC.edit} Bearbeiten</button><button class="btn sm" onclick="spotModal('${v.fin}')" title="Standort / Stellplatz ändern">${IC.pin} Umparken</button><button class="btn sm" onclick="kmModal('${v.fin}')" title="Kilometerstand eintragen">${hasKm(v)?kmFmt(v.km)+' km':'Kilometerstand'}</button><button class="btn sm" onclick="pdfProtokoll('${v.fin}')" title="Komplette Historie bis heute als PDF">${IC.pdf} PDF-Protokoll</button>${dd(IC.more+' Mehr',[[IC.warn,'Problem melden',`probModal('${v.fin}')`],'-',[IC.arch,v.archived?'Reaktivieren':'Archivieren',`archive('${v.fin}')`,'d'],v.archived?[IC.trash||'','Endgültig löschen',`delVehModal('${v.fin}')`,'d']:null],{b:'sm',title:'Weitere Aktionen'})}</div></div></div>
   <div class="tabs" role="tablist">${tabs.map(t=>`<button class="${S.tab===t[0]?'on':''}" onclick="S.tab='${t[0]}';render()">${t[1]}${t[2]?` <span class="c">${t[2]}</span>`:''}</button>`).join('')}</div>${body}</section>`}
 
 function chip(t){const[c]=st(t),v=veh(t.fin);return`<button class="chip ${c}" title="${E(vname(v)+' · '+t.title)}" onclick="taskModal('${t._id}')">${icon(catOf(t))}<span>${E(v.model||t.fin.slice(-6))}: ${E(t.title)}</span></button>`}
@@ -1414,16 +1587,18 @@ function cal(){const ts=activeTasks(),D=new Date(S.cd+'T12:00:00'),V=S.cv,on=d=>
  <div class="calbar"><button class="btn" onclick="S.cd='${step(-1)}';render()" aria-label="Zurück">‹</button><button class="btn" onclick="S.cd='${step(1)}';render()" aria-label="Weiter">›</button><button class="btn" onclick="S.cd=TD();render()">Heute</button><h3>${ti}</h3>
  <span class="muted" style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;font-size:12px">${['b12','hv','reifen','bremse','folie','reinigung'].map(c=>`<span style="display:inline-flex;gap:4px;align-items:center">${icon(c)}${CAT[c]}</span>`).join('')}</span></div>${b}`}
 
-function sett(){const c=S.cfg;
+const SETT=[['allg','Allgemein'],['plan','Pflegeplan'],['veh','Fahrzeuge & Import'],['mail','Erinnerungen']];
+function sett(){const c=S.cfg,tab=SETT.some(t=>t[0]===S.setTab)?S.setTab:'allg',G=(k,h)=>k===tab?h:'';
  const rows=[['≤ 14 Tage nach Eingang',['','hv','','','folie',''],'HV · ggf. Folie applizieren'],['30 Tage nach Eingang',['reifen','','','','',''],''],['3 Monate',['','b12','hv','bremse','',''],''],['6 Monate',['reifen','b12','hv','bremse','',''],''],['9 Monate',['','b12','hv','bremse','',''],''],['12 Monate',['reifen','b12','hv','bremse','','reinigung'],''],['15 / 18 / 21 / 24 Monate','wdh','Zyklus wiederholt sich; Säuberung wieder nach 24 Monaten']];
  const th=getTheme();
  return`<div class="head"><h2>Einstellungen</h2></div>
- <section class="panel" style="max-width:640px"><div class="ph"><h3>Erscheinungsbild</h3></div><div class="pb" style="display:flex;flex-direction:column;gap:10px">
+ <div class="tabs set-tabs" role="tablist">${SETT.map(t=>`<button role="tab" aria-selected="${tab===t[0]}" class="${tab===t[0]?'on':''}" onclick="S.setTab='${t[0]}';render()">${t[1]}</button>`).join('')}</div>
+ ${G('allg',`<section class="panel" style="max-width:640px"><div class="ph"><h3>Erscheinungsbild</h3></div><div class="pb" style="display:flex;flex-direction:column;gap:10px">
  <div class="th-seg" role="radiogroup" aria-label="Erscheinungsbild">${[['light','☀︎ Hell'],['dark','☾ Dunkel'],['auto','Automatisch']].map(o=>`<button role="radio" aria-checked="${th===o[0]}" class="${th===o[0]?'on':''}" onclick="setTheme('${o[0]}')">${o[1]}</button>`).join('')}</div>
  <span class="hint">„Automatisch“ folgt der Einstellung deines Geräts. Die Auswahl gilt für dieses Gerät und diesen Browser.</span></div></section>
- ${appPanel()}
- ${mailPanel()}
- <section class="panel"><div class="ph"><h3>Pflegeprogramm Neufahrzeuge</h3><span class="muted">TQS Anlage 1, Abschnitt 3.2 · Fristen ab Eingangsdatum</span></div>
+ ${appPanel()}`)}
+ ${G('mail',mailPanel())}
+ ${G('plan',`<section class="panel"><div class="ph"><h3>Pflegeprogramm Neufahrzeuge</h3><span class="muted">TQS Anlage 1, Abschnitt 3.2 · Fristen ab Eingangsdatum</span></div>
  <div class="scroll"><table class="mx"><tr><th>Termin</th><th>Reifendruck</th><th>12V-Batterie</th><th>HV-Batterie</th><th>Bremsen</th><th>Folie</th><th>Säuberung</th></tr>
  ${rows.map(r=>`<tr><td><b>${r[0]}</b></td>${r[1]==='wdh'?`<td colspan="6" class="muted" style="text-align:center">${r[2]}</td>`:r[1].map(x=>`<td>${x?icon(x):''}</td>`).join('')}</tr>`).join('')}</table></div>
  <div class="pb hint" style="display:flex;flex-direction:column;gap:6px"><span>HV-Batterie nur bei Hybrid- und Elektrofahrzeugen. Der Plan reicht immer <b>2 Jahre über das heutige Datum</b> hinaus und wird automatisch verlängert (Eingang 2025 → Termine bis 2028). Die Termine wiederholen sich danach im Rhythmus von 3, 6, 9 und 12 Monaten. Neue Fahrzeuge starten mit Transportmodus <b>an</b> (12V vierteljährlich). Wird er auf der Fahrzeugseite mit Datum ausgeschaltet, ersetzt ab diesem Tag eine 12V-Batteriepflege alle 6 Wochen die vierteljährliche Prüfung. Einschalten ist danach nicht mehr möglich.</span><span>Für Porsche, Bentley und den Crafter gelten teilweise andere Vorgaben (TQS 3.1 Checkliste); diese sind hier nicht abgebildet.</span></div></section>
@@ -1431,7 +1606,10 @@ function sett(){const c=S.cfg;
  <label class="f">12V-Batteriepflege bei Transportmodus aus: Intervall in Tagen<input type="number" min="7" id="s_wk" value="${c.wk}"></label>
  <label class="f">„Bitte Laden!“ bei 12V-Spannung unter (Volt)<input type="number" step="0.1" id="s_v12" value="${c.v12}"></label>
  <label class="f">„Bitte Laden!“ bei HV-Ladezustand unter (%)<input type="number" min="0" max="100" id="s_hv" value="${c.hv}"></label>
- <div><button class="btn p" onclick="saveCfg()">Speichern und Termine neu berechnen</button></div></div></section>
+ <div><button class="btn p" onclick="saveCfg()">Speichern und Termine neu berechnen</button></div></div></section>`)}
+ ${G('veh',`<section class="panel" style="max-width:640px"><div class="ph"><h3>Fahrzeugliste importieren</h3></div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
+ <p class="hint" style="margin:0">Excel (.xlsx), CSV oder PDF hochladen, z. B. die Fahrzeugliste aus dem Gebrauchtwagen-Portal. Vorhandene Fahrzeuge werden übersprungen, fehlende Angaben werden rot markiert.</p>
+ <div><button class="btn p" onclick="importModal()">${IC.up} Liste importieren</button></div></div></section>
  <section class="panel" style="max-width:640px"><div class="ph"><h3>Neue Fahrzeuge</h3>${c.usedDef?'<span class="pill">Gebrauchtwagen</span>':''}</div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
  <p class="hint" style="margin:0">Ist das eingeschaltet, ist beim Hinzufügen eines Fahrzeugs „Gebrauchtwagen“ schon angehakt: kein Transport- und kein Schauraummodus. Für einen Neuwagen kann der Haken im Formular jederzeit entfernt werden. Bereits angelegte Fahrzeuge ändern sich nicht. Die Einstellung gilt für alle Benutzer.</p>
  <button class="toggle ${c.usedDef?'on':''}" onclick="setUsedDef(${!c.usedDef})" aria-pressed="${!!c.usedDef}"><span class="sw-t"></span><span><b>Gebrauchtwagen vorauswählen ${c.usedDef?'an':'aus'}</b><small>${c.usedDef?'Neue Fahrzeuge werden als Gebrauchtwagen angelegt':'Neue Fahrzeuge werden als Neuwagen (mit Transportmodus) angelegt'}</small></span></button>
@@ -1439,7 +1617,7 @@ function sett(){const c=S.cfg;
  <section class="panel" style="max-width:640px;border-color:${c.transpFree?'var(--ba)':'var(--bd)'}"><div class="ph" style="background:linear-gradient(90deg,var(--bab),transparent 65%)"><h3>Transport-/Schauraummodus bearbeiten</h3>${c.transpFree?'<span class="pill s-ba">freigeschaltet</span>':''}</div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
  <p class="msg err" style="display:block;margin:0"><b>Achtung:</b> Normalerweise werden Transport- und Schauraummodus einmal mit Datum ausgeschaltet und sind danach gesperrt. Mit dieser Freischaltung können beide Modi bei allen Fahrzeugen beliebig ein- und ausgeschaltet und das Datum frei in Vergangenheit oder Zukunft gelegt werden. Die 12V-Termine werden dabei neu berechnet. Bereits erledigte Maßnahmen bleiben erhalten. Die Einstellung gilt für alle Benutzer.</p>
  <button class="toggle ${c.transpFree?'on':''}" onclick="setTranspFree(${!c.transpFree})" aria-pressed="${!!c.transpFree}"><span class="sw-t"></span><span><b>Freie Bearbeitung ${c.transpFree?'an':'aus'}</b><small>${c.transpFree?'Transport- und Schauraummodus sind frei änderbar':'Beide Modi können nur einmal ausgeschaltet werden'}</small></span></button>
- </div></section>`}
+ </div></section>`)}`}
 async function setUsedDef(on){try{await db.doc('settings/cfg').set({usedDef:on},{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}
  S.cfg={...S.cfg,usedDef:on};log('',`Gebrauchtwagen-Vorauswahl ${on?'eingeschaltet':'ausgeschaltet'}`);render();toast(on?'Neue Fahrzeuge sind jetzt als Gebrauchtwagen vorausgewählt.':'Neue Fahrzeuge werden wieder als Neuwagen angelegt.')}
 async function setTranspFree(on){if(on&&!confirm('Freie Bearbeitung des Transportmodus wirklich einschalten? Das gilt für alle Benutzer.'))return;
@@ -1763,10 +1941,19 @@ document.addEventListener('change',e=>{if(e.target.id==='tourL'){S.tourL=e.targe
 
 /* ---------- Rahmen ---------- */
 const NAV=[['dash','Dashboard',IC.dash],['tour','Rundgang',IC.route],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car],['prob','Probleme',IC.warn],['set','Einstellungen',IC.set]];
+/* Seitenleiste: Gruppen mit Unterpunkten (am Handy nur die Hauptpunkte) */
+function navHtml(late,pr){const A=S.veh.filter(v=>!v.archived),cnt={'':A.length,new:A.filter(v=>!v.used).length,used:A.filter(v=>v.used).length,show:A.filter(v=>v.show).length,miss:A.filter(v=>missingOf(v).length).length,arch:S.veh.length-A.length};
+ const a=n=>`<a data-v="${n[0]}" class="${(S.view===n[0]||(S.view==='veh'&&n[0]==='veh_l'))&&!(n[0]==='veh_l'&&S.view==='veh_l'&&S.fl&&VSUB.some(x=>x[0]===S.fl))?'on':''}" onclick="${n[0]==='veh_l'?"goVeh('')":`go('${n[0]}')`}" title="${n[1]}">${n[2]}<span class="lb">${n[1]}</span>${n[0]==='dash'&&late?`<span class="cnt">${late}</span>`:n[0]==='prob'&&pr?`<span class="cnt">${pr}</span>`:''}</a>`;
+ const sub=([f,l])=>(f==='show'||f==='miss')&&!cnt[f]?'':`<a class="sub ${S.view==='veh_l'&&S.fl===f?'on':''}" onclick="goVeh('${f}')">${l}<span class="n${f==='miss'?' r':''}">${cnt[f]}</span></a>`;
+ const N=Object.fromEntries(NAV.map(n=>[n[0],n]));
+ return`<div class="nsec">Übersicht</div>${a(N.dash)}${a(N.tour)}${a(N.cal)}
+ <div class="nsec">Bestand</div>${a(N.veh_l)}${VSUB.map(sub).join('')}${a(N.prob)}
+ <div class="nsec">Verwaltung</div><a data-v="imp" onclick="importModal()" title="Fahrzeugliste importieren">${IC.up}<span class="lb">Liste importieren</span></a>${a(N.set)}`}
+const VSUB=[['new','Neuwagen'],['used','Gebrauchtwagen'],['show','Im Schauraum'],['miss','Fehlende Daten'],['arch','Archiv']];
 function renderNav(){const late=activeTasks().filter(t=>t.status!=='Erledigt'&&t.due<TD()).length,pr=S.prob.filter(p=>p.status==='Offen').length;
  {const d=document.querySelector('.relb-d');if(d&&!d.innerHTML)d.innerHTML=IC.reload}
  $('nav').innerHTML=`<div class="brand"><img class="mk" src="icon-192.png?v=3" alt="TQS Fahrzeugpflege" width="34" height="34"><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
- <div class="nl">${NAV.map(n=>`<a data-v="${n[0]}" class="${(S.view===n[0]||(S.view==='veh'&&n[0]==='veh_l'))?'on':''}" onclick="go('${n[0]}')" title="${n[1]}">${n[2]}<span class="lb">${n[1]}</span>${n[0]==='dash'&&late?`<span class="cnt">${late}</span>`:n[0]==='prob'&&pr?`<span class="cnt">${pr}</span>`:''}</a>`).join('')}</div>
+ <div class="nl">${navHtml(late,pr)}</div>
  <button class="scanb" onclick="scanModal()" title="FIN scannen oder suchen">${IC.scan}<span class="lb">FIN scannen</span></button>
  <button class="relb relb-m${syncWait.size?' spin':''}" onclick="appReload(this)" title="App aktualisieren" aria-label="App aktualisieren">${IC.reload}</button>
  <button class="me" onclick="profileModal()" title="Profil"><span class="av">${E(initials(me()))}</span><div><b>${E(me())}</b><small>${E(S.acct.email)}</small></div></button>`;
@@ -1779,6 +1966,16 @@ async function appReload(b){if(b)b.classList.add('spin');
   await Promise.all([fetch('./',{cache:'reload'}),fetch('./index.html',{cache:'reload'})].map(p=>p.catch(()=>{})));
   if(window.caches)for(const k of await caches.keys()){const c=await caches.open(k);await c.delete('./');await c.delete('./index.html')}}catch(e){}
  location.reload()}
+/* ---------- Aufklapp-Menüs ---------- */
+function dd(label,items,o={}){return`<div class="dd${o.cls?' '+o.cls:''}"><button class="btn${o.b?' '+o.b:''}" onclick="ddT(event,this)" aria-haspopup="menu" aria-expanded="false"${o.title?` title="${o.title}" aria-label="${o.title}"`:''}>${label}</button><div class="ddm" role="menu">${items.filter(Boolean).map(i=>i==='-'?'<hr>':`<button role="menuitem" class="${i[3]||''}" onclick="ddClose();${i[2]}">${i[0]||''}<span>${i[1]}</span></button>`).join('')}</div></div>`}
+function ddT(e,b){e.stopPropagation();const d=b.parentNode,on=!d.classList.contains('open');ddClose();if(on){d.classList.add('open');b.setAttribute('aria-expanded','true');
+ const m=d.querySelector('.ddm'),r=m.getBoundingClientRect();d.classList.toggle('left',r.left<8);const f=m.querySelector('button');if(f&&e.detail===0)f.focus()}}
+function ddClose(){document.querySelectorAll('.dd.open').forEach(d=>{d.classList.remove('open','left');d.firstElementChild.setAttribute('aria-expanded','false')})}
+document.addEventListener('pointerdown',e=>{if(!e.target.closest||!e.target.closest('.dd'))ddClose()},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.querySelector('.dd.open')){e.stopImmediatePropagation();ddClose()}},true);
+/* „Fahrzeug hinzufügen“ mit Menü: anlegen, scannen, Liste importieren */
+const addBtn=()=>`<div class="split"><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button>${dd(IC.chevd,[[IC.plus,'Fahrzeug anlegen','vehModal()'],[IC.scan,'FIN scannen','scanModal()'],'-',[IC.up,'Liste importieren<small>Excel, CSV oder PDF</small>','importModal()']],{b:'p',title:'Weitere Möglichkeiten zum Hinzufügen'})}</div>`;
+function goVeh(f){S.fl=f;S.q='';go('veh_l')}
 function go(v){const same=S.view===v;S.view=v;render();if(!same)window.scrollTo(0,0)}
 /* Datenänderungen kommen oft in Schüben: einmal gesammelt neu zeichnen, und nie mitten im Antippen,
    damit sich nichts unter dem Finger verschiebt */
