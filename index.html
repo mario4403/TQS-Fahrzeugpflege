@@ -1134,7 +1134,7 @@ const PDFW={r:[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,5
 const WIN={8364:128,8218:130,402:131,8222:132,8230:133,8224:134,8225:135,710:136,8240:137,352:138,8249:139,338:140,381:142,8216:145,8217:146,8220:147,8221:148,8226:149,8211:150,8212:151,732:152,8482:153,353:154,8250:155,339:156,382:158,376:159};
 function winBytes(s){s=String(s==null?'':s).replace(/≤/g,'<=').replace(/≥/g,'>=').replace(/→/g,'->').replace(/[  ]/g,' ');const o=[];for(const ch of s){const c=ch.codePointAt(0);o.push(c>=32&&c<127?c:c>=160&&c<=255?c:WIN[c]||63)}return o}
 const pw=(s,sz,b)=>winBytes(s).reduce((a,c)=>a+(PDFW[b?'b':'r'][c-32]||556),0)*sz/1000;
-function PDFDoc(W,H){const pages=[];let cur=null;
+function PDFDoc(W,H){const pages=[],imgs=[];let cur=null;
  const n=v=>String(Math.round(v*100)/100);
  const esc=b=>b.map(c=>c===40||c===41||c===92?'\\'+String.fromCharCode(c):String.fromCharCode(c)).join('');
  const col=h=>{h=h.replace('#','');return[0,2,4].map(i=>(parseInt(h.substr(i,2),16)/255).toFixed(3)).join(' ')};
@@ -1149,14 +1149,19 @@ function PDFDoc(W,H){const pages=[];let cur=null;
   text(x,y,s,o={}){const sz=o.size||9;const str=o.maxW?api.fit(s,o.maxW,sz,o.bold):String(s==null?'':s),w=pw(str,sz,o.bold);
    const xx=o.align==='right'?x-w:o.align==='center'?x-w/2:x;
    cur.push(`BT /${o.bold?'F2':'F1'} ${n(sz)} Tf ${col(o.color||'#14202b')} rg ${n(xx)} ${n(H-y)} Td (${esc(winBytes(str))}) Tj ET`);return w},
+  /* JPEG-Bild (Bytes als Uint8Array) einbetten */
+  img(x,y,w,h,jpg,iw,ih){imgs.push({jpg,iw,ih});cur.push(`q ${n(w)} 0 0 ${n(h)} ${n(x)} ${n(H-y-h)} cm /Im${imgs.length} Do Q`)},
   rect(x,y,w,h,fill,stroke,lw){cur.push(`${fill?col(fill)+' rg ':''}${stroke?col(stroke)+' RG '+n(lw||.5)+' w ':''}${n(x)} ${n(H-y-h)} ${n(w)} ${n(h)} re ${fill&&stroke?'B':fill?'f':'S'}`)},
   line(pts,color,lw,dash){cur.push(`${col(color||'#000000')} RG ${n(lw||.5)} w ${dash?'['+dash.join(' ')+'] 0 d ':''}${pts.map((p,i)=>`${n(p[0])} ${n(H-p[1])} ${i?'l':'m'}`).join(' ')} S [] 0 d`)},
   dot(x,y,r,fill){const k=.5523*r,Y=H-y;cur.push(`${col(fill)} rg ${n(x+r)} ${n(Y)} m ${n(x+r)} ${n(Y+k)} ${n(x+k)} ${n(Y+r)} ${n(x)} ${n(Y+r)} c ${n(x-k)} ${n(Y+r)} ${n(x-r)} ${n(Y+k)} ${n(x-r)} ${n(Y)} c ${n(x-r)} ${n(Y-k)} ${n(x-k)} ${n(Y-r)} ${n(x)} ${n(Y-r)} c ${n(x+k)} ${n(Y-r)} ${n(x+r)} ${n(Y-k)} ${n(x+r)} ${n(Y)} c f`)},
   bytes(title){const objs=[],add=s=>{objs.push(s);return objs.length};
    const cat=add(''),pg=add(''),f1=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'),f2=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+   const xo=imgs.map(im=>{let b='';for(let i=0;i<im.jpg.length;i+=8192)b+=String.fromCharCode.apply(null,im.jpg.subarray(i,i+8192));
+    return add(`<< /Type /XObject /Subtype /Image /Width ${im.iw} /Height ${im.ih} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.jpg.length} >>\nstream\n${b}\nendstream`)}),
+    xres=xo.length?` /XObject << ${xo.map((o,i)=>`/Im${i+1} ${o} 0 R`).join(' ')} >>`:'';
    const info=add(`<< /Title (${esc(winBytes(title||''))}) /Producer (TQS Fahrzeugpflege) >>`),kids=[];
    for(const p of pages){const s=p.join('\n'),c=add(`<< /Length ${s.length} >>\nstream\n${s}\nendstream`);
-    kids.push(add(`<< /Type /Page /Parent ${pg} 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${c} 0 R >>`))}
+    kids.push(add(`<< /Type /Page /Parent ${pg} 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >>${xres} >> /Contents ${c} 0 R >>`))}
    objs[cat-1]=`<< /Type /Catalog /Pages ${pg} 0 R >>`;objs[pg-1]=`<< /Type /Pages /Kids [${kids.map(k=>k+' 0 R').join(' ')}] /Count ${kids.length} >>`;
    let out='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';const offs=[];objs.forEach((o,i)=>{offs.push(out.length);out+=`${i+1} 0 obj\n${o}\nendobj\n`});
    const xr=out.length;out+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n${offs.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')}trailer\n<< /Size ${objs.length+1} /Root ${cat} 0 R /Info ${info} 0 R >>\nstartxref\n${xr}\n%%EOF`;
@@ -1179,7 +1184,14 @@ function pdfChart(doc,x,y,w,h,[title,rs,o],C){
   if(lbl)doc.text(cx,cy-5,nf(r.v,o.d),{size:6.5,color:C.tx,align:'center'});
   if(cx-lastX>=44||i===rs.length-1&&cx-lastX>=30){doc.text(cx,py+pH+12,fmt(r.d).slice(0,6)+fmt(r.d).slice(8),{size:6.5,color:C.mu,align:'center'});lastX=cx}});
  doc.line([[px,py],[px,py+pH],[px+pW,py+pH]],'#9aa6b2',.6)}
-function pdfProtokoll(fin){const v=veh(fin);if(!v.fin)return;
+/* Fahrzeugfoto fürs PDF: große Version, falls vorhanden, sonst das kleine; immer als JPEG */
+async function pdfPhoto(v){if(!okPhoto(v.photo))return null;let src=v.photo;
+ if(v.photoL){try{let d=PHL[v.fin];if(!d){const s=await Promise.race([db.doc('photos/'+v.fin).get(),new Promise((_,no)=>setTimeout(no,4000))]);d=s.exists&&s.data().data;if(okPhotoL(d))PHL[v.fin]=d;else d=null}if(d)src=d}catch(e){}}
+ const im=new Image();im.src=src;await im.decode();const w=Math.min(im.naturalWidth,1200),h=Math.round(w*im.naturalHeight/im.naturalWidth);
+ const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);
+ const b=atob(c.toDataURL('image/jpeg',.88).split(',')[1]),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return{jpg:u,w,h}}
+async function pdfProtokoll(fin){const v=veh(fin);if(!v.fin)return;
+ let ph=null;try{ph=await pdfPhoto(v)}catch(e){console.warn('Foto fürs PDF',e)}
  try{
  const T=TD(),W=842,H=595,M=36,doc=PDFDoc(W,H);
  const C={tx:'#14202b',mu:'#5b6877',bd:'#d6dde4',ac:'#0b6a96',hd:'#132029',ok:'#1b8a4c',ba:'#c42b2b',wa:'#9a6a00',z:'#f4f7fb',okb:'#e0f3e8',bab:'#fbe3e1',wab:'#fdf0cc',grb:'#e8ecf0'};
@@ -1193,8 +1205,11 @@ function pdfProtokoll(fin){const v=veh(fin);if(!v.fin)return;
  head();
  doc.text(M,y+10,[`${v.brand||''} ${v.model||''}`.trim(),v.variant].filter(Boolean).join(' · '),{size:12,bold:true,maxW:W-2*M});y+=18;
  const info=[['FIN',v.fin],['Eingang',fmt(v.deliv)],['Standort',v.loc||'–'],['Stellplatz',v.spot||'–'],['Kennzeichen',v.plate||'–'],['Interne Nr.',v.nr||'–'],['Kilometerstand',kmTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Fahrzeugart',v.used?'Gebrauchtwagen':'Neufahrzeug'],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Farbe',v.color||'–']];
- const cw=(W-2*M)/4,ih=Math.ceil(info.length/4)*23+4;doc.rect(M,y,W-2*M,ih,C.z);
- info.forEach((x,i)=>{const cx=M+10+(i%4)*cw,cy=y+4+Math.floor(i/4)*23;doc.text(cx,cy+8,x[0].toUpperCase(),{size:6.5,bold:true,color:C.mu});doc.text(cx,cy+19,x[1],{size:9.5,maxW:cw-16})});y+=ih+12;
+ /* mit Foto: Bild links, Stammdaten rechts daneben in 3 Spalten; ohne Foto wie bisher 4 Spalten über die ganze Breite */
+ const nc=ph?3:4,ih=Math.ceil(info.length/nc)*23+4,pwid=ph?Math.min(260,ih*ph.w/ph.h):0,ix=M+(ph?pwid+10:0),cw=(W-M-ix)/nc;
+ if(ph){doc.rect(M,y,pwid,ih,C.z);const s=Math.min(pwid/ph.w,ih/ph.h),dw=ph.w*s,dh=ph.h*s;doc.img(M+(pwid-dw)/2,y+(ih-dh)/2,dw,dh,ph.jpg,ph.w,ph.h);doc.rect(M,y,pwid,ih,null,C.bd,.6)}
+ doc.rect(ix,y,W-M-ix,ih,C.z);
+ info.forEach((x,i)=>{const cx=ix+10+(i%nc)*cw,cy=y+4+Math.floor(i/nc)*23;doc.text(cx,cy+8,x[0].toUpperCase(),{size:6.5,bold:true,color:C.mu});doc.text(cx,cy+19,x[1],{size:9.5,maxW:cw-16})});y+=ih+12;
  doc.text(M,y+8,`${ts.length} Maßnahmen bis ${fmt(T)}  ·  ${nDone} erledigt  ·  ${ts.length-nDone} nicht erledigt${nLate?` (davon ${nLate} überfällig)`:''}`,{size:9,color:C.mu});y+=16;
  const cols=[['Geplant',58],['Maßnahme',160],['Intervall / Herkunft',150],['Status',70],['Erledigt am',62],['Mitarbeiter:in',95],['Messwert',54],['Bemerkung',0]];
  cols[7][1]=W-2*M-cols.slice(0,7).reduce((a,c)=>a+c[1],0);
