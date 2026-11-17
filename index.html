@@ -896,7 +896,7 @@ const BRANDS=['Volkswagen','VW Nutzfahrzeuge','Audi','Škoda','Seat','Cupra','Po
 let curV=null;
 const uniq=a=>[...new Set(a.filter(Boolean))].sort(new Intl.Collator('de',{numeric:true}).compare);
 let vPhoto='',vPhotoL=null,crop=null;
-function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{transp:true,...(pre||{})};curV=v;vPhoto=okPhoto(v.photo)?v.photo:'';vPhotoL=null;crop=null;const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
+function vehModal(fin,pre){const v=S.veh.find(x=>x.fin===fin)||{...(S.cfg.usedDef?{used:true,transp:false}:{transp:true}),...(pre||{})};curV=v;vPhoto=okPhoto(v.photo)?v.photo:'';vPhotoL=null;crop=null;const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
  modal(`<header><h3>${fin?'Fahrzeug bearbeiten':'Neues Fahrzeug'}</h3><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
  <div class="sb"><div class="prev" id="vprev"></div>
  <div class="phrow"><input type="file" id="vph" accept="image/*" hidden><button class="btn sm" type="button" onclick="$('vph').click()">${IC.camera} <span id="vphl">${vPhoto?'Foto ändern':'Foto hinzufügen'}</span></button><button class="btn sm" type="button" id="vphe" hidden onclick="cropOpen()">Ausschnitt ändern</button><button class="btn sm" type="button" id="vphx" style="color:var(--ba)" ${vPhoto?'':'hidden'} onclick="vPhoto='';vPhotoL='';this.hidden=true;$('vphl').textContent='Foto hinzufügen';$('vphs').textContent='Foto wird beim Speichern entfernt – dann ist wieder die Skizze zu sehen.';vPrev()">Foto entfernen</button><span class="hint" id="vphs">${vPhoto?'':'Optional: 1 Foto, wird statt der Skizze angezeigt.'}</span></div>
@@ -1414,10 +1414,16 @@ function sett(){const c=S.cfg;
  <label class="f">„Bitte Laden!“ bei 12V-Spannung unter (Volt)<input type="number" step="0.1" id="s_v12" value="${c.v12}"></label>
  <label class="f">„Bitte Laden!“ bei HV-Ladezustand unter (%)<input type="number" min="0" max="100" id="s_hv" value="${c.hv}"></label>
  <div><button class="btn p" onclick="saveCfg()">Speichern und Termine neu berechnen</button></div></div></section>
+ <section class="panel" style="max-width:640px"><div class="ph"><h3>Neue Fahrzeuge</h3>${c.usedDef?'<span class="pill">Gebrauchtwagen</span>':''}</div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
+ <p class="hint" style="margin:0">Ist das eingeschaltet, ist beim Hinzufügen eines Fahrzeugs „Gebrauchtwagen“ schon angehakt: kein Transport- und kein Schauraummodus. Für einen Neuwagen kann der Haken im Formular jederzeit entfernt werden. Bereits angelegte Fahrzeuge ändern sich nicht. Die Einstellung gilt für alle Benutzer.</p>
+ <button class="toggle ${c.usedDef?'on':''}" onclick="setUsedDef(${!c.usedDef})" aria-pressed="${!!c.usedDef}"><span class="sw-t"></span><span><b>Gebrauchtwagen vorauswählen ${c.usedDef?'an':'aus'}</b><small>${c.usedDef?'Neue Fahrzeuge werden als Gebrauchtwagen angelegt':'Neue Fahrzeuge werden als Neuwagen (mit Transportmodus) angelegt'}</small></span></button>
+ </div></section>
  <section class="panel" style="max-width:640px;border-color:${c.transpFree?'var(--ba)':'var(--bd)'}"><div class="ph" style="background:linear-gradient(90deg,var(--bab),transparent 65%)"><h3>Transport-/Schauraummodus bearbeiten</h3>${c.transpFree?'<span class="pill s-ba">freigeschaltet</span>':''}</div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
  <p class="msg err" style="display:block;margin:0"><b>Achtung:</b> Normalerweise werden Transport- und Schauraummodus einmal mit Datum ausgeschaltet und sind danach gesperrt. Mit dieser Freischaltung können beide Modi bei allen Fahrzeugen beliebig ein- und ausgeschaltet und das Datum frei in Vergangenheit oder Zukunft gelegt werden. Die 12V-Termine werden dabei neu berechnet. Bereits erledigte Maßnahmen bleiben erhalten. Die Einstellung gilt für alle Benutzer.</p>
  <button class="toggle ${c.transpFree?'on':''}" onclick="setTranspFree(${!c.transpFree})" aria-pressed="${!!c.transpFree}"><span class="sw-t"></span><span><b>Freie Bearbeitung ${c.transpFree?'an':'aus'}</b><small>${c.transpFree?'Transport- und Schauraummodus sind frei änderbar':'Beide Modi können nur einmal ausgeschaltet werden'}</small></span></button>
  </div></section>`}
+async function setUsedDef(on){try{await db.doc('settings/cfg').set({usedDef:on},{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}
+ S.cfg={...S.cfg,usedDef:on};log('',`Gebrauchtwagen-Vorauswahl ${on?'eingeschaltet':'ausgeschaltet'}`);render();toast(on?'Neue Fahrzeuge sind jetzt als Gebrauchtwagen vorausgewählt.':'Neue Fahrzeuge werden wieder als Neuwagen angelegt.')}
 async function setTranspFree(on){if(on&&!confirm('Freie Bearbeitung des Transportmodus wirklich einschalten? Das gilt für alle Benutzer.'))return;
  try{await db.doc('settings/cfg').set({transpFree:on},{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}
  S.cfg={...S.cfg,transpFree:on};log('',`Freie Bearbeitung des Transportmodus ${on?'eingeschaltet':'ausgeschaltet'}`);render();toast(on?'Transportmodus ist jetzt frei bearbeitbar.':'Freie Bearbeitung ausgeschaltet.')}
