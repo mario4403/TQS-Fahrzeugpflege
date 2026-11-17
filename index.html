@@ -723,7 +723,10 @@ async function sync(v){if(syncing[v.fin])return syncing[v.fin];
  const p=(async()=>{const want=planFor(v),keys=new Set(want.map(x=>x.k)),mine=(S.taskAll||S.tasks).filter(t=>t.fin===v.fin),ops=[];let add=0,del=0;
   for(const t of mine)if(t.status==='Offen'&&!t.manual&&!t.removed&&!keys.has(t.k)){del++;ops.push(()=>db.doc('tasks/'+t._id).delete())}
   for(const x of want){const id=v.fin+'_'+x.k,cur=mine.find(t=>t._id===id);
-   if(!cur){add++;ops.push(()=>db.doc('tasks/'+id).set({fin:v.fin,k:x.k,cat:x.cat,title:x.t,when:x.w,due:x.due,status:'Offen',done:'',who:'',val:'',note:''}))}
+   /* Neu anlegen nur, wenn es die Maßnahme auf dem Server wirklich noch nicht gibt – sonst würde eine anderswo
+      erledigte Maßnahme wieder auf „Offen" zurückgesetzt */
+   if(!cur){add++;ops.push(async()=>{const r=db.doc('tasks/'+id),sn=await r.get({source:'server'}).catch(()=>null);if(!sn||sn.exists)return;
+    await r.set({fin:v.fin,k:x.k,cat:x.cat,title:x.t,when:x.w,due:x.due,status:'Offen',done:'',who:'',val:'',note:''})})}
    else if(cur.status!=='Erledigt'&&!cur.removed&&(cur.due!==x.due||cur.title!==x.t||cur.when!==x.w||cur.cat!==x.cat))ops.push(()=>db.doc('tasks/'+id).update({due:x.due,title:x.t,when:x.w,cat:x.cat}))}
   await pool(ops,6);return{add,del,total:want.length}})();
  syncing[v.fin]=p;try{return await p}finally{delete syncing[v.fin]}}
@@ -1801,13 +1804,16 @@ addEventListener('pageshow',e=>{if(e.persisted){hiddenAt=hiddenAt||Date.now()-6*
 addEventListener('online',()=>{if(S.acct){syncStart();try{db.enableNetwork()}catch(e){}}});
 function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=false;
  if(!subscribed){subscribed=true;syncStart();
-  const sub=(n,k)=>{let got=false;unsubs.push(db.collection(n).onSnapshot({includeMetadataChanges:true},s=>{syncSeen(k,s);/* nur Statuswechsel (Cache → Server), keine geänderten Daten: nicht neu zeichnen */if(got&&!s.docChanges().length)return;got=true;S[k]=s.docs.map(d=>({...d.data(),_id:d.id}));if(k==='tasks'){S.taskAll=S.tasks;S.tasks=S.taskAll.filter(t=>!t.removed)}if(k in S.ready)S.ready[k]=1;migrate();soon()},e=>{console.error(n,e);if(e.code==='permission-denied')toast('Kein Zugriff auf die Datenbank. Sind die Firestore-Regeln eingetragen?')}));}
+  const sub=(n,k)=>{let got=false;unsubs.push(db.collection(n).onSnapshot({includeMetadataChanges:true},s=>{syncSeen(k,s);if(!s.metadata.fromCache&&k in srvOk)srvOk[k]=1;/* nur Statuswechsel (Cache → Server), keine geänderten Daten: nicht neu zeichnen */if(got&&!s.docChanges().length){migrate();return}got=true;S[k]=s.docs.map(d=>({...d.data(),_id:d.id}));if(k==='tasks'){S.taskAll=S.tasks;S.tasks=S.taskAll.filter(t=>!t.removed)}if(k in S.ready)S.ready[k]=1;migrate();soon()},e=>{console.error(n,e);if(e.code==='permission-denied')toast('Kein Zugriff auf die Datenbank. Sind die Firestore-Regeln eingetragen?')}));}
   sub('vehicles','veh');sub('tasks','tasks');sub('problems','prob');sub('log','log');
   unsubs.push(db.doc('settings/cfg').onSnapshot(s=>{S.cfg={...DEF,...(s.data()||{})};soon()},e=>console.error(e)),db.doc('settings/reminders').onSnapshot(s=>{S.rem=s.data()||{};if(S.view==='set')soon()},e=>console.warn('Erinnerungen',e)))}
  render()}
-async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks)return;S.migrated=true;try{for(const v of S.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
+/* Pflegeplan-Abgleich erst, wenn Fahrzeuge UND Maßnahmen frisch vom Server da sind. Vorher liegt nur der gespeicherte
+   (evtl. veraltete) Stand vor – ein Abgleich darauf hat Maßnahmen gelöscht bzw. wieder angelegt (Zahl sprang hin und her). */
+const srvOk={veh:0,tasks:0};
+async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks||!srvOk.veh||!srvOk.tasks)return;S.migrated=true;try{for(const v of S.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
 function signedIn(u){S.acct={email:u.email,uid:u.uid,name:u.displayName||u.email.split('@')[0]};enterApp()}
-function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.taskAll=[];S.prob=[];S.log=[];
+function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;srvOk.veh=srvOk.tasks=0;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.taskAll=[];S.prob=[];S.log=[];
  const was=!!S.acct;S.acct=null;$('mod').hidden=true;$('mb').innerHTML='';$('app').hidden=true;$('boot').hidden=true;$('auth').hidden=false;if(was){authTab('login');msg('mLogin','Du wurdest abgemeldet.',1)}}
 
 /* ---------- Offline ---------- */
