@@ -1965,6 +1965,12 @@ async function appReload(b){if(b)b.classList.add('spin');
  try{const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(reg)await reg.update().catch(()=>{});
   await Promise.all([fetch('./',{cache:'reload'}),fetch('./index.html',{cache:'reload'})].map(p=>p.catch(()=>{})));
   if(window.caches)for(const k of await caches.keys()){const c=await caches.open(k);await c.delete('./');await c.delete('./index.html')}}catch(e){}
+ /* Gespeicherten Datenstand verwerfen, damit nach dem Neuladen alles frisch vom Server kommt.
+    Vorher warten, bis alle eigenen Änderungen beim Server angekommen sind – sonst gingen sie verloren. */
+ if(db){try{await Promise.race([db.waitForPendingWrites(),new Promise((_,no)=>setTimeout(()=>no(new Error('pending')),5000))]);
+   await db.terminate();await db.clearPersistence()}
+  catch(e){if(e&&e.message==='pending'){if(b)b.classList.remove('spin');
+    toast('Es gibt noch Änderungen, die nicht beim Server angekommen sind (keine Verbindung?). Bitte Internet prüfen und erneut aktualisieren.');return}}}
  location.reload()}
 /* ---------- Aufklapp-Menüs ---------- */
 function dd(label,items,o={}){return`<div class="dd${o.cls?' '+o.cls:''}"><button class="btn${o.b?' '+o.b:''}" onclick="ddT(event,this)" aria-haspopup="menu" aria-expanded="false"${o.title?` title="${o.title}" aria-label="${o.title}"`:''}>${label}</button><div class="ddm" role="menu">${items.filter(Boolean).map(i=>i==='-'?'<hr>':`<button role="menuitem" class="${i[3]||''}" onclick="ddClose();${i[2]}">${i[0]||''}<span>${i[1]}</span></button>`).join('')}</div></div>`}
@@ -2044,7 +2050,7 @@ let auth=null;
  if(typeof firebase==='undefined')return fail('Firebase konnte nicht geladen werden. Bitte Internetverbindung prüfen und die Seite neu laden.');
  if(!firebaseConfig.apiKey||/HIER/.test(firebaseConfig.apiKey))return fail('Firebase ist noch nicht eingerichtet: Bitte den <b>firebaseConfig</b>-Block oben in der index.html mit den Werten aus der Firebase-Konsole ersetzen.');
  firebase.initializeApp(firebaseConfig);auth=firebase.auth();auth.languageCode='de';db=firebase.firestore();
- try{if(db.enablePersistence)db.enablePersistence({synchronizeTabs:true}).catch(e=>console.warn('Offline-Speicher nicht verfügbar:',e&&e.code))}catch(e){}
+ try{if(db.enablePersistence)db.enablePersistence({synchronizeTabs:false}).catch(e=>console.warn('Offline-Speicher nicht verfügbar:',e&&e.code))}catch(e){}
  patchOffline();
  auth.onAuthStateChanged(u=>{if(holdAuth)return;if(u&&u.emailVerified&&okDomain(u.email))signedIn(u);else{if(u)auth.signOut();signedOut()}})})();
 </script>
