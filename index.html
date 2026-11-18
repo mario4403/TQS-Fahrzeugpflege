@@ -2019,10 +2019,10 @@ function navHtml(late,pr){const A=S.veh.filter(v=>!v.archived),cnt={'':A.length,
  const cs=x=>RAW.veh.filter(v=>!v.archived&&(x==='*'||siteOf(v)===x)).length,q=x=>E(x).replace(/'/g,"\\'");
  const st=`<div class="nsec">Standort</div>${SITES().map(x=>`<a class="sub site ${S.site===x?'on':''}" onclick="setSite('${q(x)}')">${IC.pin}${E(x)}<span class="n">${cs(x)}</span></a>`).join('')}${SITES().length>1?`<a class="sub site ${S.site==='*'?'on':''}" onclick="setSite('*')">${IC.pin}Alle Standorte<span class="n">${cs('*')}</span></a>`:''}<a class="sub site add" onclick="siteModal()">${IC.plus}Standort hinzufügen</a>`;
  return`${st}<div class="nsec">Übersicht</div>${a(N.dash)}${a(N.tour)}${a(N.cal)}
- <div class="nsec">Bestand</div>${a(N.veh_l).replace('</a>',`<button class="ntog ${navVehOpen()?'open':''}" onclick="event.stopPropagation();navVehToggle()" title="${navVehOpen()?'Unterpunkte einklappen':'Neuwagen, Gebrauchtwagen, Schauraum anzeigen'}" aria-label="Unterpunkte ein-/ausklappen" aria-expanded="${navVehOpen()}">${IC.chevd}</button></a>`)}${VSUB.filter(([f])=>navVehOpen()||!NVFOLD.includes(f)||(S.view==='veh_l'&&S.fl===f)).map(sub).join('')}${a(N.prob)}${a(N.notes)}
+ <div class="nsec">Bestand</div>${a(N.veh_l).replace('</a>',`<button class="ntog ${navVehOpen()?'open':''}" onclick="event.stopPropagation();navVehToggle()" title="${navVehOpen()?'Unterpunkte einklappen':'Neuwagen, Gebrauchtwagen, Schauraum, Archiv anzeigen'}" aria-label="Unterpunkte ein-/ausklappen" aria-expanded="${navVehOpen()}">${IC.chevd}</button></a>`)}${VSUB.filter(([f])=>navVehOpen()||!NVFOLD.includes(f)||(S.view==='veh_l'&&S.fl===f)).map(sub).join('')}${a(N.prob)}${a(N.notes)}
  <div class="nsec">Verwaltung</div><a data-v="imp" onclick="importModal()" title="Fahrzeugliste importieren">${IC.up}<span class="lb">Liste importieren</span></a>${a(N.set)}`}
-/* Unterpunkte Neuwagen / Gebrauchtwagen / Im Schauraum einklappbar (pro Gerät gemerkt) */
-const NVFOLD=['new','used','show'];
+/* Unterpunkte Neuwagen / Gebrauchtwagen / Im Schauraum / Archiv einklappbar (pro Gerät gemerkt) */
+const NVFOLD=['new','used','show','arch'];
 function navVehOpen(){try{return localStorage.getItem('tqsNavVeh')!=='0'}catch(e){return true}}
 function navVehToggle(){try{localStorage.setItem('tqsNavVeh',navVehOpen()?'0':'1')}catch(e){}renderNav()}
 const VSUB=[['new','Neuwagen'],['used','Gebrauchtwagen'],['show','Im Schauraum'],['miss','Fehlende Daten'],['arch','Archiv']];
