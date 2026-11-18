@@ -132,6 +132,14 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 .ntx{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px;line-height:1.5}
 .btn.ghost{background:none;border-color:transparent}
 @media(max-width:430px){#nav .brand{display:none}#nav .nl a[data-v]{width:40px}}
+/* Standort wählen (nach dem Anmelden) */
+#sitepick:not([hidden]){position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:24px;background:radial-gradient(1200px 600px at 20% 0%,rgba(240,169,46,.18),transparent 60%),var(--nav,#14202b);overflow:auto}
+.sp-box{width:min(440px,100%);background:var(--sf);color:var(--tx);border-radius:20px;padding:30px 26px;box-shadow:0 24px 60px rgba(0,0,0,.35);text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px}
+.sp-box .mk{border-radius:12px}.sp-box h1{margin:6px 0 0;font-size:24px}.sp-box p{margin:0 0 8px}
+.sp-list{display:flex;flex-direction:column;gap:10px;width:100%;margin:6px 0}
+.sp-btn{display:flex;align-items:center;gap:12px;width:100%;padding:16px 18px;border-radius:14px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);font:inherit;font-size:17px;cursor:pointer;text-align:left;min-height:58px}
+.sp-btn:hover,.sp-btn:focus-visible{border-color:var(--ac);background:var(--grb);outline:0}.sp-btn .ic{width:20px;height:20px;color:var(--ac)}.sp-btn small{margin-left:auto;color:var(--mu);font-size:13px}
+.sp-out{margin-top:10px;font-size:13px;color:var(--mu)}
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--grb);color:var(--gr)}
 .tag.ac{background:var(--acs);color:var(--ac)}
 .ic{width:18px;height:18px;flex-shrink:0}
@@ -574,6 +582,7 @@ body.mopen{overflow:hidden}
 <body>
 <div id="boot"><p>Wird geladen …</p></div>
 
+<div id="sitepick" hidden></div>
 <div id="auth" hidden>
  <aside class="a-side">
   <div class="brand"><img class="mk" src="icon-192.png?v=3" alt="TQS Fahrzeugpflege" width="34" height="34"><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
@@ -594,7 +603,7 @@ body.mopen{overflow:hidden}
     <p class="msg" id="mLogin" role="alert"></p>
     <label class="f">E-Mail<input id="lEmail" type="email" autocomplete="username" placeholder="vorname.nachname@autohaus-reiser.at"></label>
     <label class="f">Passwort<span class="pw"><input id="lPw" type="password" autocomplete="current-password"><button type="button" onclick="togglePw('lPw',this)">Zeigen</button></span></label>
-    <div class="row"><label class="chk"><input type="checkbox" id="lRem" checked>Angemeldet bleiben</label><button type="button" class="link" onclick="authTab('reset')">Passwort vergessen?</button></div>
+    <div class="row"><span class="muted" style="font-size:12.5px">Nach 4 Stunden ohne Nutzung wirst du automatisch abgemeldet.</span><button type="button" class="link" onclick="authTab('reset')">Passwort vergessen?</button></div>
     <button class="btn p" type="submit" id="lBtn" style="justify-content:center;padding:11px">Anmelden</button>
     <p class="hint">Noch kein Konto? <button type="button" class="link" onclick="authTab('reg')">Jetzt registrieren</button></p>
    </form>
@@ -865,10 +874,10 @@ $('fLogin').addEventListener('submit',async e=>{e.preventDefault();msg('mLogin',
  if(!okDomain(email))return msg('mLogin','Kein Firmenkonto! Anmeldung nur mit einer E-Mail-Adresse '+DOMAIN+' möglich.');
  if(!pw)return msg('mLogin','Bitte das Passwort eingeben.');
  busy('lBtn',true,'Anmelden …');holdAuth=true;
- try{await auth.setPersistence($('lRem').checked?firebase.auth.Auth.Persistence.LOCAL:firebase.auth.Auth.Persistence.SESSION);
+ try{await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
   const c=await auth.signInWithEmailAndPassword(email,pw);
   if(!c.user.emailVerified){try{await c.user.sendEmailVerification()}catch(x){}await auth.signOut();msg('mLogin','Bitte bestätige zuerst deine E-Mail-Adresse. Wir haben dir den Bestätigungslink erneut geschickt (auch im Spam-Ordner nachsehen).');return}
-  $('lPw').value='';holdAuth=false;signedIn(c.user)}
+  $('lPw').value='';holdAuth=false;actNow(true);S.pickSite=true;signedIn(c.user)}
  catch(err){msg('mLogin',errText(err))}
  finally{holdAuth=false;busy('lBtn',false,'Anmelden')}});
 
@@ -880,6 +889,20 @@ $('fReset').addEventListener('submit',async e=>{e.preventDefault();msg('mReset',
 
 const initials=n=>(n||'?').split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
 function logout(){auth.signOut()}
+/* ---------- Sitzung: 4 Stunden ohne Nutzung → automatisch abmelden (auch wenn die App geschlossen oder minimiert war) ---------- */
+const SESS=4*3600e3;let actW=0,autoOut=false;
+function actNow(force){const t=Date.now();if(!force&&t-actW<30e3)return;actW=t;try{localStorage.setItem('tqsAct',String(t))}catch(e){}}
+function actAge(){let t=0;try{t=+localStorage.getItem('tqsAct')||0}catch(e){}return Date.now()-t}
+function sessCheck(){if(S.acct&&actAge()>SESS){autoOut=true;auth.signOut()}}
+['pointerdown','keydown','wheel','touchstart'].forEach(ev=>addEventListener(ev,()=>{if(S.acct&&!document.hidden)actNow()},{passive:true,capture:true}));
+setInterval(sessCheck,30e3);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sessCheck()});
+/* Nach dem Anmelden: Standort wählen */
+function sitePickHtml(){const L=SITES(),n=x=>RAW.veh.filter(v=>!v.archived&&siteOf(v)===x).length;
+ return`<div class="sp-box"><img class="mk" src="icon-192.png?v=3" alt="" width="46" height="46"><h1>Standort wählen</h1><p class="muted">Hallo ${E((S.acct&&S.acct.name||'').split(' ')[0])}, an welchem Standort arbeitest du heute?</p>
+ ${S.cfgOk?`<div class="sp-list">${L.map((x,i)=>`<button class="sp-btn" onclick="pickSite(${i})">${IC.pin}<b>${E(x)}</b>${S.ready.veh?`<small>${n(x)} ${n(x)===1?'Fahrzeug':'Fahrzeuge'}</small>`:''}</button>`).join('')}</div>
+ ${L.length>1?`<button class="link" onclick="pickSite(-1)">Alle Standorte anzeigen</button>`:''}`:'<p class="muted">Wird geladen …</p>'}
+ <button class="link sp-out" onclick="logout()">Abmelden</button></div>`}
+function pickSite(i){S.pickSite=false;$('sitepick').hidden=true;$('sitepick').innerHTML='';S.view='dash';setSite(i<0?'*':SITES()[i],true)}
 function profileModal(){const a=S.acct;modal(`<header><div class="av" style="width:44px;height:44px;font-size:16px">${E(initials(a.name))}</div><div style="flex:1"><h3>${E(a.name)}</h3><span class="muted">${E(a.email)}</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
  <div class="sb"><p class="msg" id="mP" role="alert"></p>
  <label class="f">Anzeigename<input id="pName" value="${E(a.name)}"></label>
@@ -2093,7 +2116,8 @@ addEventListener('blur',touchEnd);document.addEventListener('visibilitychange',t
 /* Während ein Fenster offen ist, wird die Seite dahinter nicht neu gezeichnet – sobald es zu ist, sofort nachholen,
    sonst bleiben alte Zahlen stehen (z. B. nach dem Abhaken einer Maßnahme im Fenster) */
 {const mo=new MutationObserver(()=>{if(blocked&&$('mod').hidden&&$('alrt').hidden){blocked=false;soon()}});['mod','alrt'].forEach(id=>mo.observe($(id),{attributes:true,attributeFilter:['hidden']}))}
-function render(){if(!db||!S.acct||$('app').hidden)return;applySite();if(!$('mod').hidden||!$('alrt').hidden){blocked=true;return}
+function render(){if(!db||!S.acct||$('app').hidden)return;applySite();
+ if(S.pickSite){$('sitepick').hidden=false;$('sitepick').innerHTML=sitePickHtml();return}if(!$('mod').hidden||!$('alrt').hidden){blocked=true;return}
  S.vis=[];if(S.selMode&&S.selKey!==S.view+'|'+S.sel+'|'+S.tab){S.selMode=false;S.pick=new Set()}
  renderNav();
  /* Noch keine Daten (z. B. direkt nach „Aktualisieren“, Zwischenspeicher leer): Ladeanzeige statt lauter Nullen */
@@ -2125,7 +2149,7 @@ function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=
  if(!subscribed){subscribed=true;syncStart();
   const sub=(n,k)=>{let got=false;unsubs.push(db.collection(n).onSnapshot({includeMetadataChanges:true},s=>{syncSeen(k,s);if(!s.metadata.fromCache&&k in srvOk)srvOk[k]=1;/* nur Statuswechsel (Cache → Server), keine geänderten Daten: nicht neu zeichnen */if(got&&!s.docChanges().length){migrate();return}got=true;RAW[k]=s.docs.map(d=>({...d.data(),_id:d.id}));applySite();if(k in S.ready)S.ready[k]=1;migrate();soon()},e=>{console.error(n,e);if(e.code==='permission-denied')toast('Kein Zugriff auf die Datenbank. Sind die Firestore-Regeln eingetragen?')}));}
   sub('vehicles','veh');sub('tasks','tasks');sub('problems','prob');sub('log','log');sub('notes','notes');
-  unsubs.push(db.doc('settings/cfg').onSnapshot({includeMetadataChanges:true},s=>{S.cfg={...DEF,...(s.data()||{})};if(!s.metadata.fromCache){srvOk.cfg=1;migrate()}soon()},e=>console.error(e)),db.doc('settings/reminders').onSnapshot(s=>{S.rem=s.data()||{};if(S.view==='set')soon()},e=>console.warn('Erinnerungen',e)))}
+  unsubs.push(db.doc('settings/cfg').onSnapshot({includeMetadataChanges:true},s=>{S.cfg={...DEF,...(s.data()||{})};S.cfgOk=1;if(S.pickSite)render();if(!s.metadata.fromCache){srvOk.cfg=1;migrate()}soon()},e=>console.error(e)),db.doc('settings/reminders').onSnapshot(s=>{S.rem=s.data()||{};if(S.view==='set')soon()},e=>console.warn('Erinnerungen',e)))}
  render()}
 /* Pflegeplan-Abgleich erst, wenn Fahrzeuge, Maßnahmen UND Einstellungen frisch vom Server da sind. Vorher liegt nur der
    gespeicherte (evtl. veraltete) Stand vor – ein Abgleich darauf hat Maßnahmen gelöscht bzw. wieder angelegt (Zahl sprang hin und her).
@@ -2135,7 +2159,7 @@ const srvOk={veh:0,tasks:0,cfg:0};
 async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks||!srvOk.veh||!srvOk.tasks||!srvOk.cfg)return;S.migrated=true;try{for(const v of RAW.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
 function signedIn(u){S.acct={email:u.email,uid:u.uid,name:u.displayName||u.email.split('@')[0]};enterApp()}
 function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;srvOk.veh=srvOk.tasks=srvOk.cfg=0;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.taskAll=[];S.prob=[];S.log=[];RAW.veh=[];RAW.tasks=[];RAW.prob=[];RAW.log=[];RAW.notes=[];S.notes=[];
- const was=!!S.acct;S.acct=null;$('mod').hidden=true;$('mb').innerHTML='';$('app').hidden=true;$('boot').hidden=true;$('auth').hidden=false;if(was){authTab('login');msg('mLogin','Du wurdest abgemeldet.',1)}}
+ const was=!!S.acct||autoOut;S.acct=null;S.pickSite=false;S.cfgOk=0;$('sitepick').hidden=true;$('sitepick').innerHTML='';try{localStorage.removeItem('tqsAct')}catch(e){}$('mod').hidden=true;$('mb').innerHTML='';$('app').hidden=true;$('boot').hidden=true;$('auth').hidden=false;if(was){authTab('login');msg('mLogin',autoOut?'Du wurdest nach 4 Stunden ohne Nutzung automatisch abgemeldet. Bitte neu anmelden.':'Du wurdest abgemeldet.',1)}autoOut=false}
 
 /* ---------- Offline ---------- */
 /* Firebase hält Änderungen ohne Netz zurück und überträgt sie später. Damit die Knöpfe dabei nicht "hängen",
@@ -2155,7 +2179,7 @@ let auth=null;
  firebase.initializeApp(firebaseConfig);auth=firebase.auth();auth.languageCode='de';db=firebase.firestore();
  try{if(db.enablePersistence)db.enablePersistence({synchronizeTabs:false}).catch(e=>console.warn('Offline-Speicher nicht verfügbar:',e&&e.code))}catch(e){}
  patchOffline();
- auth.onAuthStateChanged(u=>{if(holdAuth)return;if(u&&u.emailVerified&&okDomain(u.email))signedIn(u);else{if(u)auth.signOut();signedOut()}})})();
+ auth.onAuthStateChanged(u=>{if(holdAuth)return;if(u&&u.emailVerified&&okDomain(u.email)){if(actAge()>SESS){autoOut=true;auth.signOut();return}signedIn(u)}else{if(u)auth.signOut();signedOut()}})})();
 </script>
 </body>
 </html>
