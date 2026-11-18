@@ -119,6 +119,8 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 .nl a.sub .n{margin-left:auto;font-size:11px;opacity:.7}.nl a.sub .n.r{background:var(--ba);color:#fff;opacity:1;border-radius:999px;padding:0 6px;font-weight:600}
 /* Standorte */
 .siterow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--bd);border-radius:10px}.siterow .ic{width:16px;height:16px;color:var(--mu)}
+.ntog{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:0;border-radius:6px;background:none;color:var(--navtx);opacity:.6;cursor:pointer;padding:0}
+.ntog:hover{opacity:1;background:rgba(255,255,255,.1)}.ntog .ic{width:16px;height:16px;transition:transform .15s;transform:rotate(-90deg)}.ntog.open .ic{transform:none}
 .nl a.sub.site{padding-left:14px;gap:10px}.nl a.sub.site .ic{width:16px;height:16px;opacity:.75}.nl a.sub.site.on{background:rgba(255,255,255,.1);font-weight:600}
 .nl a.sub.site.add{opacity:.7}.nl a.sub.site.add:hover{opacity:1}
 .sitem{display:none}.sitebtn{gap:4px;max-width:150px}.sitebtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -494,7 +496,7 @@ td .car{width:84px;height:38px;display:block}
  #app:not([hidden]){grid-template-columns:minmax(0,1fr)}
  nav{position:sticky;top:0;height:auto;flex-direction:row;align-items:center;gap:8px;padding-top:calc(8px + env(safe-area-inset-top,0px));padding-bottom:8px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));z-index:20;overflow-x:auto}
  nav .brand b,nav .brand small{display:none}
- .nsec,.nl a.sub,.nl a[data-v="imp"]{display:none!important}
+ .nsec,.nl a.sub,.nl a[data-v="imp"],.ntog{display:none!important}
  .nl{flex-direction:row}.nl a{padding:8px 10px;white-space:nowrap}.nl a.on::before{display:none}.nl a span.lb{display:none}.nl a.on span.lb{display:inline}
  .me{margin:0 0 0 auto;width:auto;padding:4px;background:none}.me div{display:none}
  main{padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -2017,8 +2019,12 @@ function navHtml(late,pr){const A=S.veh.filter(v=>!v.archived),cnt={'':A.length,
  const cs=x=>RAW.veh.filter(v=>!v.archived&&(x==='*'||siteOf(v)===x)).length,q=x=>E(x).replace(/'/g,"\\'");
  const st=`<div class="nsec">Standort</div>${SITES().map(x=>`<a class="sub site ${S.site===x?'on':''}" onclick="setSite('${q(x)}')">${IC.pin}${E(x)}<span class="n">${cs(x)}</span></a>`).join('')}${SITES().length>1?`<a class="sub site ${S.site==='*'?'on':''}" onclick="setSite('*')">${IC.pin}Alle Standorte<span class="n">${cs('*')}</span></a>`:''}<a class="sub site add" onclick="siteModal()">${IC.plus}Standort hinzufügen</a>`;
  return`${st}<div class="nsec">Übersicht</div>${a(N.dash)}${a(N.tour)}${a(N.cal)}
- <div class="nsec">Bestand</div>${a(N.veh_l)}${VSUB.map(sub).join('')}${a(N.prob)}${a(N.notes)}
+ <div class="nsec">Bestand</div>${a(N.veh_l).replace('</a>',`<button class="ntog ${navVehOpen()?'open':''}" onclick="event.stopPropagation();navVehToggle()" title="${navVehOpen()?'Unterpunkte einklappen':'Neuwagen, Gebrauchtwagen, Schauraum anzeigen'}" aria-label="Unterpunkte ein-/ausklappen" aria-expanded="${navVehOpen()}">${IC.chevd}</button></a>`)}${VSUB.filter(([f])=>navVehOpen()||!NVFOLD.includes(f)||(S.view==='veh_l'&&S.fl===f)).map(sub).join('')}${a(N.prob)}${a(N.notes)}
  <div class="nsec">Verwaltung</div><a data-v="imp" onclick="importModal()" title="Fahrzeugliste importieren">${IC.up}<span class="lb">Liste importieren</span></a>${a(N.set)}`}
+/* Unterpunkte Neuwagen / Gebrauchtwagen / Im Schauraum einklappbar (pro Gerät gemerkt) */
+const NVFOLD=['new','used','show'];
+function navVehOpen(){try{return localStorage.getItem('tqsNavVeh')!=='0'}catch(e){return true}}
+function navVehToggle(){try{localStorage.setItem('tqsNavVeh',navVehOpen()?'0':'1')}catch(e){}renderNav()}
 const VSUB=[['new','Neuwagen'],['used','Gebrauchtwagen'],['show','Im Schauraum'],['miss','Fehlende Daten'],['arch','Archiv']];
 function renderNav(){const late=activeTasks().filter(t=>t.status!=='Erledigt'&&t.due<TD()).length,pr=S.prob.filter(p=>p.status==='Offen').length;
  {const d=document.querySelector('.relb-d');if(d&&!d.innerHTML)d.innerHTML=IC.reload}
