@@ -745,7 +745,10 @@ function planFor(v){const out=[];if(!v.deliv||v.archived)return out;const d=v.de
   if(prot(due))out.push({k:'b'+m,cat:'b12',t:'12V-Batterie prüfen / laden',w,due});
   if(hv)out.push({k:'h'+m,cat:'hv',t:'HV-Batterie prüfen / laden',w,due});
   out.push({k:'f'+m,cat:'bremse',t:'Bremsen freibremsen',w,due});
-  if(m%6===0)out.push({k:'r'+m,cat:'reifen',t:'Reifendruck kontrollieren',w,due});
+  /* 'r30' ist schon der Reifendruck 30 TAGE nach Eingang – der nach 30 MONATEN braucht einen eigenen Schlüssel.
+     Sonst teilten sich beide dieselbe Maßnahme, der Abgleich schrieb sie abwechselnd auf beide Termine um
+     und die Zahl der überfälligen Maßnahmen sprang bei jedem Neuladen. */
+  if(m%6===0)out.push({k:m===30?'r30m':'r'+m,cat:'reifen',t:'Reifendruck kontrollieren',w,due});
   if(m%12===0)out.push({k:'s'+m,cat:'reinigung',t:'Fahrzeugschmutz entfernen (Säuberung)',w,due});}
  {const step=Math.max(7,+S.cfg.wk||42),wk=Math.round(step/7),gaps=[];let cur=d;
   for(const [a,b] of ivs.slice().sort((x,y)=>x[0]<y[0]?-1:1)){if(a>cur)gaps.push([cur,a]);if(b>cur)cur=b}if(cur<pend)gaps.push([cur,BIG]);
