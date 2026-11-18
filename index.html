@@ -123,6 +123,15 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 .nl a.sub.site.add{opacity:.7}.nl a.sub.site.add:hover{opacity:1}
 .sitem{display:none}.sitebtn{gap:4px;max-width:150px}.sitebtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tag.tag-site{background:transparent;border:1px solid var(--bd);color:var(--mu)}
+/* Notizen */
+.nform{display:flex;flex-direction:column;gap:10px}.nform textarea{width:100%;resize:vertical;min-height:80px}
+.nrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.nrow select{max-width:100%;flex:0 1 420px}
+.nlist{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.note{border:1px solid var(--bd);border-radius:12px;padding:10px 14px;background:var(--sf)}
+.nhd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px}.nhd .link{display:inline-flex;gap:6px;align-items:center;font-weight:600}.nhd .link .ic{width:16px;height:16px}
+.ntx{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px;line-height:1.5}
+.btn.ghost{background:none;border-color:transparent}
+@media(max-width:430px){#nav .brand{display:none}#nav .nl a[data-v]{width:40px}}
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--grb);color:var(--gr)}
 .tag.ac{background:var(--acs);color:var(--ac)}
 .ic{width:18px;height:18px;flex-shrink:0}
@@ -502,7 +511,7 @@ body.mopen{overflow:hidden}
  nav{gap:4px;overflow:visible;min-height:56px}
  nav .brand{flex:1;min-width:0}nav .brand b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}nav .brand small{display:none}
  .nl{gap:2px;flex:0 0 auto}.nl a{display:none}
- .nl a[data-v="prob"],.nl a[data-v="set"]{display:flex;width:44px;height:44px;padding:0;justify-content:center;align-items:center;position:relative}
+ .nl a[data-v="prob"],.nl a[data-v="notes"],.nl a[data-v="set"]{display:flex;width:44px;height:44px;padding:0;justify-content:center;align-items:center;position:relative}
  .nl a span.lb,.nl a.on span.lb{display:none!important}
  .nl a .cnt{position:absolute;top:2px;right:0}
  nav .scanb{display:none}
@@ -638,6 +647,7 @@ const ls={get(k,s){try{return JSON.parse((s?sessionStorage:localStorage).getItem
 /* ---------- Icons ---------- */
 const SV=(p,c)=>`<svg class="ic ${c||''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const IC={
+ note:SV('<path d="M5 4h11l3 3v13H5z"/><path d="M8 9h8M8 13h8M8 17h5"/>'),
  up:SV('<path d="M12 15V4M7 9l5-5 5 5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>'),
  dl:SV('<path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>'),
  more:SV('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'),
@@ -781,13 +791,14 @@ async function sync(v){if(syncing[v.fin])return syncing[v.fin];
 const st=t=>{if(t.status==='Erledigt')return['s-ok','Erledigt'];if(t.due<TD())return['s-ba','Überfällig'];if(t.status==='In Bearbeitung')return['s-wa','In Bearbeitung'];if(t.due<=addD(TD(),7))return['s-wa','Bald fällig'];return['s-gr','Geplant']};
 /* Standorte (Betriebe): alle Daten liegen roh in RAW, S.veh/S.tasks/S.prob/S.log zeigen nur den gewählten Standort.
    Fahrzeuge ohne Standort gehören zum ersten Standort der Liste. */
-const RAW={veh:[],tasks:[],prob:[],log:[]};
+const RAW={veh:[],tasks:[],prob:[],log:[],notes:[]};
 const SITES=()=>{const s=((S.cfg&&S.cfg.sites)||[]).filter(Boolean);return s.length?s:['Mondsee']};
 const siteOf=v=>v&&v.site&&SITES().includes(v.site)?v.site:SITES()[0];
 function applySite(){const L=SITES();if(!S.site)try{S.site=localStorage.getItem('tqsSite')||''}catch(e){}if(S.site!=='*'&&!L.includes(S.site))S.site=L[0];
  const all=S.site==='*',vs=all?RAW.veh:RAW.veh.filter(v=>siteOf(v)===S.site),fins=new Set(vs.map(v=>v.fin));
  S.veh=vs;S.taskAll=all?RAW.tasks:RAW.tasks.filter(t=>fins.has(t.fin));S.tasks=S.taskAll.filter(t=>!t.removed);
- S.prob=all?RAW.prob:RAW.prob.filter(x=>!x.fin||fins.has(x.fin));S.log=all?RAW.log:RAW.log.filter(x=>!x.fin||fins.has(x.fin))}
+ S.prob=all?RAW.prob:RAW.prob.filter(x=>!x.fin||fins.has(x.fin));
+ S.notes=(all?RAW.notes:RAW.notes.filter(x=>x.fin?fins.has(x.fin):(x.site||L[0])===S.site)).slice().sort((a,b)=>(b.at||'').localeCompare(a.at||''));S.log=all?RAW.log:RAW.log.filter(x=>!x.fin||fins.has(x.fin))}
 function setSite(x,quiet){S.site=x;try{localStorage.setItem('tqsSite',x)}catch(e){}applySite();S.fl='';S.sel=null;if(S.view==='veh')S.view='dash';render();
  if(!quiet)toast(x==='*'?'Alle Standorte werden angezeigt.':`Standort: ${x}`)}
 const siteLbl=()=>S.site==='*'?'Alle Standorte':S.site;
@@ -1578,11 +1589,12 @@ function battTab(v){const rs=readings(v.fin),r12=rs.filter(r=>r.cat==='b12'),rhv
  ${rs.slice().reverse().map(r=>{const pct=r.cat==='hv'?r.v:Math.max(0,Math.min(100,(r.v-11.8)/(12.9-11.8)*100)),bad=low(r);return`<tr class="cl" data-id="${r.t._id}" onclick="taskModal('${r.t._id}')"><td class="num"><span class="c-bn">${fmt(r.d)}</span><span class="c-bs">${fmt(r.d).slice(0,6)+fmt(r.d).slice(8)}</span></td><td>${icon(r.cat)} <span class="c-bn">${CAT[r.cat]}</span><span class="c-bs">${r.cat==='b12'?'12V':'HV'}</span></td><td class="num"><b>${r.cat==='b12'?nf(r.v,2)+' V':nf(r.v)+' %'}</b></td><td class="c-bar"><span class="bar"><i style="width:${pct}%;background:${bad?'var(--ba)':'var(--ok)'}"></i></span></td><td><span class="pill ${bad?'s-ba':'s-ok'}"><span class="c-bn">${bad?'Bitte Laden!':'In Ordnung'}</span><span class="c-bs">${bad?'Laden!':'OK'}</span></span></td></tr>`}).join('')}</table></div>`:`<p class="hint">Messwerte erscheinen hier, sobald eine Batterie-Maßnahme mit Spannung oder Ladezustand erledigt wurde.</p>`}</div>`}
 function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug nicht gefunden.</p>';
  const ts=S.tasks.filter(t=>t.fin===v.fin).sort((a,b)=>a.due<b.due?-1:1),ps=S.prob.filter(p=>p.fin===v.fin),lg=S.log.filter(l=>l.fin===v.fin).sort((a,b)=>a.at<b.at?1:-1),op=ts.filter(t=>t.status!=='Erledigt'),rs=readings(v.fin);
- const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['log','Historie']];
+ const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['notes','Notizen',S.notes.filter(n=>n.fin===v.fin).length],['log','Historie']];
  let body='';
  if(S.tab==='plan'){const rmv=(S.taskAll||[]).filter(t=>t.fin===v.fin&&t.removed).sort((a,b)=>a.due<b.due?-1:1);if(S.planF==='del'&&!rmv.length)S.planF='open';const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='del'?rmv:S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(planEnd(v))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length],...(rmv.length?[['del','Gelöscht',rmv.length]]:[])].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div>${(()=>{const od=op.filter(t=>t.due<TD());return S.planF==='del'?`<button class="btn sm" onclick="restoreTasks(${E(JSON.stringify(rmv.map(t=>t._id)))})">${IC.restore} Alle wiederherstellen</button>`:(op.length&&S.planF!=='done'&&!S.selMode?`<button class="btn sm" onclick="selStart()">${IC.sel} Auswählen</button>`:'')+(od.length?`<button class="btn sm" style="color:var(--ba)" onclick="removeTasks(${E(JSON.stringify(od.map(t=>t._id)))})">${IC.trash} Überfällige löschen (${od.length})</button>`:'')})()}<button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(t=>taskLi(t,{del:1,restore:S.planF==='del'})).join('')}</ul>`:`<p class="empty">${S.planF==='del'?'Keine gelöschten Maßnahmen.':S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
  else if(S.tab==='batt')body=battTab(v);
  else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',siteOf(v)],['Bereich',v.loc],['Stellplatz / Lagerort',v.spot],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Fahrzeugart',v.used?'Gebrauchtwagen':'Neufahrzeug'],['Kilometerstand',kmTxt(v)],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
+ else if(S.tab==='notes')body=`<div class="pb">${noteForm(v.fin)}${noteList(S.notes.filter(n=>n.fin===v.fin),0)}</div>`;
  else if(S.tab==='prob')body=`<div class="ph"><span style="flex:1"></span><button class="btn sm" onclick="probModal('${v.fin}')">${IC.plus} Problem melden</button></div>${probTbl(ps)}`;
  else body=lg.length?`<div class="scroll"><table><tr><th>Zeitpunkt</th><th>Mitarbeiter:in</th><th>Änderung</th></tr>${lg.map(l=>`<tr><td class="num">${new Date(l.at).toLocaleString('de-AT',{dateStyle:'short',timeStyle:'short'})}</td><td>${E(l.by)}</td><td style="white-space:normal">${E(l.text)}</td></tr>`).join('')}</table></div>`:'<p class="empty">Noch keine Einträge.</p>';
  return`<div><button class="link" onclick="S.view='veh_l';render()">← Alle Fahrzeuge</button></div>
@@ -1971,7 +1983,7 @@ function tour(){const T=TD(),end=S.tourR==='week'?addD(T,7):T,ts=activeTasks().f
 document.addEventListener('change',e=>{if(e.target.id==='tourL'){S.tourL=e.target.value;render()}});
 
 /* ---------- Rahmen ---------- */
-const NAV=[['dash','Dashboard',IC.dash],['tour','Rundgang',IC.route],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car],['prob','Probleme',IC.warn],['set','Einstellungen',IC.set]];
+const NAV=[['dash','Dashboard',IC.dash],['tour','Rundgang',IC.route],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car],['prob','Probleme',IC.warn],['notes','Notizen',IC.note],['set','Einstellungen',IC.set]];
 /* Seitenleiste: Gruppen mit Unterpunkten (am Handy nur die Hauptpunkte) */
 function navHtml(late,pr){const A=S.veh.filter(v=>!v.archived),cnt={'':A.length,new:A.filter(v=>!v.used).length,used:A.filter(v=>v.used).length,show:A.filter(v=>v.show).length,miss:A.filter(v=>missingOf(v).length).length,arch:S.veh.length-A.length};
  const a=n=>`<a data-v="${n[0]}" class="${(S.view===n[0]||(S.view==='veh'&&n[0]==='veh_l'))&&!(n[0]==='veh_l'&&S.view==='veh_l'&&S.fl&&VSUB.some(x=>x[0]===S.fl))?'on':''}" onclick="${n[0]==='veh_l'?"goVeh('')":`go('${n[0]}')`}" title="${n[1]}">${n[2]}<span class="lb">${n[1]}</span>${n[0]==='dash'&&late?`<span class="cnt">${late}</span>`:n[0]==='prob'&&pr?`<span class="cnt">${pr}</span>`:''}</a>`;
@@ -1980,7 +1992,7 @@ function navHtml(late,pr){const A=S.veh.filter(v=>!v.archived),cnt={'':A.length,
  const cs=x=>RAW.veh.filter(v=>!v.archived&&(x==='*'||siteOf(v)===x)).length,q=x=>E(x).replace(/'/g,"\\'");
  const st=`<div class="nsec">Standort</div>${SITES().map(x=>`<a class="sub site ${S.site===x?'on':''}" onclick="setSite('${q(x)}')">${IC.pin}${E(x)}<span class="n">${cs(x)}</span></a>`).join('')}${SITES().length>1?`<a class="sub site ${S.site==='*'?'on':''}" onclick="setSite('*')">${IC.pin}Alle Standorte<span class="n">${cs('*')}</span></a>`:''}<a class="sub site add" onclick="siteModal()">${IC.plus}Standort hinzufügen</a>`;
  return`${st}<div class="nsec">Übersicht</div>${a(N.dash)}${a(N.tour)}${a(N.cal)}
- <div class="nsec">Bestand</div>${a(N.veh_l)}${VSUB.map(sub).join('')}${a(N.prob)}
+ <div class="nsec">Bestand</div>${a(N.veh_l)}${VSUB.map(sub).join('')}${a(N.prob)}${a(N.notes)}
  <div class="nsec">Verwaltung</div><a data-v="imp" onclick="importModal()" title="Fahrzeugliste importieren">${IC.up}<span class="lb">Liste importieren</span></a>${a(N.set)}`}
 const VSUB=[['new','Neuwagen'],['used','Gebrauchtwagen'],['show','Im Schauraum'],['miss','Fehlende Daten'],['arch','Archiv']];
 function renderNav(){const late=activeTasks().filter(t=>t.status!=='Erledigt'&&t.due<TD()).length,pr=S.prob.filter(p=>p.status==='Offen').length;
@@ -2035,6 +2047,38 @@ async function delSite(i){const L=SITES(),o=L[i];if(L.length<2)return;if(RAW.veh
  if(!confirm(`Standort „${o}“ entfernen?`))return;const nl=L.filter((x,j)=>j!==i);
  try{await db.doc('settings/cfg').set({sites:nl},{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}
  S.cfg={...S.cfg,sites:nl};log('',`Standort entfernt: ${o}`);render();toast('Standort entfernt.')}
+/* ---------- Notizen (eigene Seite + Reiter am Fahrzeug; nicht im Dashboard) ---------- */
+function noteForm(fin){const vs=S.veh.filter(v=>!v.archived).sort((a,b)=>vname(a).localeCompare(vname(b)));
+ return`<div class="nform"><textarea id="ntx" rows="3" placeholder="Notiz schreiben …" maxlength="4000">${E((S.nDraft=S.nDraft||{})[S.view+'|'+S.sel]||'')}</textarea>
+ <div class="nrow">${fin===undefined?`<select id="nfin" aria-label="Fahrzeug"><option value="">Ohne Fahrzeug (allgemein)</option>${vs.map(v=>`<option value="${v.fin}" ${S.nFin===v.fin?'selected':''}>${E(vname(v))} · …${v.fin.slice(-6)}${v.plate?' · '+E(v.plate):''}</option>`).join('')}</select>`:`<input type="hidden" id="nfin" value="${fin}">`}
+ <span style="flex:1"></span><button class="btn p" id="nsv" onclick="saveNote()">${IC.plus} Notiz speichern</button></div></div>`}
+function noteList(ns,showVeh){if(!ns.length)return'<p class="empty">Noch keine Notizen.</p>';
+ return`<div class="nlist">${ns.map(n=>{const v=n.fin?veh(n.fin):null,mine=n.uid===(S.acct&&S.acct.uid);return`<article class="note">
+ <div class="nhd">${showVeh?(v&&v.fin?`<button class="link" onclick="openVeh('${v.fin}');S.tab='notes';render()">${IC.car} ${E(vname(v))} <span class="mono muted">…${v.fin.slice(-6)}</span></button>`:'<span class="muted">Allgemein</span>'):''}
+ <span class="muted">${E(n.by||'')} · ${new Date(n.at).toLocaleString('de-AT',{dateStyle:'short',timeStyle:'short'})}${n.upd?' · bearbeitet':''}</span><span style="flex:1"></span>
+ ${dd(IC.more,[[IC.edit,'Bearbeiten',`noteEdit('${n._id}')`],[IC.trash||'','Löschen',`delNote('${n._id}')`,'d']],{b:'sm ghost',title:'Notiz bearbeiten oder löschen'})}</div>
+ <div class="ntx" id="nt_${n._id}">${E(n.text)}</div></article>`}).join('')}</div>`}
+function notesPage(){const q=(S.nq||'').toLowerCase(),f=S.nF||'';
+ let ns=S.notes;if(f==='none')ns=ns.filter(n=>!n.fin);else if(f)ns=ns.filter(n=>n.fin===f);
+ if(q)ns=ns.filter(n=>(n.text+' '+(n.by||'')+' '+(n.fin?vname(veh(n.fin))+' '+n.fin:'')).toLowerCase().includes(q));
+ const vs=[...new Set(S.notes.filter(n=>n.fin).map(n=>n.fin))].map(veh).filter(v=>v.fin).sort((a,b)=>vname(a).localeCompare(vname(b)));
+ return`<div class="head"><h2>Notizen</h2></div>
+ <section class="panel"><div class="pb">${noteForm()}</div></section>
+ <div class="tools"><input id="nq" placeholder="Notizen durchsuchen …" value="${E(S.nq||'')}"><select id="nF" aria-label="Fahrzeug filtern"><option value="">Alle Notizen (${S.notes.length})</option><option value="none" ${f==='none'?'selected':''}>Ohne Fahrzeug</option>${vs.map(v=>`<option value="${v.fin}" ${f===v.fin?'selected':''}>${E(vname(v))} · …${v.fin.slice(-6)}</option>`).join('')}</select></div>
+ <section class="panel"><div class="pb">${noteList(ns,1)}</div></section>`}
+async function saveNote(){const t=$('ntx').value.trim(),fin=$('nfin')?$('nfin').value:'';if(!t){$('ntx').focus();return toast('Bitte zuerst eine Notiz schreiben.')}
+ const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7),n={text:t,fin,site:fin?siteOf(veh(fin)):(S.site!=='*'?S.site:SITES()[0]),by:me(),uid:S.acct.uid,at:new Date().toISOString()};
+ busy('nsv',true,'Speichern …');try{await db.doc('notes/'+id).set(n)}catch(e){busy('nsv',false,'Notiz speichern');return toast('Speichern nicht möglich: keine Schreibrechte (Firestore-Regeln für „notes“ fehlen?).')}
+ S.nFin=fin;delete S.nDraft[S.view+'|'+S.sel];render();toast('Notiz gespeichert.')}
+function noteEdit(id){const n=RAW.notes.find(x=>x._id===id);if(!n)return;
+ modal(`<header><div style="flex:1"><h3>Notiz bearbeiten</h3><span class="muted">${n.fin?E(vname(veh(n.fin))):'Allgemein'}</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><textarea id="netx" rows="6" maxlength="4000" style="width:100%">${E(n.text)}</textarea></div>
+ <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="nesv" onclick="saveNoteEdit('${id}')">Speichern</button></footer>`);modalLock=true;setTimeout(()=>$('netx')&&$('netx').focus(),50)}
+async function saveNoteEdit(id){const t=$('netx').value.trim();if(!t)return toast('Die Notiz ist leer. Zum Entfernen bitte „Löschen“ verwenden.');
+ busy('nesv',true,'Speichern …');try{await db.doc('notes/'+id).update({text:t,upd:new Date().toISOString(),updBy:me()})}catch(e){busy('nesv',false,'Speichern');return toast('Speichern nicht möglich: keine Schreibrechte.')}
+ const n=RAW.notes.find(x=>x._id===id);if(n){n.text=t;n.upd=1}closeM();render();toast('Notiz gespeichert.')}
+async function delNote(id){if(!confirm('Notiz wirklich löschen?'))return;try{await db.doc('notes/'+id).delete()}catch(e){return toast('Löschen nicht möglich: keine Schreibrechte.')}
+ RAW.notes=RAW.notes.filter(x=>x._id!==id);render();toast('Notiz gelöscht.')}
 function goVeh(f){S.fl=f;S.q='';go('veh_l')}
 function go(v){const same=S.view===v;S.view=v;render();if(!same)window.scrollTo(0,0)}
 /* Datenänderungen kommen oft in Schüben: einmal gesammelt neu zeichnen, und nie mitten im Antippen,
@@ -2054,11 +2098,11 @@ function render(){if(!db||!S.acct||$('app').hidden)return;applySite();if(!$('mod
  renderNav();
  /* Noch keine Daten (z. B. direkt nach „Aktualisieren“, Zwischenspeicher leer): Ladeanzeige statt lauter Nullen */
  if((syncWait.has('veh')&&!S.veh.length)||(syncWait.has('tasks')&&!S.tasks.length)){$('main').innerHTML='<div style="display:grid;place-items:center;min-height:50vh;color:var(--mu)"><p>Wird geladen …</p></div>';return}
- const f={dash,tour,cal,veh_l:vlist,veh:vdet,prob:()=>`<div class="head"><h2>Probleme</h2><button class="btn p" onclick="probModal()">${IC.plus} Problem melden</button></div><section class="panel">${probTbl(S.prob.slice(),1)}</section>`,set:sett}[S.view]||dash;
+ const f={dash,tour,cal,veh_l:vlist,veh:vdet,notes:notesPage,prob:()=>`<div class="head"><h2>Probleme</h2><button class="btn p" onclick="probModal()">${IC.plus} Problem melden</button></div><section class="panel">${probTbl(S.prob.slice(),1)}</section>`,set:sett}[S.view]||dash;
  const a=document.activeElement&&document.activeElement.id;$('main').innerHTML=f()+(S.selMode?selBar():'');document.body.classList.toggle('has-sel',S.selMode);
- if(a&&$(a)&&a==='q'){const e=$(a);e.focus();try{e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}
-document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;render()}});
-document.addEventListener('change',e=>{if(e.target.id==='fl'){S.fl=e.target.value;render()}});
+ if(a&&$(a)&&(a==='q'||a==='nq'||a==='ntx')){const e=$(a);e.focus();try{e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}
+document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;render()}else if(e.target.id==='nq'){S.nq=e.target.value;render()}else if(e.target.id==='ntx')S.nDraft[S.view+'|'+S.sel]=e.target.value});
+document.addEventListener('change',e=>{if(e.target.id==='fl'){S.fl=e.target.value;render()}else if(e.target.id==='nF'){S.nF=e.target.value;render()}else if(e.target.id==='nfin')S.nFin=e.target.value});
 
 let subscribed=false,unsubs=[];
 /* Aktualität: Beim Öffnen zeigt Firebase sofort den gespeicherten Stand und holt dann den neuen vom Server.
@@ -2080,7 +2124,7 @@ addEventListener('online',()=>{if(S.acct){syncStart();try{db.enableNetwork()}cat
 function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=false;
  if(!subscribed){subscribed=true;syncStart();
   const sub=(n,k)=>{let got=false;unsubs.push(db.collection(n).onSnapshot({includeMetadataChanges:true},s=>{syncSeen(k,s);if(!s.metadata.fromCache&&k in srvOk)srvOk[k]=1;/* nur Statuswechsel (Cache → Server), keine geänderten Daten: nicht neu zeichnen */if(got&&!s.docChanges().length){migrate();return}got=true;RAW[k]=s.docs.map(d=>({...d.data(),_id:d.id}));applySite();if(k in S.ready)S.ready[k]=1;migrate();soon()},e=>{console.error(n,e);if(e.code==='permission-denied')toast('Kein Zugriff auf die Datenbank. Sind die Firestore-Regeln eingetragen?')}));}
-  sub('vehicles','veh');sub('tasks','tasks');sub('problems','prob');sub('log','log');
+  sub('vehicles','veh');sub('tasks','tasks');sub('problems','prob');sub('log','log');sub('notes','notes');
   unsubs.push(db.doc('settings/cfg').onSnapshot({includeMetadataChanges:true},s=>{S.cfg={...DEF,...(s.data()||{})};if(!s.metadata.fromCache){srvOk.cfg=1;migrate()}soon()},e=>console.error(e)),db.doc('settings/reminders').onSnapshot(s=>{S.rem=s.data()||{};if(S.view==='set')soon()},e=>console.warn('Erinnerungen',e)))}
  render()}
 /* Pflegeplan-Abgleich erst, wenn Fahrzeuge, Maßnahmen UND Einstellungen frisch vom Server da sind. Vorher liegt nur der
@@ -2090,7 +2134,7 @@ function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=
 const srvOk={veh:0,tasks:0,cfg:0};
 async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks||!srvOk.veh||!srvOk.tasks||!srvOk.cfg)return;S.migrated=true;try{for(const v of RAW.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
 function signedIn(u){S.acct={email:u.email,uid:u.uid,name:u.displayName||u.email.split('@')[0]};enterApp()}
-function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;srvOk.veh=srvOk.tasks=srvOk.cfg=0;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.taskAll=[];S.prob=[];S.log=[];RAW.veh=[];RAW.tasks=[];RAW.prob=[];RAW.log=[];
+function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;srvOk.veh=srvOk.tasks=srvOk.cfg=0;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.taskAll=[];S.prob=[];S.log=[];RAW.veh=[];RAW.tasks=[];RAW.prob=[];RAW.log=[];RAW.notes=[];S.notes=[];
  const was=!!S.acct;S.acct=null;$('mod').hidden=true;$('mb').innerHTML='';$('app').hidden=true;$('boot').hidden=true;$('auth').hidden=false;if(was){authTab('login');msg('mLogin','Du wurdest abgemeldet.',1)}}
 
 /* ---------- Offline ---------- */
