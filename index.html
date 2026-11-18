@@ -1997,7 +1997,10 @@ addEventListener('blur',touchEnd);document.addEventListener('visibilitychange',t
 {const mo=new MutationObserver(()=>{if(blocked&&$('mod').hidden&&$('alrt').hidden){blocked=false;soon()}});['mod','alrt'].forEach(id=>mo.observe($(id),{attributes:true,attributeFilter:['hidden']}))}
 function render(){if(!db||!S.acct||$('app').hidden)return;if(!$('mod').hidden||!$('alrt').hidden){blocked=true;return}
  S.vis=[];if(S.selMode&&S.selKey!==S.view+'|'+S.sel+'|'+S.tab){S.selMode=false;S.pick=new Set()}
- renderNav();const f={dash,tour,cal,veh_l:vlist,veh:vdet,prob:()=>`<div class="head"><h2>Probleme</h2><button class="btn p" onclick="probModal()">${IC.plus} Problem melden</button></div><section class="panel">${probTbl(S.prob.slice(),1)}</section>`,set:sett}[S.view]||dash;
+ renderNav();
+ /* Noch keine Daten (z. B. direkt nach „Aktualisieren“, Zwischenspeicher leer): Ladeanzeige statt lauter Nullen */
+ if((syncWait.has('veh')&&!S.veh.length)||(syncWait.has('tasks')&&!S.tasks.length)){$('main').innerHTML='<div style="display:grid;place-items:center;min-height:50vh;color:var(--mu)"><p>Wird geladen …</p></div>';return}
+ const f={dash,tour,cal,veh_l:vlist,veh:vdet,prob:()=>`<div class="head"><h2>Probleme</h2><button class="btn p" onclick="probModal()">${IC.plus} Problem melden</button></div><section class="panel">${probTbl(S.prob.slice(),1)}</section>`,set:sett}[S.view]||dash;
  const a=document.activeElement&&document.activeElement.id;$('main').innerHTML=f()+(S.selMode?selBar():'');document.body.classList.toggle('has-sel',S.selMode);
  if(a&&$(a)&&a==='q'){const e=$(a);e.focus();try{e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}
 document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;render()}});
@@ -2007,7 +2010,7 @@ let subscribed=false,unsubs=[];
 /* Aktualität: Beim Öffnen zeigt Firebase sofort den gespeicherten Stand und holt dann den neuen vom Server.
    Solange der Server noch nicht geantwortet hat, dreht sich das Aktualisieren-Symbol. */
 const SYNC_K=['veh','tasks','prob','log'];let syncWait=new Set(SYNC_K),syncTO=0;
-function syncMark(){const on=syncWait.size>0;document.querySelectorAll('.relb').forEach(b=>b.classList.toggle('spin',on))}
+function syncMark(){const on=syncWait.size>0;document.querySelectorAll('.relb').forEach(b=>b.classList.toggle('spin',on));soon()}
 function syncStart(){syncWait=new Set(SYNC_K);syncMark();clearTimeout(syncTO);syncTO=setTimeout(()=>{syncWait.clear();syncMark()},20000)}
 function syncSeen(k,s){if(!s.metadata.fromCache&&syncWait.delete(k))syncMark()}
 /* App kommt aus dem Hintergrund zurück (Handy): Verbindung neu aufbauen, damit sofort der aktuelle Stand geladen wird,
@@ -2024,14 +2027,16 @@ function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=
  if(!subscribed){subscribed=true;syncStart();
   const sub=(n,k)=>{let got=false;unsubs.push(db.collection(n).onSnapshot({includeMetadataChanges:true},s=>{syncSeen(k,s);if(!s.metadata.fromCache&&k in srvOk)srvOk[k]=1;/* nur Statuswechsel (Cache → Server), keine geänderten Daten: nicht neu zeichnen */if(got&&!s.docChanges().length){migrate();return}got=true;S[k]=s.docs.map(d=>({...d.data(),_id:d.id}));if(k==='tasks'){S.taskAll=S.tasks;S.tasks=S.taskAll.filter(t=>!t.removed)}if(k in S.ready)S.ready[k]=1;migrate();soon()},e=>{console.error(n,e);if(e.code==='permission-denied')toast('Kein Zugriff auf die Datenbank. Sind die Firestore-Regeln eingetragen?')}));}
   sub('vehicles','veh');sub('tasks','tasks');sub('problems','prob');sub('log','log');
-  unsubs.push(db.doc('settings/cfg').onSnapshot(s=>{S.cfg={...DEF,...(s.data()||{})};soon()},e=>console.error(e)),db.doc('settings/reminders').onSnapshot(s=>{S.rem=s.data()||{};if(S.view==='set')soon()},e=>console.warn('Erinnerungen',e)))}
+  unsubs.push(db.doc('settings/cfg').onSnapshot({includeMetadataChanges:true},s=>{S.cfg={...DEF,...(s.data()||{})};if(!s.metadata.fromCache){srvOk.cfg=1;migrate()}soon()},e=>console.error(e)),db.doc('settings/reminders').onSnapshot(s=>{S.rem=s.data()||{};if(S.view==='set')soon()},e=>console.warn('Erinnerungen',e)))}
  render()}
-/* Pflegeplan-Abgleich erst, wenn Fahrzeuge UND Maßnahmen frisch vom Server da sind. Vorher liegt nur der gespeicherte
-   (evtl. veraltete) Stand vor – ein Abgleich darauf hat Maßnahmen gelöscht bzw. wieder angelegt (Zahl sprang hin und her). */
-const srvOk={veh:0,tasks:0};
-async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks||!srvOk.veh||!srvOk.tasks)return;S.migrated=true;try{for(const v of S.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
+/* Pflegeplan-Abgleich erst, wenn Fahrzeuge, Maßnahmen UND Einstellungen frisch vom Server da sind. Vorher liegt nur der
+   gespeicherte (evtl. veraltete) Stand vor – ein Abgleich darauf hat Maßnahmen gelöscht bzw. wieder angelegt (Zahl sprang hin und her).
+   Die Einstellungen sind nötig, weil der 12V-Pflegeabstand (cfg.wk) die Termine bestimmt: ohne sie würde mit dem
+   Standardwert (6 Wochen) gerechnet und der Plan bei jedem Neuladen umgeschrieben. */
+const srvOk={veh:0,tasks:0,cfg:0};
+async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks||!srvOk.veh||!srvOk.tasks||!srvOk.cfg)return;S.migrated=true;try{for(const v of S.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
 function signedIn(u){S.acct={email:u.email,uid:u.uid,name:u.displayName||u.email.split('@')[0]};enterApp()}
-function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;srvOk.veh=srvOk.tasks=0;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.taskAll=[];S.prob=[];S.log=[];
+function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;srvOk.veh=srvOk.tasks=srvOk.cfg=0;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.taskAll=[];S.prob=[];S.log=[];
  const was=!!S.acct;S.acct=null;$('mod').hidden=true;$('mb').innerHTML='';$('app').hidden=true;$('boot').hidden=true;$('auth').hidden=false;if(was){authTab('login');msg('mLogin','Du wurdest abgemeldet.',1)}}
 
 /* ---------- Offline ---------- */
