@@ -1154,8 +1154,8 @@ async function vinAuto(){const el=$('vf');if(!el||el.disabled)return;const f=el.
   const tc=t=>String(t||'').toLowerCase().replace(/(^|[\s-])\S/g,c=>c.toUpperCase());
   if(vinFill('vb',IMPB[hkey(d.Make)]||tc(d.Make)))got.push('Marke');
   if(d.Model&&vinFill('vm',d.Model))got.push('Modell');
-  show(d.Model?'':'Modell online nicht gefunden (europäische Modelle sind dort oft nicht erfasst)');if(got.length)vPrev()}
-  catch(e){show('online gerade nicht erreichbar')}}
+  show('');if(got.length)vPrev()}
+  catch(e){show('')}}
  else show('')}
 const AUTOF={brand:'vb',model:'vm'},AUTOL={Marke:'brand',Modell:'model',Karosserie:'body',Antrieb:'ev'};
 function autoList(){return Object.entries(AUTOF).filter(([k,id])=>$(id)&&$(id).dataset.auto).map(([k])=>k)}
