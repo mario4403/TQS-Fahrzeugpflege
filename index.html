@@ -1120,8 +1120,9 @@ function kmF(t){const d=String(t||'').replace(/km/i,'').replace(/[\s.,']/g,'');i
 function finClean(el){const v=el.value,c=el.selectionStart??v.length,n=v.replace(/\s+/g,'').slice(0,17);if(n===v)return;
  const pos=Math.min(n.length,v.slice(0,c).replace(/\s+/g,'').length);el.value=n;try{el.setSelectionRange(pos,pos)}catch(e){}}
 /* ---------- Fahrzeugdaten aus der FIN (beim Neuanlegen) ----------
-   1. Hersteller aus den ersten 3 Stellen, Modelljahr aus Stelle 10 (offline, sofort)
-   2. Modell, Karosserie, Antrieb von einem Fahrzeug aus dem eigenen Bestand mit gleichem Hersteller- und Typcode (Stelle 1–3 + 7–8)
+   Nur Marke und Modell:
+   1. Marke aus den ersten 3 Stellen (offline, sofort)
+   2. Modell von einem Fahrzeug aus dem eigenen Bestand mit gleichem Hersteller- und Typcode (Stelle 1–3 + 7–8)
    3. Ergänzend die freie FIN-Datenbank der US-Verkehrsbehörde NHTSA (vPIC) – kennt europäische Modelle oft nicht
    Nur leere Felder werden befüllt und mit „automatisch eingefügt“ markiert. */
 const WMIB={WVW:'Volkswagen',WVG:'Volkswagen',WV1:'VW Nutzfahrzeuge',WV2:'VW Nutzfahrzeuge',WV3:'VW Nutzfahrzeuge',WAU:'Audi',WUA:'Audi',WA1:'Audi',TRU:'Audi',TMB:'Škoda',TMP:'Škoda',VSS:'Seat',VS6:'Seat',WP0:'Porsche',WP1:'Porsche',
@@ -1140,14 +1141,12 @@ async function vinAuto(){const el=$('vf');if(!el||el.disabled)return;const f=el.
  const same=RAW.veh.filter(v=>v.fin&&v.fin!==f&&v.fin.slice(0,3)===w&&v.fin.slice(6,8)===f.slice(6,8)&&v.model);
  const top=k=>{const c={};same.forEach(v=>{if(v[k])c[v[k]]=(c[v[k]]||0)+1});return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||''};
  if(vinFill('vb',top('brand')||WMIB[w]||WMIB[w.slice(0,2)+'*'],'Marke'))got.push('Marke');
- if(same.length){if(vinFill('vm',top('model')))got.push('Modell');if(vinFill('vbody',top('body')))got.push('Karosserie');
-  const ev=same.filter(v=>v.ev).length>same.length/2,hy=same.filter(v=>v.hyb).length>same.length/2;if(ev&&vinFill('c4',true))got.push('Elektro');if(hy&&vinFill('c3',true))got.push('Hybrid');
+ if(same.length){if(vinFill('vm',top('model')))got.push('Modell');
   info.push(`Modell wie ${same.length===1?'ein Fahrzeug':same.length+' Fahrzeuge'} im eigenen Bestand mit gleichem Typcode (${f.slice(6,8)})`)}
- if(yr)info.push(`Modelljahr laut FIN: ${yr}`);
- const show=(extra)=>{if(!box)return;box.hidden=!(info.length||got.length||extra);box.innerHTML=`${IC.info||'ℹ'} <span>${got.length?`<b>${got.join(', ')}</b> automatisch eingefügt – bitte prüfen. `:''}${info.join(' · ')}${extra?' · '+extra:''}</span>`};
+ const show=(extra)=>{if(!box)return;box.hidden=!(info.length||got.length||extra);box.innerHTML=`${IC.info||'ℹ'} <span>${got.length?`<b>${got.join(', ')}</b> automatisch eingefügt – bitte prüfen. `:''}${[...info,extra].filter(Boolean).join(' · ')}</span>`};
  show(navigator.onLine?'suche online …':'');if(got.length)vPrev();
  /* online ergänzen (nur wenn noch etwas fehlt) */
- if(navigator.onLine&&(!$('vm').value||!$('vb').value||!$('vbody').value)){try{
+ if(navigator.onLine&&(!$('vm').value||!$('vb').value)){try{
   /* Ergebnis je FIN merken, damit nicht bei jedem Öffnen erneut gefragt wird */
   vinAutoDone[f]=vinAutoDone[f]||(async()=>{const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),6000);
    const r=await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${f}?format=json`,{signal:ctl.signal});clearTimeout(tm);return((await r.json()).Results||[])[0]||{}})();
@@ -1155,15 +1154,10 @@ async function vinAuto(){const el=$('vf');if(!el||el.disabled)return;const f=el.
   const tc=t=>String(t||'').toLowerCase().replace(/(^|[\s-])\S/g,c=>c.toUpperCase());
   if(vinFill('vb',IMPB[hkey(d.Make)]||tc(d.Make)))got.push('Marke');
   if(d.Model&&vinFill('vm',d.Model))got.push('Modell');
-  const bc=String(d.BodyClass||'').toLowerCase(),bm=/sport utility|suv|crossover/.test(bc)?'suv':/pickup/.test(bc)?'pickup':/van|bus/.test(bc)?'van':/wagon/.test(bc)?'kombi':/coupe|convertible|cabrio/.test(bc)?'coupe':/hatchback/.test(bc)?'kompakt':/sedan|saloon/.test(bc)?'limousine':'';
-  if(bm&&vinFill('vbody',bm))got.push('Karosserie');
-  const fu=(d.FuelTypePrimary+' '+d.ElectrificationLevel).toLowerCase();if(/bev|electric/.test(fu)&&!/hybrid/.test(fu)&&vinFill('c4',true))got.push('Elektro');else if(/hybrid|phev/.test(fu)&&vinFill('c3',true))got.push('Hybrid');
-  if(d.ModelYear&&!yr)info.push('Modelljahr '+d.ModelYear);
-  const ext=[d.DisplacementL&&(+d.DisplacementL).toFixed(1)+' l',d.EngineHP&&d.EngineHP+' PS',d.TransmissionStyle].filter(Boolean).join(', ');
-  show(ext?'Online: '+ext:(d.Model?'':'online keine weiteren Daten (europäische Modelle sind dort oft nicht erfasst)'));if(got.length)vPrev()}
+  show(d.Model?'':'Modell online nicht gefunden (europäische Modelle sind dort oft nicht erfasst)');if(got.length)vPrev()}
   catch(e){show('online gerade nicht erreichbar')}}
  else show('')}
-const AUTOF={brand:'vb',model:'vm',body:'vbody',hyb:'c3',ev:'c4'},AUTOL={Marke:'brand',Modell:'model',Karosserie:'body',Antrieb:'ev'};
+const AUTOF={brand:'vb',model:'vm'},AUTOL={Marke:'brand',Modell:'model',Karosserie:'body',Antrieb:'ev'};
 function autoList(){return Object.entries(AUTOF).filter(([k,id])=>$(id)&&$(id).dataset.auto).map(([k])=>k)}
 function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{photo:vPhoto,photoL:vPhotoL===null?((curV&&curV.photoL)||0):(vPhotoL&&vPhoto?Date.now():0),fin:$('vf').value.replace(/\s+/g,'').toUpperCase().slice(0,17),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),spot:$('vsp').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),auto:autoList(),site:$('vsite')?$('vsite').value:siteOf(curV),...kmF($('vkm').value),solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked,...usedF($('vused').checked)}}
 function usedF(u){if(u)return{used:true,transp:false,transpOff:'',show:false,showOn:'',showOff:''};if(curV&&curV.used)return{used:false,transp:true,transpOff:''};return{used:false,transp:!curV||curV.transp!==false}}
