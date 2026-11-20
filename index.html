@@ -143,6 +143,8 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 .sp-btn:hover,.sp-btn:focus-visible{border-color:var(--ac);background:var(--grb);outline:0}.sp-btn .ic{width:20px;height:20px;color:var(--ac)}.sp-btn small{margin-left:auto;color:var(--mu);font-size:13px}
 .sp-out{margin-top:10px;font-size:13px;color:var(--mu)}
 .scnear{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}.scnear .btn{justify-content:flex-start;text-align:left;height:auto;padding:10px 12px;gap:10px}.scnear mark{background:var(--wab,#fde7b0);color:inherit;border-radius:3px;padding:0 1px}
+.autob{align-self:flex-start;width:max-content;text-transform:none;letter-spacing:0;display:inline-block;margin-left:6px;font-size:10.5px;font-weight:600;color:var(--ac);background:var(--grb);border-radius:999px;padding:1px 7px;vertical-align:middle}
+.vinfo{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--mu);background:var(--grb);border-radius:10px;padding:8px 10px;margin-top:-4px}.vinfo .ic{flex:0 0 auto;width:16px;height:16px;color:var(--ac);margin-top:1px}
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--grb);color:var(--gr)}
 .tag.ac{background:var(--acs);color:var(--ac)}
 .ic{width:18px;height:18px;flex-shrink:0}
@@ -1003,7 +1005,8 @@ function vehModal(fin,pre){const v=RAW.veh.find(x=>x.fin===fin)||{...(S.cfg.used
   <span class="hint">Mit dem Finger verschieben, mit zwei Fingern, dem Regler oder dem Mausrad zoomen. So erscheint das Foto überall in der App.</span>
   <div class="crop-b"><button class="btn sm" type="button" onclick="cropClose()">Abbrechen</button><button class="btn sm p" type="button" onclick="cropApply()">${IC.check} Ausschnitt übernehmen</button></div></div>
  <div class="fg">
-  <label class="f full">FIN (17 Zeichen)<input id="vf" class="mono" value="${E(v.fin)}" ${fin?'disabled':''} autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="finClean(this)" style="text-transform:uppercase"></label>
+  <label class="f full">FIN (17 Zeichen)<input id="vf" class="mono" value="${E(v.fin)}" ${fin?'disabled':''} autocomplete="off" autocapitalize="characters" spellcheck="false" oninput="finClean(this);vinAuto()" style="text-transform:uppercase"></label>
+  <div class="full vinfo" id="vinfo" hidden></div>
   <label class="f">Marke<input id="vb" list="brands" value="${E(v.brand)}"><datalist id="brands">${BRANDS.map(b=>`<option value="${b}">`).join('')}</datalist></label>
   <label class="f">Modell<input id="vm" value="${E(v.model)}" placeholder="z. B. Golf, Tiguan, ID.4"></label>
   <label class="f">Ausstattung / Variante<input id="vv" value="${E(v.variant)}"></label>
@@ -1022,7 +1025,7 @@ function vehModal(fin,pre){const v=RAW.veh.find(x=>x.fin===fin)||{...(S.cfg.used
  <div style="display:flex;gap:18px;flex-wrap:wrap"><label class="chk"><input type="checkbox" id="c3" ${v.hyb?'checked':''}>Hybrid</label><label class="chk"><input type="checkbox" id="c4" ${v.ev?'checked':''}>Elektro</label><label class="chk"><input type="checkbox" id="c2" ${v.solar?'checked':''}>Solarpanel</label></div>
  <p class="hint" id="vhint"></p>
  <p class="hint" id="vplan"></p><p class="msg err" id="verr"></p></div>
- <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev();modalLock=true;
+ <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev();modalLock=true;if(!fin)setTimeout(vinAuto,30);else(v.auto||[]).forEach(k=>{const el=$(AUTOF[k]);if(el){el.dataset.auto='1';const l=el.closest('label');if(l&&!l.querySelector('.autob'))l.insertAdjacentHTML('beforeend','<span class="autob">automatisch eingefügt</span>')}});
  $('vph').addEventListener('change',e=>{pickPhoto(e.target.files&&e.target.files[0]);e.target.value=''})}
 /* ---------- Foto vergrößern (Fahrzeugseite) ---------- */
 const PHL={};/* geladene große Fotos */
@@ -1116,7 +1119,53 @@ function kmF(t){const d=String(t||'').replace(/km/i,'').replace(/[\s.,']/g,'');i
 /* FIN-Eingabe: Leerzeichen (auch beim Einfügen) still entfernen, max. 17 Zeichen; Cursor bleibt an seiner Stelle */
 function finClean(el){const v=el.value,c=el.selectionStart??v.length,n=v.replace(/\s+/g,'').slice(0,17);if(n===v)return;
  const pos=Math.min(n.length,v.slice(0,c).replace(/\s+/g,'').length);el.value=n;try{el.setSelectionRange(pos,pos)}catch(e){}}
-function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{photo:vPhoto,photoL:vPhotoL===null?((curV&&curV.photoL)||0):(vPhotoL&&vPhoto?Date.now():0),fin:$('vf').value.replace(/\s+/g,'').toUpperCase().slice(0,17),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),spot:$('vsp').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),site:$('vsite')?$('vsite').value:siteOf(curV),...kmF($('vkm').value),solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked,...usedF($('vused').checked)}}
+/* ---------- Fahrzeugdaten aus der FIN (beim Neuanlegen) ----------
+   1. Hersteller aus den ersten 3 Stellen, Modelljahr aus Stelle 10 (offline, sofort)
+   2. Modell, Karosserie, Antrieb von einem Fahrzeug aus dem eigenen Bestand mit gleichem Hersteller- und Typcode (Stelle 1–3 + 7–8)
+   3. Ergänzend die freie FIN-Datenbank der US-Verkehrsbehörde NHTSA (vPIC) – kennt europäische Modelle oft nicht
+   Nur leere Felder werden befüllt und mit „automatisch eingefügt“ markiert. */
+const WMIB={WVW:'Volkswagen',WVG:'Volkswagen',WV1:'VW Nutzfahrzeuge',WV2:'VW Nutzfahrzeuge',WV3:'VW Nutzfahrzeuge',WAU:'Audi',WUA:'Audi',WA1:'Audi',TRU:'Audi',TMB:'Škoda',TMP:'Škoda',VSS:'Seat',VS6:'Seat',WP0:'Porsche',WP1:'Porsche',
+ WBA:'BMW',WBS:'BMW',WBY:'BMW',WMW:'Mini',WDB:'Mercedes-Benz',WDD:'Mercedes-Benz',W1K:'Mercedes-Benz',W1N:'Mercedes-Benz',W1V:'Mercedes-Benz',WF0:'Ford',WF1:'Ford',W0L:'Opel',W0V:'Opel',VF1:'Renault',VF3:'Peugeot',VF7:'Citroën',VR3:'Peugeot',VR7:'Citroën',
+ ZFA:'Fiat',ZAR:'Alfa Romeo',YV1:'Volvo',SAL:'Land Rover',SAJ:'Jaguar',JTD:'Toyota',JTN:'Toyota',SB1:'Toyota',JMZ:'Mazda',KMH:'Hyundai',TMA:'Hyundai',KNA:'Kia',U5Y:'Kia',VNK:'Toyota',LRW:'Tesla',XP7:'Tesla',LSV:'Volkswagen',LFV:'Volkswagen',TSM:'Suzuki',JSA:'Suzuki',JN1:'Nissan',SJN:'Nissan',UU1:'Dacia',VGA:'Alpine',LPS:'Polestar'};
+const VYC='ABCDEFGHJKLMNPRSTVWXY123456789';
+function vinYear(f){const i=VYC.indexOf(f[9]);if(i<0)return null;const now=new Date().getFullYear();let y=1980+i;while(y+30<=now+1)y+=30;return y}
+const vinAutoDone={};
+function vinFill(id,val,lab){const el=$(id);if(!el||val==null||val==='')return false;if(el.type==='checkbox'){if(el.checked||!val)return false;el.checked=true}else{if(el.value)return false;
+  if(el.tagName==='SELECT'&&![...el.options].some(o=>o.value===val))return false;el.value=val}
+ el.dataset.auto='1';const l=el.closest('label');if(l&&!l.querySelector('.autob'))l.insertAdjacentHTML('beforeend','<span class="autob">automatisch eingefügt</span>');return true}
+async function vinAuto(){const el=$('vf');if(!el||el.disabled)return;const f=el.value.trim().toUpperCase(),box=$('vinfo');
+ if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(f)){if(box)box.hidden=true;return}if(box&&box.dataset.fin===f)return;if(box)box.dataset.fin=f;
+ const info=[],got=[],w=f.slice(0,3),yr=vinYear(f);
+ /* eigener Bestand: gleicher Hersteller- und Typcode */
+ const same=RAW.veh.filter(v=>v.fin&&v.fin!==f&&v.fin.slice(0,3)===w&&v.fin.slice(6,8)===f.slice(6,8)&&v.model);
+ const top=k=>{const c={};same.forEach(v=>{if(v[k])c[v[k]]=(c[v[k]]||0)+1});return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||''};
+ if(vinFill('vb',top('brand')||WMIB[w]||WMIB[w.slice(0,2)+'*'],'Marke'))got.push('Marke');
+ if(same.length){if(vinFill('vm',top('model')))got.push('Modell');if(vinFill('vbody',top('body')))got.push('Karosserie');
+  const ev=same.filter(v=>v.ev).length>same.length/2,hy=same.filter(v=>v.hyb).length>same.length/2;if(ev&&vinFill('c4',true))got.push('Elektro');if(hy&&vinFill('c3',true))got.push('Hybrid');
+  info.push(`Modell wie ${same.length===1?'ein Fahrzeug':same.length+' Fahrzeuge'} im eigenen Bestand mit gleichem Typcode (${f.slice(6,8)})`)}
+ if(yr)info.push(`Modelljahr laut FIN: ${yr}`);
+ const show=(extra)=>{if(!box)return;box.hidden=!(info.length||got.length||extra);box.innerHTML=`${IC.info||'ℹ'} <span>${got.length?`<b>${got.join(', ')}</b> automatisch eingefügt – bitte prüfen. `:''}${info.join(' · ')}${extra?' · '+extra:''}</span>`};
+ show(navigator.onLine?'suche online …':'');if(got.length)vPrev();
+ /* online ergänzen (nur wenn noch etwas fehlt) */
+ if(navigator.onLine&&(!$('vm').value||!$('vb').value||!$('vbody').value)){try{
+  /* Ergebnis je FIN merken, damit nicht bei jedem Öffnen erneut gefragt wird */
+  vinAutoDone[f]=vinAutoDone[f]||(async()=>{const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),6000);
+   const r=await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${f}?format=json`,{signal:ctl.signal});clearTimeout(tm);return((await r.json()).Results||[])[0]||{}})();
+  vinAutoDone[f].catch(()=>{delete vinAutoDone[f]});const d=await vinAutoDone[f];if(($('vf')||{}).value!==f)return;
+  const tc=t=>String(t||'').toLowerCase().replace(/(^|[\s-])\S/g,c=>c.toUpperCase());
+  if(vinFill('vb',IMPB[hkey(d.Make)]||tc(d.Make)))got.push('Marke');
+  if(d.Model&&vinFill('vm',d.Model))got.push('Modell');
+  const bc=String(d.BodyClass||'').toLowerCase(),bm=/sport utility|suv|crossover/.test(bc)?'suv':/pickup/.test(bc)?'pickup':/van|bus/.test(bc)?'van':/wagon/.test(bc)?'kombi':/coupe|convertible|cabrio/.test(bc)?'coupe':/hatchback/.test(bc)?'kompakt':/sedan|saloon/.test(bc)?'limousine':'';
+  if(bm&&vinFill('vbody',bm))got.push('Karosserie');
+  const fu=(d.FuelTypePrimary+' '+d.ElectrificationLevel).toLowerCase();if(/bev|electric/.test(fu)&&!/hybrid/.test(fu)&&vinFill('c4',true))got.push('Elektro');else if(/hybrid|phev/.test(fu)&&vinFill('c3',true))got.push('Hybrid');
+  if(d.ModelYear&&!yr)info.push('Modelljahr '+d.ModelYear);
+  const ext=[d.DisplacementL&&(+d.DisplacementL).toFixed(1)+' l',d.EngineHP&&d.EngineHP+' PS',d.TransmissionStyle].filter(Boolean).join(', ');
+  show(ext?'Online: '+ext:(d.Model?'':'online keine weiteren Daten (europäische Modelle sind dort oft nicht erfasst)'));if(got.length)vPrev()}
+  catch(e){show('online gerade nicht erreichbar')}}
+ else show('')}
+const AUTOF={brand:'vb',model:'vm',body:'vbody',hyb:'c3',ev:'c4'},AUTOL={Marke:'brand',Modell:'model',Karosserie:'body',Antrieb:'ev'};
+function autoList(){return Object.entries(AUTOF).filter(([k,id])=>$(id)&&$(id).dataset.auto).map(([k])=>k)}
+function formVeh(){const sel=$('vcol').value,cus=sel==='__c';return{photo:vPhoto,photoL:vPhotoL===null?((curV&&curV.photoL)||0):(vPhotoL&&vPhoto?Date.now():0),fin:$('vf').value.replace(/\s+/g,'').toUpperCase().slice(0,17),brand:$('vb').value.trim(),model:$('vm').value.trim(),variant:$('vv').value.trim(),body:$('vbody').value,color:cus?($('vcn').value.trim()||'Sonderfarbe'):sel,colorHex:cus?$('vcc').value:((COLORS.find(c=>c[0]===sel)||[])[1]||''),loc:$('vl').value.trim(),spot:$('vsp').value.trim(),deliv:$('vd').value,plate:$('vk').value.trim(),nr:$('vn').value.trim(),auto:autoList(),site:$('vsite')?$('vsite').value:siteOf(curV),...kmF($('vkm').value),solar:$('c2').checked,hyb:$('c3').checked,ev:$('c4').checked,...usedF($('vused').checked)}}
 function usedF(u){if(u)return{used:true,transp:false,transpOff:'',show:false,showOn:'',showOff:''};if(curV&&curV.used)return{used:false,transp:true,transpOff:''};return{used:false,transp:!curV||curV.transp!==false}}
 function vPrev(){if(!$('vprev'))return;$('vcw').hidden=$('vcol').value!=='__c';const v=formVeh();$('vprev').innerHTML=carSVG(v)+`<div><b>${vname(v)}</b><br><small>${BODIES[bodyOf(v)].l}${v.color?' · '+E(v.color):''}</small></div>`;
  const n=planFor({...v,archived:false}).length,b=planFor({...v,archived:false}).filter(x=>x.cat==='b12').length;$('vplan').textContent=v.deliv?`Pflegeplan: ${n} Termine bis ${fmt(planEnd(v))}, davon ${b}× 12V-Batterie (${v.used?'Gebrauchtwagen: alle '+Math.round((+S.cfg.wk||42)/7)+' Wochen ab Eingang':v.transp?'Transportmodus an: vierteljährlich':'Transportmodus aus: alle 6 Wochen'}).`:'Ohne Eingangsdatum wird kein Pflegeplan erstellt.';
@@ -1139,7 +1188,7 @@ async function saveVeh(old){if(crop&&$('vcrop')&&!$('vcrop').hidden)cropApply();
  log(fin,old?'Stammdaten geändert':'Fahrzeug angelegt');if(hasKm(f)&&(!old||+o.km!==f.km||!hasKm(o)))log(fin,`Kilometerstand: ${kmFmt(f.km)} km`);const r=await sync(v);
  $('mod').hidden=true;$('mb').innerHTML='';if(!old){S.sel=fin;S.view='veh';S.tab='plan'}render();
  toast(old?`Gespeichert · Pflegeplan aktualisiert (+${r.add} / −${r.del})`:`Fahrzeug angelegt · ${r.total} Pflegetermine bis ${fmt(planEnd(v))} eingetragen`)}
-document.addEventListener('input',e=>{if(['vb','vm','vv','vbody','vcol','vcn','vcc','vd','c1','c3','c4','vused'].includes(e.target.id))vPrev()});
+document.addEventListener('input',e=>{if(['vb','vm','vv','vbody','vcol','vcn','vcc','vd','c1','c3','c4','vused'].includes(e.target.id)){if(e.target.dataset.auto){delete e.target.dataset.auto;const b=e.target.closest('label')&&e.target.closest('label').querySelector('.autob');if(b)b.remove()}vPrev()}});
 document.addEventListener('change',e=>{if(['vbody','vcol','c1','c3','c4','vd','vused'].includes(e.target.id))vPrev()});
 const showTxt=v=>v.used?'– (Gebrauchtwagen)':v.show?(v.showOn>TD()?`Start geplant am ${fmt(v.showOn)}`:`an seit ${fmt(v.showOn)}`):v.showOn?`${fmt(v.showOn)} – ${fmt(v.showOff)}`:'nie eingeschaltet';
 const offTxt=v=>{if(v.used)return'– (Gebrauchtwagen)';const d=v.transpOff||v.deliv;return d>TD()?`Entfernung geplant am ${fmt(d)}`:`entfernt am ${fmt(d)}`};
@@ -1621,7 +1670,7 @@ function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug ni
  let body='';
  if(S.tab==='plan'){const rmv=(S.taskAll||[]).filter(t=>t.fin===v.fin&&t.removed).sort((a,b)=>a.due<b.due?-1:1);if(S.planF==='del'&&!rmv.length)S.planF='open';const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='del'?rmv:S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(planEnd(v))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length],...(rmv.length?[['del','Gelöscht',rmv.length]]:[])].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div>${(()=>{const od=op.filter(t=>t.due<TD());return S.planF==='del'?`<button class="btn sm" onclick="restoreTasks(${E(JSON.stringify(rmv.map(t=>t._id)))})">${IC.restore} Alle wiederherstellen</button>`:(op.length&&S.planF!=='done'&&!S.selMode?`<button class="btn sm" onclick="selStart()">${IC.sel} Auswählen</button>`:'')+(od.length?`<button class="btn sm" style="color:var(--ba)" onclick="removeTasks(${E(JSON.stringify(od.map(t=>t._id)))})">${IC.trash} Überfällige löschen (${od.length})</button>`:'')})()}<button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(t=>taskLi(t,{del:1,restore:S.planF==='del'})).join('')}</ul>`:`<p class="empty">${S.planF==='del'?'Keine gelöschten Maßnahmen.':S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
  else if(S.tab==='batt')body=battTab(v);
- else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',siteOf(v)],['Bereich',v.loc],['Stellplatz / Lagerort',v.spot],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Fahrzeugart',v.used?'Gebrauchtwagen':'Neufahrzeug'],['Kilometerstand',kmTxt(v)],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
+ else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',siteOf(v)],['Bereich',v.loc],['Stellplatz / Lagerort',v.spot],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Fahrzeugart',v.used?'Gebrauchtwagen':'Neufahrzeug'],['Kilometerstand',kmTxt(v)],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}${(v.auto||[]).some(k=>k===AUTOL[x[0]]||(x[0]==='Antrieb'&&k==='hyb'))?'<span class="autob">automatisch eingefügt</span>':''}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
  else if(S.tab==='notes')body=`<div class="pb">${noteForm(v.fin)}${noteList(S.notes.filter(n=>n.fin===v.fin),0)}</div>`;
  else if(S.tab==='prob')body=`<div class="ph"><span style="flex:1"></span><button class="btn sm" onclick="probModal('${v.fin}')">${IC.plus} Problem melden</button></div>${probTbl(ps)}`;
  else body=lg.length?`<div class="scroll"><table><tr><th>Zeitpunkt</th><th>Mitarbeiter:in</th><th>Änderung</th></tr>${lg.map(l=>`<tr><td class="num">${new Date(l.at).toLocaleString('de-AT',{dateStyle:'short',timeStyle:'short'})}</td><td>${E(l.by)}</td><td style="white-space:normal">${E(l.text)}</td></tr>`).join('')}</table></div>`:'<p class="empty">Noch keine Einträge.</p>';
