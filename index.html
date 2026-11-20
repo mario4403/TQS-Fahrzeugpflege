@@ -145,6 +145,9 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 .scnear{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}.scnear .btn{justify-content:flex-start;text-align:left;height:auto;padding:10px 12px;gap:10px}.scnear mark{background:var(--wab,#fde7b0);color:inherit;border-radius:3px;padding:0 1px}
 .autob{align-self:flex-start;width:max-content;text-transform:none;letter-spacing:0;display:inline-block;margin-left:6px;font-size:10.5px;font-weight:600;color:var(--ac);background:var(--grb);border-radius:999px;padding:1px 7px;vertical-align:middle}
 .vinfo{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--mu);background:var(--grb);border-radius:10px;padding:8px 10px;margin-top:-4px}.vinfo .ic{flex:0 0 auto;width:16px;height:16px;color:var(--ac);margin-top:1px}
+.demo-or{display:flex;align-items:center;gap:10px;color:var(--mu);font-size:12px;margin:6px 0 2px}.demo-or::before,.demo-or::after{content:'';flex:1;border-top:1px solid var(--bd)}
+.demobar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--grb);border:1px solid var(--ac);border-radius:12px;padding:10px 14px;margin:0 0 16px;font-size:13.5px}.demobar>span{flex:1;min-width:200px}.demobar .ic{width:18px;height:18px;color:var(--ac)}
+.demo .relb-d{display:none}
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--grb);color:var(--gr)}
 .tag.ac{background:var(--acs);color:var(--ac)}
 .ic{width:18px;height:18px;flex-shrink:0}
@@ -611,6 +614,9 @@ body.mopen{overflow:hidden}
     <div class="row"><span class="muted" style="font-size:12.5px">Nach 4 Stunden ohne Nutzung wirst du automatisch abgemeldet.</span><button type="button" class="link" onclick="authTab('reset')">Passwort vergessen?</button></div>
     <button class="btn p" type="submit" id="lBtn" style="justify-content:center;padding:11px">Anmelden</button>
     <p class="hint">Noch kein Konto? <button type="button" class="link" onclick="authTab('reg')">Jetzt registrieren</button></p>
+    <div class="demo-or"><span>oder</span></div>
+    <button class="btn" type="button" onclick="startDemo()" style="justify-content:center;padding:11px">Demo-Version ausprobieren</button>
+    <p class="hint" style="margin-top:-4px">Ohne Anmeldung, mit leerem Bestand. In der Demo wird nichts gespeichert.</p>
    </form>
 
    <form id="fReg" novalidate hidden>
@@ -808,12 +814,12 @@ const st=t=>{if(t.status==='Erledigt')return['s-ok','Erledigt'];if(t.due<TD())re
 const RAW={veh:[],tasks:[],prob:[],log:[],notes:[]};
 const SITES=()=>{const s=((S.cfg&&S.cfg.sites)||[]).filter(Boolean);return s.length?s:['Mondsee']};
 const siteOf=v=>v&&v.site&&SITES().includes(v.site)?v.site:SITES()[0];
-function applySite(){const L=SITES();if(!S.site)try{S.site=localStorage.getItem('tqsSite')||''}catch(e){}if(S.site!=='*'&&!L.includes(S.site))S.site=L[0];
+function applySite(){const L=SITES();if(!S.site&&!DEMO)try{S.site=localStorage.getItem('tqsSite')||''}catch(e){}if(S.site!=='*'&&!L.includes(S.site))S.site=L[0];
  const all=S.site==='*',vs=all?RAW.veh:RAW.veh.filter(v=>siteOf(v)===S.site),fins=new Set(vs.map(v=>v.fin));
  S.veh=vs;S.taskAll=all?RAW.tasks:RAW.tasks.filter(t=>fins.has(t.fin));S.tasks=S.taskAll.filter(t=>!t.removed);
  S.prob=all?RAW.prob:RAW.prob.filter(x=>!x.fin||fins.has(x.fin));
  S.notes=(all?RAW.notes:RAW.notes.filter(x=>x.fin?fins.has(x.fin):(x.site||L[0])===S.site)).slice().sort((a,b)=>(b.at||'').localeCompare(a.at||''));S.log=all?RAW.log:RAW.log.filter(x=>!x.fin||fins.has(x.fin))}
-function setSite(x,quiet){S.site=x;try{localStorage.setItem('tqsSite',x)}catch(e){}applySite();S.fl='';S.sel=null;if(S.view==='veh')S.view='dash';render();
+function setSite(x,quiet){if(DEMO)x=DEMO_SITE;S.site=x;if(!DEMO)try{localStorage.setItem('tqsSite',x)}catch(e){}applySite();S.fl='';S.sel=null;if(S.view==='veh')S.view='dash';render();
  if(!quiet)toast(x==='*'?'Alle Standorte werden angezeigt.':`Standort: ${x}`)}
 const siteLbl=()=>S.site==='*'?'Alle Standorte':S.site;
 const veh=f=>RAW.veh.find(v=>v.fin===f)||{};
@@ -893,12 +899,51 @@ $('fReset').addEventListener('submit',async e=>{e.preventDefault();msg('mReset',
  catch(err){msg('mReset',err.code==='auth/user-not-found'?'Falls zu dieser E-Mail ein Konto existiert, ist der Link jetzt unterwegs.':errText(err))}});
 
 const initials=n=>(n||'?').split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
-function logout(){auth.signOut()}
+function logout(){if(DEMO)return endDemo();auth.signOut()}
+/* ---------- Demo-Version ----------
+   Läuft komplett mit einer lokalen Datenbank im Browser-Speicher: keine Verbindung zu Firebase,
+   kein Zugriff auf echte Autohäuser, Standorte oder Fahrzeuge. Beim Beenden/Neuladen ist alles weg. */
+let DEMO=false;
+function localDb(){const st=new Map(),subs=new Set(),meta={fromCache:false,hasPendingWrites:false},cl=o=>o==null?o:JSON.parse(JSON.stringify(o));
+ const gid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,9);let qt=0;const queue=()=>{clearTimeout(qt);qt=setTimeout(()=>subs.forEach(f=>{try{f()}catch(e){console.error(e)}}),0)};
+ const mg=(a,b)=>{const o={...(a||{})};for(const k in b){const v=b[k];o[k]=v&&typeof v==='object'&&!Array.isArray(v)&&o[k]&&typeof o[k]==='object'&&!Array.isArray(o[k])?mg(o[k],v):v}return o};
+ const sd=p=>({id:p.split('/').pop(),exists:st.has(p),data:()=>cl(st.get(p)),metadata:meta});
+ const doc=p=>({id:p.split('/').pop(),path:p,get:async()=>sd(p),
+  set:async(d,o)=>{st.set(p,o&&o.merge?mg(st.get(p),cl(d)):cl(d));queue()},
+  update:async d=>{if(!st.has(p))throw Object.assign(new Error('not-found'),{code:'not-found'});const o=cl(st.get(p));
+   for(const [k,v] of Object.entries(d)){const ks=k.split('.');let t=o;ks.slice(0,-1).forEach(x=>{if(!t[x]||typeof t[x]!=='object')t[x]={};t=t[x]});t[ks[ks.length-1]]=cl(v)}st.set(p,o);queue()},
+  delete:async()=>{st.delete(p);queue()},
+  onSnapshot:(a,b)=>{const f=typeof a==='function'?a:b,g=()=>f(sd(p));subs.add(g);setTimeout(g);return()=>subs.delete(g)}});
+ const list=c=>[...st.keys()].filter(k=>k.startsWith(c+'/')&&k.split('/').length===2).map(sd);
+ const col=c=>({doc:id=>doc(c+'/'+(id||gid())),add:async d=>{const r=doc(c+'/'+gid());await r.set(d);return r},get:async()=>({docs:list(c)}),
+  onSnapshot:(a,b)=>{const f=typeof a==='function'?a:b,g=()=>f({docs:list(c),metadata:meta,docChanges:()=>[{}]});subs.add(g);setTimeout(g);return()=>subs.delete(g)}});
+ const ok=async()=>{};return{doc,collection:col,enablePersistence:ok,enableNetwork:ok,disableNetwork:ok,waitForPendingWrites:ok,terminate:ok,clearPersistence:ok,__local:1}}
+const DEMO_SITE='Demo-Standort';
+async function startDemo(){if(S.acct)return;DEMO=true;db=localDb();await db.doc('settings/cfg').set({sites:[DEMO_SITE]});
+ S.acct={email:'demo@beispiel.at',uid:'demo',name:'Demo'};S.site=DEMO_SITE;S.view='dash';S.pickSite=false;document.body.classList.add('demo');
+ enterApp();setTimeout(()=>toast('Demo-Version gestartet – nichts davon wird gespeichert.'),400)}
+function endDemo(){DEMO=false;try{sessionStorage.setItem('tqsDemoEnd','1')}catch(e){}location.reload()}
+const demoBar=()=>DEMO?`<div class="demobar">${IC.info||''}<span><b>Demo-Version</b> – alle Funktionen zum Ausprobieren, max. 1 Fahrzeug. Nichts wird gespeichert.</span><button class="btn sm p" onclick="endDemo()">Zur Anmeldung / Registrierung</button></div>`:'';
+/* Demo: nur 1 Fahrzeug */
+function demoFull(){if(!DEMO||RAW.veh.length<1)return false;
+ modal(`<header><div style="flex:1"><h3>Demo: nur 1 Fahrzeug</h3></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><p>In der Demo-Version kann nur <b>ein Fahrzeug</b> angelegt werden. Bitte melde dich an oder registriere dich, um weitere Fahrzeuge hinzuzufügen.</p></div>
+ <footer><button class="btn" onclick="closeM()">Weiter testen</button><button class="btn p" onclick="endDemo()">Anmelden / Registrieren</button></footer>`);return true}
+/* Beispielfahrzeug mit zufälligen Daten, Eingang immer heute */
+const DEMO_CARS=[['Volkswagen','Golf','Life 1.5 eTSI','kompakt','WVW','CD'],['Volkswagen','Tiguan','Elegance 2.0 TDI','suv','WVG','CT'],['Volkswagen','ID.4','Pro 77 kWh','suv','WVG','E2','ev'],
+ ['Volkswagen','Passat Variant','Business 2.0 TDI','kombi','WVW','CJ'],['Škoda','Octavia Combi','Style 2.0 TDI','kombi','TMB','NX'],['Škoda','Enyaq','85','suv','TMB','E1','ev'],['Škoda','Fabia','Selection 1.0 TSI','kompakt','TMB','PJ'],
+ ['Seat','Ibiza','FR 1.0 TSI','kompakt','VSS','KJ'],['Seat','Ateca','Xperience 1.5 TSI','suv','VSS','KH'],['Cupra','Formentor','VZ e-Hybrid','suv','VSS','KM','hyb'],['Cupra','Born','e-Boost 79 kWh','kompakt','VSS','K1','ev'],
+ ['Audi','A4 Avant','40 TDI quattro','kombi','WAU','F4'],['Audi','Q4 e-tron','45 quattro','suv','WAU','FZ','ev'],['VW Nutzfahrzeuge','Caddy','Life 2.0 TDI','van','WV2','SK'],['VW Nutzfahrzeuge','Multivan','Style eHybrid','van','WV2','ST','hyb']];
+function demoSample(){if(!DEMO||demoFull())return;const r=a=>a[Math.floor(Math.random()*a.length)],c=r(DEMO_CARS),y=new Date().getFullYear();
+ const fin=(c[4]+'ZZZ'+c[5]+'Z'+VYC[(y-2010+30)%30]+r(['W','X','R','K','N','P'])+String(Math.floor(Math.random()*1e6)).padStart(6,'0')).toUpperCase();
+ const set=(id,v)=>{const e=$(id);if(e){e.value=v}};set('vf',fin);set('vb',c[0]);set('vm',c[1]);set('vv',c[2]);set('vbody',c[3]);set('vcol',r(COLORS)[0]);set('vd',TD());
+ set('vkm',String(Math.round(Math.random()*30)*500));set('vsp',`Reihe ${r(['A','B','C','D'])} · ${1+Math.floor(Math.random()*30)}`);set('vl',r(['Hof','Halle 1','Halle 2','Schauraum']));
+ if($('c3'))$('c3').checked=c[6]==='hyb';if($('c4'))$('c4').checked=c[6]==='ev';saveVeh('')}
 /* ---------- Sitzung: 4 Stunden ohne Nutzung → automatisch abmelden (auch wenn die App geschlossen oder minimiert war) ---------- */
 const SESS=4*3600e3;let actW=0,autoOut=false;
-function actNow(force){const t=Date.now();if(!force&&t-actW<30e3)return;actW=t;try{localStorage.setItem('tqsAct',String(t))}catch(e){}}
+function actNow(force){if(DEMO)return;const t=Date.now();if(!force&&t-actW<30e3)return;actW=t;try{localStorage.setItem('tqsAct',String(t))}catch(e){}}
 function actAge(){let t=0;try{t=+localStorage.getItem('tqsAct')||0}catch(e){}return Date.now()-t}
-function sessCheck(){if(S.acct&&actAge()>SESS){autoOut=true;auth.signOut()}}
+function sessCheck(){if(DEMO)return;if(S.acct&&actAge()>SESS){autoOut=true;auth.signOut()}}
 ['pointerdown','keydown','wheel','touchstart'].forEach(ev=>addEventListener(ev,()=>{if(S.acct&&!document.hidden)actNow()},{passive:true,capture:true}));
 setInterval(sessCheck,30e3);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sessCheck()});
 /* Nach dem Anmelden: Standort wählen */
@@ -996,7 +1041,7 @@ const BRANDS=['Volkswagen','VW Nutzfahrzeuge','Audi','Škoda','Seat','Cupra','Po
 let curV=null;
 const uniq=a=>[...new Set(a.filter(Boolean))].sort(new Intl.Collator('de',{numeric:true}).compare);
 let vPhoto='',vPhotoL=null,crop=null;
-function vehModal(fin,pre){const v=RAW.veh.find(x=>x.fin===fin)||{...(S.cfg.usedDef?{used:true,transp:false}:{transp:true}),...(pre||{})};curV=v;vPhoto=okPhoto(v.photo)?v.photo:'';vPhotoL=null;crop=null;const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
+function vehModal(fin,pre){if(!fin&&demoFull())return;const v=RAW.veh.find(x=>x.fin===fin)||{...(S.cfg.usedDef?{used:true,transp:false}:{transp:true}),...(pre||{})};curV=v;vPhoto=okPhoto(v.photo)?v.photo:'';vPhotoL=null;crop=null;const cn=v.color||'',isC=cn&&!COLORS.some(c=>c[0]===cn);
  modal(`<header><h3>${fin?'Fahrzeug bearbeiten':'Neues Fahrzeug'}</h3><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
  <div class="sb"><div class="prev" id="vprev"></div>
  <div class="phrow"><input type="file" id="vph" accept="image/*" hidden><button class="btn sm" type="button" onclick="$('vph').click()">${IC.camera} <span id="vphl">${vPhoto?'Foto ändern':'Foto hinzufügen'}</span></button><button class="btn sm" type="button" id="vphe" hidden onclick="cropOpen()">Ausschnitt ändern</button><button class="btn sm" type="button" id="vphx" style="color:var(--ba)" ${vPhoto?'':'hidden'} onclick="vPhoto='';vPhotoL='';this.hidden=true;$('vphl').textContent='Foto hinzufügen';$('vphs').textContent='Foto wird beim Speichern entfernt – dann ist wieder die Skizze zu sehen.';vPrev()">Foto entfernen</button><span class="hint" id="vphs">${vPhoto?'':'Optional: 1 Foto, wird statt der Skizze angezeigt.'}</span></div>
@@ -1025,7 +1070,7 @@ function vehModal(fin,pre){const v=RAW.veh.find(x=>x.fin===fin)||{...(S.cfg.used
  <div style="display:flex;gap:18px;flex-wrap:wrap"><label class="chk"><input type="checkbox" id="c3" ${v.hyb?'checked':''}>Hybrid</label><label class="chk"><input type="checkbox" id="c4" ${v.ev?'checked':''}>Elektro</label><label class="chk"><input type="checkbox" id="c2" ${v.solar?'checked':''}>Solarpanel</label></div>
  <p class="hint" id="vhint"></p>
  <p class="hint" id="vplan"></p><p class="msg err" id="verr"></p></div>
- <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev();modalLock=true;if(!fin)setTimeout(vinAuto,30);else(v.auto||[]).forEach(k=>{const el=$(AUTOF[k]);if(el){el.dataset.auto='1';const l=el.closest('label');if(l&&!l.querySelector('.autob'))l.insertAdjacentHTML('beforeend','<span class="autob">automatisch eingefügt</span>')}});
+ <footer>${DEMO&&!fin?`<button class="btn" onclick="demoSample()" title="Nur in der Demo: legt ein zufälliges Fahrzeug an">🎲 Beispielfahrzeug</button><span style="flex:1"></span>`:''}<button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="vsave" onclick="saveVeh('${fin||''}')">${fin?'Speichern':'Fahrzeug anlegen'}</button></footer>`);vPrev();modalLock=true;if(!fin)setTimeout(vinAuto,30);else(v.auto||[]).forEach(k=>{const el=$(AUTOF[k]);if(el){el.dataset.auto='1';const l=el.closest('label');if(l&&!l.querySelector('.autob'))l.insertAdjacentHTML('beforeend','<span class="autob">automatisch eingefügt</span>')}});
  $('vph').addEventListener('change',e=>{pickPhoto(e.target.files&&e.target.files[0]);e.target.value=''})}
 /* ---------- Foto vergrößern (Fahrzeugseite) ---------- */
 const PHL={};/* geladene große Fotos */
@@ -1369,7 +1414,7 @@ function impCheck(t){const m=impCols(t.head),T=TD(),seen=new Set(),have=new Set(
  return t.rows.map(r=>{const x=impRow(r,m,T);x.st=!/^[A-HJ-NPR-Z0-9]{17}$/.test(x.fin)?'bad':have.has(x.fin)?'have':seen.has(x.fin)?'dup':'new';seen.add(x.fin);
   x.miss=missingOf({...x,imp:1});return x})}
 let impData=null;
-function importModal(){impData=null;
+function importModal(){if(demoFull())return;impData=null;
  modal(`<header><div style="flex:1"><h3>Fahrzeugliste importieren</h3><span class="muted">Excel (.xlsx), CSV oder PDF – z. B. die Fahrzeugliste aus dem Gebrauchtwagen-Portal</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
  <div class="sb" id="impb"><label class="drop" id="impd"><input type="file" id="impf" accept=".xlsx,.xlsm,.csv,.txt,.pdf,application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
   ${IC.up||IC.plus}<b>Datei auswählen</b><span class="muted">oder hierher ziehen</span></label>
@@ -1396,7 +1441,7 @@ function impShow(){const{rs,file}=impData,nw=rs.filter(r=>r.st==='new'),hv=rs.fi
  <p class="msg err" id="imperr"></p>`;
  const upd=()=>{const n=document.querySelectorAll('.impc:checked').length;$('impsv').disabled=!n;$('impsv').textContent=n?`${n} ${n===1?'Fahrzeug':'Fahrzeuge'} anlegen`:'Keine neuen Fahrzeuge'};
  document.querySelectorAll('.impc').forEach(c=>c.onchange=upd);$('impall').onchange=e=>{document.querySelectorAll('.impc').forEach(c=>c.checked=e.target.checked);upd()};upd()}
-async function impSave(){if(!impData)return;const used=$('impu').checked,past=$('impp').checked,site=$('imps').value,T=TD(),sel=[...document.querySelectorAll('.impc:checked')].map(c=>impData.rs[+c.dataset.i]).filter(r=>!RAW.veh.some(v=>v.fin===r.fin));
+async function impSave(){if(!impData)return;if(DEMO&&RAW.veh.length+[...document.querySelectorAll('.impc:checked')].length>1)return $('imperr').textContent='In der Demo-Version kann nur 1 Fahrzeug angelegt werden – bitte nur ein Fahrzeug auswählen oder anmelden/registrieren.';const used=$('impu').checked,past=$('impp').checked,site=$('imps').value,T=TD(),sel=[...document.querySelectorAll('.impc:checked')].map(c=>impData.rs[+c.dataset.i]).filter(r=>!RAW.veh.some(v=>v.fin===r.fin));
  if(!sel.length)return;const b=$('impsv');b.disabled=true;let done=0,fail=0;
  const docs=sel.map(r=>({fin:r.fin,brand:r.brand,model:r.model,variant:r.variant,body:'',color:r.color,colorHex:'',loc:r.loc,spot:r.spot,plate:r.plate,nr:'',km:r.km==null?'':r.km,kmAt:r.km==null?'':T,
   deliv:r.deliv,ez:r.ez,fuel:r.fuel,solar:false,hyb:r.hyb&&!r.ev,ev:r.ev,used,transp:!used,transpOff:'',show:false,showOn:'',showOff:'',archived:false,site,photo:'',photoL:0,imp:{at:T,file:impData.file,stock:r.stock||''}}));
@@ -1718,9 +1763,9 @@ function sett(){const c=S.cfg,tab=SETT.some(t=>t[0]===S.setTab)?S.setTab:'allg',
  <label class="f">„Bitte Laden!“ bei 12V-Spannung unter (Volt)<input type="number" step="0.1" id="s_v12" value="${c.v12}"></label>
  <label class="f">„Bitte Laden!“ bei HV-Ladezustand unter (%)<input type="number" min="0" max="100" id="s_hv" value="${c.hv}"></label>
  <div><button class="btn p" onclick="saveCfg()">Speichern und Termine neu berechnen</button></div></div></section>`)}
- ${G('veh',`<section class="panel" style="max-width:640px"><div class="ph"><h3>Standorte</h3><button class="btn sm" onclick="siteModal()">${IC.plus} Standort hinzufügen</button></div><div class="pb" style="display:flex;flex-direction:column;gap:8px">
+ ${G('veh',`<section class="panel" style="max-width:640px"><div class="ph"><h3>Standorte</h3><button class="btn sm" ${DEMO?'hidden':''} onclick="siteModal()">${IC.plus} Standort hinzufügen</button></div><div class="pb" style="display:flex;flex-direction:column;gap:8px">
  <p class="hint" style="margin:0">Jeder Standort hat seine eigenen Fahrzeuge und Maßnahmen. Fahrzeuge ohne Zuordnung gehören zum ersten Standort.</p>
- ${SITES().map((x,i)=>{const n=RAW.veh.filter(v=>siteOf(v)===x).length;return`<div class="siterow">${IC.pin}<b>${E(x)}</b><span class="muted">${n} ${n===1?'Fahrzeug':'Fahrzeuge'}</span><span style="flex:1"></span><button class="btn sm" onclick="siteRenModal(${i})">Umbenennen</button>${SITES().length>1&&!n?`<button class="btn sm d" onclick="delSite(${i})">Entfernen</button>`:''}</div>`}).join('')}</div></section>
+ ${SITES().map((x,i)=>{const n=RAW.veh.filter(v=>siteOf(v)===x).length;return`<div class="siterow">${IC.pin}<b>${E(x)}</b><span class="muted">${n} ${n===1?'Fahrzeug':'Fahrzeuge'}</span><span style="flex:1"></span><button class="btn sm" ${DEMO?'hidden':''} onclick="siteRenModal(${i})">Umbenennen</button>${SITES().length>1&&!n?`<button class="btn sm d" onclick="delSite(${i})">Entfernen</button>`:''}</div>`}).join('')}</div></section>
  <section class="panel" style="max-width:640px"><div class="ph"><h3>Fahrzeugliste importieren</h3></div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
  <p class="hint" style="margin:0">Excel (.xlsx), CSV oder PDF hochladen, z. B. die Fahrzeugliste aus dem Gebrauchtwagen-Portal. Vorhandene Fahrzeuge werden übersprungen, fehlende Angaben werden rot markiert.</p>
  <div><button class="btn p" onclick="importModal()">${IC.up} Liste importieren</button></div></div></section>
@@ -2077,7 +2122,7 @@ function navHtml(late,pr){const A=S.veh.filter(v=>!v.archived),cnt={'':A.length,
  const N=Object.fromEntries(NAV.map(n=>[n[0],n]));
  const cs=x=>RAW.veh.filter(v=>!v.archived&&(x==='*'||siteOf(v)===x)).length,q=x=>E(x).replace(/'/g,"\\'");
  const st=`<div class="nsec">Standort</div>${SITES().map(x=>`<a class="sub site ${S.site===x?'on':''}" onclick="setSite('${q(x)}')">${IC.pin}${E(x)}<span class="n">${cs(x)}</span></a>`).join('')}${SITES().length>1?`<a class="sub site ${S.site==='*'?'on':''}" onclick="setSite('*')">${IC.pin}Alle Standorte<span class="n">${cs('*')}</span></a>`:''}<a class="sub site add" onclick="siteModal()">${IC.plus}Standort hinzufügen</a>`;
- return`${st}<div class="nsec">Übersicht</div>${a(N.dash)}${a(N.tour)}${a(N.cal)}
+ return`${DEMO?`<div class="nsec">Demo</div><a class="sub site on">${IC.pin}${DEMO_SITE}</a><a class="sub site add" onclick="endDemo()">${IC.up}Zur Anmeldung</a>`:st}<div class="nsec">Übersicht</div>${a(N.dash)}${a(N.tour)}${a(N.cal)}
  <div class="nsec">Bestand</div>${a(N.veh_l).replace('</a>',`<button class="ntog ${navVehOpen()?'open':''}" onclick="event.stopPropagation();navVehToggle()" title="${navVehOpen()?'Unterpunkte einklappen':'Neuwagen, Gebrauchtwagen, Schauraum, Archiv anzeigen'}" aria-label="Unterpunkte ein-/ausklappen" aria-expanded="${navVehOpen()}">${IC.chevd}</button></a>`)}${VSUB.filter(([f])=>navVehOpen()||!NVFOLD.includes(f)||(S.view==='veh_l'&&S.fl===f)).map(sub).join('')}${a(N.prob)}${a(N.notes)}
  <div class="nsec">Verwaltung</div><a data-v="imp" onclick="importModal()" title="Fahrzeugliste importieren">${IC.up}<span class="lb">Liste importieren</span></a>${a(N.set)}`}
 /* Unterpunkte Neuwagen / Gebrauchtwagen / Im Schauraum / Archiv einklappbar (pro Gerät gemerkt) */
@@ -2087,17 +2132,17 @@ function navVehToggle(){try{localStorage.setItem('tqsNavVeh',navVehOpen()?'0':'1
 const VSUB=[['new','Neuwagen'],['used','Gebrauchtwagen'],['show','Im Schauraum'],['miss','Fehlende Daten'],['arch','Archiv']];
 function renderNav(){const late=activeTasks().filter(t=>t.status!=='Erledigt'&&t.due<TD()).length,pr=S.prob.filter(p=>p.status==='Offen').length;
  {const d=document.querySelector('.relb-d');if(d&&!d.innerHTML)d.innerHTML=IC.reload}
- $('nav').innerHTML=`<div class="brand"><img class="mk" src="icon-192.png?v=3" alt="TQS Fahrzeugpflege" width="34" height="34"><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
+ $('nav').innerHTML=`<div class="brand"><img class="mk" src="icon-192.png?v=3" alt="TQS Fahrzeugpflege" width="34" height="34"><div><b>Fahrzeugpflege</b><small>${DEMO?'Demo-Version':'Autohaus Reiser'}</small></div></div>
  <div class="nl">${navHtml(late,pr)}</div>
  <button class="scanb" onclick="scanModal()" title="FIN scannen oder suchen">${IC.scan}<span class="lb">FIN scannen</span></button>
- <div class="sitem">${dd(IC.pin+'<span>'+E(siteLbl())+'</span>'+IC.chevd,[...SITES().map(x=>[IC.pin,E(x)+(S.site===x?' ✓':''),`setSite('${E(x).replace(/'/g,"\\'")}')`]),SITES().length>1?[IC.pin,'Alle Standorte'+(S.site==='*'?' ✓':''),"setSite('*')"]:null,'-',[IC.plus,'Standort hinzufügen','siteModal()']],{b:'sm sitebtn',title:'Standort wechseln'})}</div>
+ <div class="sitem">${DEMO?`<button class="btn sm sitebtn" onclick="endDemo()">Demo beenden</button>`:dd(IC.pin+'<span>'+E(siteLbl())+'</span>'+IC.chevd,[...SITES().map(x=>[IC.pin,E(x)+(S.site===x?' ✓':''),`setSite('${E(x).replace(/'/g,"\\'")}')`]),SITES().length>1?[IC.pin,'Alle Standorte'+(S.site==='*'?' ✓':''),"setSite('*')"]:null,'-',[IC.plus,'Standort hinzufügen','siteModal()']],{b:'sm sitebtn',title:'Standort wechseln'})}</div>
  <button class="relb relb-m${syncWait.size?' spin':''}" onclick="appReload(this)" title="App aktualisieren" aria-label="App aktualisieren">${IC.reload}</button>
  <button class="me" onclick="profileModal()" title="Profil"><span class="av">${E(initials(me()))}</span><div><b>${E(me())}</b><small>${E(S.acct.email)}</small></div></button>`;
  const on=v=>S.view===v||(S.view==='veh'&&v==='veh_l'),TB=[['dash','Start',IC.dash,late],['tour','Rundgang',IC.route],['scan','Scannen',IC.scan],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car]];
  $('tabbar').innerHTML=TB.map(([v,l,ic,c])=>v==='scan'?`<button class="tb-scan" onclick="scanModal()" aria-label="FIN scannen"><span class="tb-c">${ic}</span><span>${l}</span></button>`:
   `<button class="${on(v)?'on':''}" aria-current="${on(v)?'page':'false'}" onclick="go('${v}')">${ic}<span>${l}</span>${c?`<span class="tb-n">${c>99?'99+':c}</span>`:''}</button>`).join('')}
 /* Neueste Version laden: Browser-Zwischenspeicher für die Seite umgehen, dann neu laden (Daten bleiben erhalten) */
-async function appReload(b){if(b)b.classList.add('spin');
+async function appReload(b){if(DEMO){render();return toast('Demo: Ansicht aktualisiert.')}if(b)b.classList.add('spin');
  try{const reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(reg)await reg.update().catch(()=>{});
   await Promise.all([fetch('./',{cache:'reload'}),fetch('./index.html',{cache:'reload'})].map(p=>p.catch(()=>{})));
   if(window.caches)for(const k of await caches.keys()){const c=await caches.open(k);await c.delete('./');await c.delete('./index.html')}}catch(e){}
@@ -2117,7 +2162,7 @@ document.addEventListener('pointerdown',e=>{if(!e.target.closest||!e.target.clos
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.querySelector('.dd.open')){e.stopImmediatePropagation();ddClose()}},true);
 /* „Fahrzeug hinzufügen“ mit Menü: anlegen, scannen, Liste importieren */
 const addBtn=()=>`<div class="split"><button class="btn p" onclick="vehModal()">${IC.plus} Fahrzeug hinzufügen</button>${dd(IC.chevd,[[IC.plus,'Fahrzeug anlegen','vehModal()'],[IC.scan,'FIN scannen','scanModal()'],'-',[IC.up,'Liste importieren<small>Excel, CSV oder PDF</small>','importModal()']],{b:'p',title:'Weitere Möglichkeiten zum Hinzufügen'})}</div>`;
-function siteModal(){modal(`<header><div style="flex:1"><h3>Standort hinzufügen</h3><span class="muted">z. B. ein weiterer Betrieb oder eine Filiale</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+function siteModal(){if(DEMO)return toast('In der Demo-Version gibt es nur einen Standort.');modal(`<header><div style="flex:1"><h3>Standort hinzufügen</h3><span class="muted">z. B. ein weiterer Betrieb oder eine Filiale</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
  <div class="sb"><label class="f">Name des Standorts<input id="sitn" placeholder="z. B. Salzburg" maxlength="40" onkeydown="if(event.key==='Enter')saveSite()"></label>
  <p class="hint">Der neue Standort startet leer: Dashboard, Fahrzeuge und Maßnahmen zeigen dann nur seine Fahrzeuge. Die Fahrzeuge der anderen Standorte bleiben gespeichert und sind jederzeit über „Standort“ oder „Alle Standorte“ erreichbar.</p><p class="msg err" id="siterr"></p></div>
  <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="sitsv" onclick="saveSite()">Standort anlegen</button></footer>`);setTimeout(()=>$('sitn')&&$('sitn').focus(),50)}
@@ -2190,7 +2235,7 @@ function render(){if(!db||!S.acct||$('app').hidden)return;applySite();
  /* Noch keine Daten (z. B. direkt nach „Aktualisieren“, Zwischenspeicher leer): Ladeanzeige statt lauter Nullen */
  if((syncWait.has('veh')&&!S.veh.length)||(syncWait.has('tasks')&&!S.tasks.length)){$('main').innerHTML='<div style="display:grid;place-items:center;min-height:50vh;color:var(--mu)"><p>Wird geladen …</p></div>';return}
  const f={dash,tour,cal,veh_l:vlist,veh:vdet,notes:notesPage,prob:()=>`<div class="head"><h2>Probleme</h2><button class="btn p" onclick="probModal()">${IC.plus} Problem melden</button></div><section class="panel">${probTbl(S.prob.slice(),1)}</section>`,set:sett}[S.view]||dash;
- const a=document.activeElement&&document.activeElement.id;$('main').innerHTML=f()+(S.selMode?selBar():'');document.body.classList.toggle('has-sel',S.selMode);
+ const a=document.activeElement&&document.activeElement.id;$('main').innerHTML=demoBar()+f()+(S.selMode?selBar():'');document.body.classList.toggle('has-sel',S.selMode);
  if(a&&$(a)&&(a==='q'||a==='nq'||a==='ntx')){const e=$(a);e.focus();try{e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}
 document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;render()}else if(e.target.id==='nq'){S.nq=e.target.value;render()}else if(e.target.id==='ntx')S.nDraft[S.view+'|'+S.sel]=e.target.value});
 document.addEventListener('change',e=>{if(e.target.id==='fl'){S.fl=e.target.value;render()}else if(e.target.id==='nF'){S.nF=e.target.value;render()}else if(e.target.id==='nfin')S.nFin=e.target.value});
