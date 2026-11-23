@@ -1685,7 +1685,8 @@ function togG(el,f){el.open?S.openG.add(f):S.openG.delete(f)}
 function openVeh(f,tb){S.sel=f;S.view='veh';S.tab=typeof tb==='string'?tb:'plan';render();window.scrollTo(0,0)}
 
 /* ---------- §57a-Pickerl (wiederkehrende Begutachtung) ----------
-   Bisher 3-2-1, ab 19.05.2027 für alle Pkw (M1) 4-2-2-2-1 – auch für bereits zugelassene Fahrzeuge (KFG-Novelle, § 132 Abs 37).
+   Regel nach Erstzulassung (Vorgabe Autohaus): EZ bis 18.05.2027 → dauerhaft 3-2-1 mit Toleranz −1/+4 Monate,
+   EZ ab 19.05.2027 → 4-2-2-2-1 mit Toleranz −4/+0 Monate.
    Stichtag-Monat = Monat der Erstzulassung. Toleranz alt −1/+4 Monate (für Lochungen bis Okt. 2027, längstens Ende Nov. 2027), neu −4/+0. */
 const PK_SW='2027-05',PK_DAY='2027-05-19';
 const PKMON=['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
@@ -1693,22 +1694,21 @@ const ymA=(m,n)=>{let y=+m.slice(0,4),k=+m.slice(5,7)-1+n;y+=Math.floor(k/12);k=
 const ymD=(a,b)=>(+b.slice(0,4)-+a.slice(0,4))*12+(+b.slice(5,7)-+a.slice(5,7));
 const mEnd=m=>iso(new Date(+m.slice(0,4),+m.slice(5,7),0));
 const ymT=m=>m?PKMON[+m.slice(5,7)-1]+' '+m.slice(0,4):'–',ymS=m=>m?m.slice(5,7)+'/'+m.slice(0,4):'–';
-function pkWin(m){return m<='2027-10'?{from:ymA(m,-1)+'-01',to:mEnd(m>'2027-07'?'2027-11':ymA(m,4)),old:1}:{from:ymA(m,-4)+'-01',to:mEnd(m),old:0}}
+function pkWin(m,nw){return !nw?{from:ymA(m,-1)+'-01',to:mEnd(ymA(m,4)),old:1}:{from:ymA(m,-4)+'-01',to:mEnd(m),old:0}}
 /* nächstes Begutachtungsalter nach einer Begutachtung im Alter a (a=0: noch nie begutachtet) */
-function pkStepN(a){return a===0?4:a<10?a+2:a+1}
-function pkStep(ez,a){const o=a<3?3:a<5?5:a+1;return ymA(ez,o*12)<(TD()>=PK_DAY?'2027-01':PK_SW)?o:pkStepN(a)}
-function pkCalc(v){const p=v.pk||{},ez=v.ez&&/^\d{4}-\d\d/.test(v.ez)?v.ez.slice(0,7):'';if(!ez)return null;
+/* nächstes Begutachtungsalter nach einer Begutachtung im Alter a (a=0: noch nie begutachtet) */
+function pkStep(a,nw){return nw?(a===0?4:a<10?a+2:a+1):(a<3?3:a<5?5:a+1)}
+const pkNew=v=>!!v.ez&&v.ez>=PK_DAY;
+function pkCalc(v){const nw=pkNew(v),p=v.pk||{},ez=v.ez&&/^\d{4}-\d\d/.test(v.ez)?v.ez.slice(0,7):'';if(!ez)return null;
  const at=a=>ymA(ez,a*12),lm=p.last?p.last.slice(0,7):'';let a=lm?Math.max(0,Math.floor((ymD(ez,lm)+4)/12)):0,est=0,due,ag;
  if(p.due&&/^\d{4}-\d\d$/.test(p.due)){due=p.due;ag=Math.max(0,Math.round(ymD(ez,due)/12))}
- else{ag=pkStep(ez,a);due=at(ag);
+ else{ag=pkStep(a,nw);due=at(ag);
   /* Gebrauchtwagen ohne letzte Begutachtung: Termine als pünktlich eingehalten annehmen (Schätzung) */
-  if(!lm&&v.used){const T=TD();while(pkWin(due).to<T&&ag<90){ag=pkStep(ez,ag);due=at(ag);est=1}}}
- const nag=pkStep(ez,ag),c={ez,due,age:ag,win:pkWin(due),next:at(nag),nextAge:nag,est,last:p.last||'',man:!!p.due,newRule:due>=PK_SW,issueY:+(lm||ez).slice(0,4)};
- /* Plakette noch nach alter Regel gelocht (Fälligkeit Jän.–Apr. 2027): ab 19.05.2027 Austauschplakette möglich */
- if(!c.newRule&&!est&&due>='2027-01'&&TD()<PK_DAY){const x=at(pkStepN(lm?a:0));if(x!==due)c.alt=x}
+  if(!lm&&v.used){const T=TD();while(pkWin(due,nw).to<T&&ag<90){ag=pkStep(ag,nw);due=at(ag);est=1}}}
+ const nag=pkStep(ag,nw),c={ez,due,age:ag,win:pkWin(due,nw),next:at(nag),nextAge:nag,est,last:p.last||'',man:!!p.due,newRule:nw,issueY:+(lm||ez).slice(0,4)};
  return c}
-function pkRule(c){if(!c.newRule)return{t:'3-2-1 (bisherige Regel)',d:c.age<=3?'erste Begutachtung 3 Jahre nach der Erstzulassung':c.age<=5?'zweite Begutachtung nach weiteren 2 Jahren':'jährlich ab dem 5. Jahr'};
- return{t:'4-2-2-2-1 (ab 19.05.2027)',d:c.age<=4&&!c.last?'erste Begutachtung 4 Jahre nach der Erstzulassung':c.age<=10?'alle 2 Jahre bis zum 10. Jahr':'jährlich ab dem 10. Jahr'}}
+function pkRule(c){if(!c.newRule)return{t:'3-2-1 (Erstzulassung vor 19.05.2027)',d:c.age<=3?'erste Begutachtung 3 Jahre nach der Erstzulassung':c.age<=5?'zweite Begutachtung nach weiteren 2 Jahren':'jährlich ab dem 5. Jahr'};
+ return{t:'4-2-2-2-1 (Erstzulassung ab 19.05.2027)',d:c.age<=4&&!c.last?'erste Begutachtung 4 Jahre nach der Erstzulassung':c.age<=10?'alle 2 Jahre bis zum 10. Jahr':'jährlich ab dem 10. Jahr'}}
 function pkSt(c){const T=TD(),w=c.win,me=mEnd(c.due);
  if(T>w.to)return{k:'late',t:'überfällig seit '+fmt(addD(w.to,1)),c:'s-ba'};
  if(T>me)return{k:'grace',t:'Nachfrist bis '+fmt(w.to),c:'s-ba'};
@@ -1750,7 +1750,7 @@ function pkInfo(v,c){const s=pkSt(c),r=pkRule(c);
  return`<div class="pk-due"><span class="lbl">Nächstes Pickerl</span><b>${ymT(c.due)}</b><span class="pill ${s.c}">${s.t}</span></div>
  <div class="pk-meta"><div><span>Begutachtung möglich</span>${fmt(c.win.from)} – ${fmt(c.win.to)}${c.win.old?'<em> inkl. Nachfrist</em>':''}</div>
  <div class="pk-mr"><span>Regel</span>${r.t} · ${r.d}</div><div class="pk-mr"><span>Danach</span>${ymT(c.next)}</div>
- ${c.est?`<div class="pk-note">Geschätzt: keine letzte Begutachtung eingetragen.</div>`:''}${c.alt?`<div class="pk-note">Ab 19.05.2027 Austauschplakette möglich → dann fällig ${ymT(c.alt)}.</div>`:''}</div>`}
+ ${c.est?`<div class="pk-note">Geschätzt: keine letzte Begutachtung eingetragen.</div>`:''}</div>`}
 function pkRow({v,c}){const f=v.fin;
  return`<div class="pkr" onclick="openVeh('${f}','pk')" role="button" tabindex="0">
  <div class="pk-pl">${pkSVG(v,c)}</div>
@@ -1771,15 +1771,14 @@ function pkDash(){const R=pkRows().filter(r=>r.s&&(pkDueK(r.s.k)||r.s.k==='soon'
  return`<section class="panel"><div class="ph"><h3>§57a-Pickerl</h3><span class="muted">${R.length} fällig oder bald fällig</span><button class="btn sm" onclick="go('pk')">Alle anzeigen</button></div>
  ${R.slice(0,5).map(({v,c,s})=>`<div class="pkd" onclick="openVeh('${v.fin}','pk')" role="button" tabindex="0">${pkSVG(v,c,'mini')}<div style="min-width:0"><b>${vname(v)}</b>${v.plate?`<span class="kz">${E(v.plate)}</span>`:''}<div class="t2">${finCopy(v.fin)}</div></div><div class="pkd-d"><b>${ymT(c.due)}</b><span class="pill ${s.c}">${s.t}</span></div><span class="chev">${IC.chev}</span></div>`).join('')}</section>`}
 function pkTab(v){const c=pkCalc(v);
- if(!c)return`<div class="pb pk-tab">${pkSVG(v,null,'big')}<div><h3 style="margin:0 0 6px">Noch keine Pickerl-Daten</h3><p class="muted" style="margin:0 0 14px">Trage die Erstzulassung${v.used?' und die letzte §57a-Begutachtung':''} ein. Daraus wird der nächste Termin nach § 57a KFG berechnet – ab 19.05.2027 nach der neuen 4-2-2-2-1-Regel.</p><button class="btn p" onclick="pkModal('${v.fin}')">${IC.plus} Pickerl eintragen</button></div></div>`;
+ if(!c)return`<div class="pb pk-tab">${pkSVG(v,null,'big')}<div><h3 style="margin:0 0 6px">Noch keine Pickerl-Daten</h3><p class="muted" style="margin:0 0 14px">Trage die Erstzulassung${v.used?' und die letzte §57a-Begutachtung':''} ein. Daraus wird der nächste Termin nach § 57a KFG berechnet: Erstzulassung vor dem 19.05.2027 nach 3-2-1, ab dem 19.05.2027 nach 4-2-2-2-1.</p><button class="btn p" onclick="pkModal('${v.fin}')">${IC.plus} Pickerl eintragen</button></div></div>`;
  return`<div class="pb pk-tab">${pkSVG(v,c,'big')}<div style="min-width:0">${pkInfo(v,c)}
  <div class="pk-meta" style="margin-top:4px"><div><span>Kennzeichen</span>${E(v.plate)||'–'}</div><div><span>Erstzulassung</span>${fmt(v.ez)} · ${pkAgeTxt(c)}</div><div><span>Letzte Begutachtung</span>${c.last?fmt(c.last):v.used?'nicht eingetragen':'noch keine'}${c.man?' · Termin manuell laut Plakette':''}</div></div>
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn p" onclick="pkDone('${v.fin}')">${IC.check} Begutachtung eintragen</button><button class="btn" onclick="pkModal('${v.fin}')">${IC.edit} Bearbeiten</button></div></div></div>`}
 function pkHelp(){modal(`<header><div style="flex:1"><h3>So wird das Pickerl berechnet</h3><span class="muted">§ 57a KFG, Pkw (Klasse M1)</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
- <div class="sb pk-help"><p><b>Bis 18.05.2027 (3-2-1):</b> erste Begutachtung 3 Jahre nach der Erstzulassung, dann nach 2 Jahren, danach jährlich. Toleranz: 1 Monat vor bis 4 Monate nach dem gelochten Monat.</p>
- <p><b>Ab 19.05.2027 (4-2-2-2-1):</b> erste Begutachtung 4 Jahre nach der Erstzulassung, dann alle 2 Jahre bis zum 10. Jahr, danach jährlich. Die Begutachtung ist bis zu 4 Monate vor dem gelochten Monat möglich, eine Nachfrist gibt es nicht mehr.</p>
- <p><b>Gilt auch für bereits zugelassene Fahrzeuge</b> – Neu- und Gebrauchtwagen werden nach ihrem Alter eingeordnet. Liegt die nächste Fälligkeit ab Mai 2027, zählt schon die neue Regel; nach einer Begutachtung folgt die nächste bis zum 10. Jahr nach 2 Jahren.</p>
- <p><b>Plaketten mit Lochung Jänner bis Oktober 2027</b> behalten die alte Nachfrist, längstens bis Ende November 2027. Für „falsch“ gelochte Plaketten gibt es ab 19.05.2027 eine Austauschplakette.</p>
+ <div class="sb pk-help"><p><b>Erstzulassung bis 18.05.2027 (3-2-1):</b> erste Begutachtung 3 Jahre nach der Erstzulassung, dann nach 2 Jahren, danach jährlich. Toleranz: 1 Monat vor bis 4 Monate nach dem gelochten Monat.</p>
+ <p><b>Erstzulassung ab 19.05.2027 (4-2-2-2-1):</b> erste Begutachtung 4 Jahre nach der Erstzulassung, dann alle 2 Jahre bis zum 10. Jahr, danach jährlich. Die Begutachtung ist bis zu 4 Monate vor dem gelochten Monat möglich, eine Nachfrist gibt es nicht mehr.</p>
+ <p><b>Maßgeblich ist nur das Datum der Erstzulassung:</b> Ein Fahrzeug, das vor dem 19.05.2027 zugelassen wurde, bleibt für immer bei 3-2-1 – auch bei Terminen nach Mai 2027. Ob Neu- oder Gebrauchtwagen spielt dafür keine Rolle; beim Gebrauchtwagen ergibt sich aus Erstzulassung und letzter Begutachtung, ob er alle 2 Jahre oder jährlich dran ist.</p>
  <p class="hint">Der Monat der Fälligkeit ist der Monat der Erstzulassung. Steht auf der Plakette ein anderer Termin, kann er beim Fahrzeug unter „Bearbeiten“ als „Termin laut Plakette“ eingetragen werden. Angaben ohne Gewähr – maßgeblich ist die gelochte Plakette bzw. das Gutachten.</p></div>
  <footer><button class="btn p" onclick="closeM()">Verstanden</button></footer>`)}
 function pkModal(fin){const v=veh(fin),p=v.pk||{};
