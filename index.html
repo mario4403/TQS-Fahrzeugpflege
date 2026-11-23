@@ -275,6 +275,7 @@ main{padding-bottom:110px}
 .pk-car .t2,.pkd .t2{font-size:12px;color:var(--mu);margin-top:3px}
 .pk-due{display:flex;flex-direction:column;align-items:flex-start;gap:4px}.pk-due .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);font-weight:600}.pk-due b{font:600 20px/1.15 var(--f-disp)}
 .pk-meta{display:grid;gap:5px;font-size:13px}.pk-meta span{display:block;font-size:11px;color:var(--mu)}.pk-meta em{font-style:normal;color:var(--mu)}
+.pk-gl{font-size:11.5px;color:var(--mu)}
 .pk-note{font-size:12px;color:var(--wa);background:var(--wab);border-radius:8px;padding:5px 8px}
 .pk-act{display:flex;flex-direction:column;gap:6px;align-items:stretch}
 .pkd{display:grid;grid-template-columns:44px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bd);cursor:pointer}.pkd:last-child{border-bottom:0}.pkd:hover{background:var(--sf2)}
@@ -1694,21 +1695,23 @@ const ymA=(m,n)=>{let y=+m.slice(0,4),k=+m.slice(5,7)-1+n;y+=Math.floor(k/12);k=
 const ymD=(a,b)=>(+b.slice(0,4)-+a.slice(0,4))*12+(+b.slice(5,7)-+a.slice(5,7));
 const mEnd=m=>iso(new Date(+m.slice(0,4),+m.slice(5,7),0));
 const ymT=m=>m?PKMON[+m.slice(5,7)-1]+' '+m.slice(0,4):'–',ymS=m=>m?m.slice(5,7)+'/'+m.slice(0,4):'–';
-function pkWin(m,nw){return !nw?{from:ymA(m,-1)+'-01',to:mEnd(ymA(m,4)),old:1}:{from:ymA(m,-4)+'-01',to:mEnd(m),old:0}}
+function pkWin(m){return m<='2027-10'?{from:ymA(m,-1)+'-01',to:mEnd(m>'2027-07'?'2027-11':ymA(m,4)),old:1}:{from:ymA(m,-4)+'-01',to:mEnd(m),old:0}}
 /* nächstes Begutachtungsalter nach einer Begutachtung im Alter a (a=0: noch nie begutachtet) */
-/* nächstes Begutachtungsalter nach einer Begutachtung im Alter a (a=0: noch nie begutachtet) */
-function pkStep(a,nw){return nw?(a===0?4:a<10?a+2:a+1):(a<3?3:a<5?5:a+1)}
-const pkNew=v=>!!v.ez&&v.ez>=PK_DAY;
-function pkCalc(v){const nw=pkNew(v),p=v.pk||{},ez=v.ez&&/^\d{4}-\d\d/.test(v.ez)?v.ez.slice(0,7):'';if(!ez)return null;
- const at=a=>ymA(ez,a*12),lm=p.last?p.last.slice(0,7):'';let a=lm?Math.max(0,Math.floor((ymD(ez,lm)+4)/12)):0,est=0,due,ag;
+const pkOld=a=>a<3?3:a<5?5:a+1,pkNewS=a=>a===0?4:a<10?a+2:a+1;
+/* offizielle Fälligkeit: Termine vor Mai 2027 noch nach 3-2-1, alles danach nach 4-2-2-2-1 – auch für bereits zugelassene Fahrzeuge */
+function pkStep(ez,a){const o=pkOld(a);return ymA(ez,o*12)<(TD()>=PK_DAY?'2027-01':PK_SW)?o:pkNewS(a)}
+function pkCalc(v){const p=v.pk||{},ez=v.ez&&/^\d{4}-\d\d/.test(v.ez)?v.ez.slice(0,7):'';if(!ez)return null;
+ const at=a=>ymA(ez,a*12),lm=p.last?p.last.slice(0,7):'';let a=lm?Math.max(0,Math.floor((ymD(ez,lm)+4)/12)):0,est=0,due,ag,pl='';
  if(p.due&&/^\d{4}-\d\d$/.test(p.due)){due=p.due;ag=Math.max(0,Math.round(ymD(ez,due)/12))}
- else{ag=pkStep(a,nw);due=at(ag);
+ else{ag=pkStep(ez,a);due=at(ag);
   /* Gebrauchtwagen ohne letzte Begutachtung: Termine als pünktlich eingehalten annehmen (Schätzung) */
-  if(!lm&&v.used){const T=TD();while(pkWin(due,nw).to<T&&ag<90){ag=pkStep(ag,nw);due=at(ag);est=1}}}
- const nag=pkStep(ag,nw),c={ez,due,age:ag,win:pkWin(due,nw),next:at(nag),nextAge:nag,est,last:p.last||'',man:!!p.due,newRule:nw,issueY:+(lm||ez).slice(0,4)};
- return c}
-function pkRule(c){if(!c.newRule)return{t:'3-2-1 (Erstzulassung vor 19.05.2027)',d:c.age<=3?'erste Begutachtung 3 Jahre nach der Erstzulassung':c.age<=5?'zweite Begutachtung nach weiteren 2 Jahren':'jährlich ab dem 5. Jahr'};
- return{t:'4-2-2-2-1 (Erstzulassung ab 19.05.2027)',d:c.age<=4&&!c.last?'erste Begutachtung 4 Jahre nach der Erstzulassung':c.age<=10?'alle 2 Jahre bis zum 10. Jahr':'jährlich ab dem 10. Jahr'}}
+  if(!lm&&v.used){const T=TD();while(pkWin(due).to<T&&ag<90){ag=pkStep(ez,ag);due=at(ag);est=1}}
+  /* Plakette vor dem 19.05.2027 ausgegeben: noch nach alter Regel gelocht → Austauschplakette möglich */
+  if(!est&&(p.last||v.ez)<PK_DAY){const o=at(pkOld(a));if(o!==due)pl=o}}
+ const nag=pkStep(ez,ag);
+ return{ez,due,pl,age:ag,win:pkWin(due),next:at(nag),nextAge:nag,est,last:p.last||'',man:!!p.due,newRule:due>=PK_SW,issueY:+(lm||ez).slice(0,4)}}
+function pkRule(c){if(!c.newRule)return{t:'3-2-1 (bisherige Regel)',d:c.age<=3?'erste Begutachtung 3 Jahre nach der Erstzulassung':c.age<=5?'zweite Begutachtung nach weiteren 2 Jahren':'jährlich ab dem 5. Jahr'};
+ return{t:'4-2-2-2-1 (ab 19.05.2027)',d:c.age<=4&&!c.last?'erste Begutachtung 4 Jahre nach der Erstzulassung':c.age<=10?'alle 2 Jahre bis zum 10. Jahr':'jährlich ab dem 10. Jahr'}}
 function pkSt(c){const T=TD(),w=c.win,me=mEnd(c.due);
  if(T>w.to)return{k:'late',t:'überfällig seit '+fmt(addD(w.to,1)),c:'s-ba'};
  if(T>me)return{k:'grace',t:'Nachfrist bis '+fmt(w.to),c:'s-ba'};
@@ -1731,13 +1734,13 @@ function pkDots(t,cx,y,w){const s=String(t||'').toUpperCase().replace(/Ä/g,'A')
  return`<g fill="#2f353b">${o}</g>`}
 let pkN=0;
 function pkSVG(v,c,cls){const cx=80,cy=134,R1=76,R2=51,R3=29,id='pka'+(++pkN),pt=(r,a)=>[cx+r*Math.sin(a*Math.PI/180),cy-r*Math.cos(a*Math.PI/180)],f=n=>n.toFixed(1);
- const dm=c?+c.due.slice(5,7):0,dy=c?+c.due.slice(0,4):0,y0=c?Math.min(c.issueY,dy-1):new Date().getFullYear();let g='';
+ const pd=c?(c.pl||c.due):'',dm=c?+pd.slice(5,7):0,dy=c?+pd.slice(0,4):0,y0=c?Math.min(c.issueY,dy-1):new Date().getFullYear();let g='';
  for(let i=0;i<12;i++){const a=i*30+15,[x1,y1]=pt(R2,a),[x2,y2]=pt(R1,a);g+=`<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}"/>`}
  for(let j=0;j<7;j++){const a=j*360/7+180/7,[x1,y1]=pt(R3,a),[x2,y2]=pt(R2,a);g+=`<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}"/>`}
  let t='';for(let m=1;m<=12;m++){const[x,y]=pt(63.5,(m%12)*30);t+=`<text x="${f(x)}" y="${f(y)}" font-size="15">${m}</text>`}
  for(let j=0;j<7;j++){const[x,y]=pt(40,j*360/7);t+=`<text x="${f(x)}" y="${f(y)}" font-size="13.5">${String((y0+j)%100).padStart(2,'0')}</text>`}
  let h='';if(c){const[mx,my]=pt(63.5,(dm%12)*30),j=dy-y0,[yx,yy]=pt(40,j*360/7);h=`<g fill="#1c2227" stroke="#0e1215" stroke-width=".8"><circle cx="${f(mx+1.5)}" cy="${f(my+1)}" r="7"/><circle cx="${f(yx+1.2)}" cy="${f(yy+1)}" r="6.6"/></g>`}
- return`<svg class="pkpl ${cls||''}${c?'':' pk-empty'}" viewBox="0 0 160 214" role="img" aria-label="Prüfplakette${c?', gelocht '+ymT(c.due):', noch nicht eingetragen'}${v.plate?', Kennzeichen '+E(v.plate):''}">
+ return`<svg class="pkpl ${cls||''}${c?'':' pk-empty'}" viewBox="0 0 160 214" role="img" aria-label="Prüfplakette${c?', gelocht '+ymT(c.pl||c.due):', noch nicht eingetragen'}${v.plate?', Kennzeichen '+E(v.plate):''}">
  <path d="M13 2H147Q158 2 158 13V134A78 78 0 0 1 2 134V13Q2 2 13 2Z" fill="#f2f3f1" stroke="#c9ced2" stroke-width="1.5"/>
  ${v.plate?pkDots(v.plate,cx,17,128):`<text x="80" y="28" font-size="10" fill="#9aa3ab" text-anchor="middle" font-family="Inter,Arial,sans-serif">ohne Kennzeichen</text>`}
  <g fill="none" stroke="#1f2428" stroke-width="2"><circle cx="${cx}" cy="${cy}" r="${R1}"/><circle cx="${cx}" cy="${cy}" r="${R2}"/><circle cx="${cx}" cy="${cy}" r="${R3}"/>${g}</g>
@@ -1747,10 +1750,10 @@ function pkSVG(v,c,cls){const cx=80,cy=134,R1=76,R2=51,R3=29,id='pka'+(++pkN),pt
  <path d="M${cx} ${cy-9}l3 4 5-2-2 5 3 3-5 1-1 7h-6l-1-7-5-1 3-3-2-5 5 2z" fill="#2d3741" opacity=".75"/>${h}</svg>`}
 
 function pkInfo(v,c){const s=pkSt(c),r=pkRule(c);
- return`<div class="pk-due"><span class="lbl">Nächstes Pickerl</span><b>${ymT(c.due)}</b><span class="pill ${s.c}">${s.t}</span></div>
+ return`<div class="pk-due"><span class="lbl">Nächstes Pickerl</span><b>${ymT(c.due)}</b><span class="pill ${s.c}">${s.t}</span>${c.pl?`<small class="pk-gl">Plakette gelocht: ${ymS(c.pl)}</small>`:''}</div>
  <div class="pk-meta"><div><span>Begutachtung möglich</span>${fmt(c.win.from)} – ${fmt(c.win.to)}${c.win.old?'<em> inkl. Nachfrist</em>':''}</div>
  <div class="pk-mr"><span>Regel</span>${r.t} · ${r.d}</div><div class="pk-mr"><span>Danach</span>${ymT(c.next)}</div>
- ${c.est?`<div class="pk-note">Geschätzt: keine letzte Begutachtung eingetragen.</div>`:''}</div>`}
+ ${c.est?`<div class="pk-note">Geschätzt: keine letzte Begutachtung eingetragen.</div>`:''}${c.pl?`<div class="pk-note">Plakette gelocht auf ${ymT(c.pl)} (alte Regel). ${TD()<PK_DAY?'Ab':'Seit'} 19.05.2027 gilt 4-2-2-2-1 → fällig erst ${ymT(c.due)}. Austauschplakette ohne Begutachtung bei Prüf- oder Zulassungsstelle (ca. 12 €).</div>`:''}</div>`}
 function pkRow({v,c}){const f=v.fin;
  return`<div class="pkr" onclick="openVeh('${f}','pk')" role="button" tabindex="0">
  <div class="pk-pl">${pkSVG(v,c)}</div>
@@ -1771,14 +1774,16 @@ function pkDash(){const R=pkRows().filter(r=>r.s&&(pkDueK(r.s.k)||r.s.k==='soon'
  return`<section class="panel"><div class="ph"><h3>§57a-Pickerl</h3><span class="muted">${R.length} fällig oder bald fällig</span><button class="btn sm" onclick="go('pk')">Alle anzeigen</button></div>
  ${R.slice(0,5).map(({v,c,s})=>`<div class="pkd" onclick="openVeh('${v.fin}','pk')" role="button" tabindex="0">${pkSVG(v,c,'mini')}<div style="min-width:0"><b>${vname(v)}</b>${v.plate?`<span class="kz">${E(v.plate)}</span>`:''}<div class="t2">${finCopy(v.fin)}</div></div><div class="pkd-d"><b>${ymT(c.due)}</b><span class="pill ${s.c}">${s.t}</span></div><span class="chev">${IC.chev}</span></div>`).join('')}</section>`}
 function pkTab(v){const c=pkCalc(v);
- if(!c)return`<div class="pb pk-tab">${pkSVG(v,null,'big')}<div><h3 style="margin:0 0 6px">Noch keine Pickerl-Daten</h3><p class="muted" style="margin:0 0 14px">Trage die Erstzulassung${v.used?' und die letzte §57a-Begutachtung':''} ein. Daraus wird der nächste Termin nach § 57a KFG berechnet: Erstzulassung vor dem 19.05.2027 nach 3-2-1, ab dem 19.05.2027 nach 4-2-2-2-1.</p><button class="btn p" onclick="pkModal('${v.fin}')">${IC.plus} Pickerl eintragen</button></div></div>`;
+ if(!c)return`<div class="pb pk-tab">${pkSVG(v,null,'big')}<div><h3 style="margin:0 0 6px">Noch keine Pickerl-Daten</h3><p class="muted" style="margin:0 0 14px">Trage die Erstzulassung${v.used?' und die letzte §57a-Begutachtung':''} ein. Daraus wird der nächste Termin nach § 57a KFG berechnet: ab 19.05.2027 nach der neuen 4-2-2-2-1-Regel, auch für bereits zugelassene Fahrzeuge.</p><button class="btn p" onclick="pkModal('${v.fin}')">${IC.plus} Pickerl eintragen</button></div></div>`;
  return`<div class="pb pk-tab">${pkSVG(v,c,'big')}<div style="min-width:0">${pkInfo(v,c)}
  <div class="pk-meta" style="margin-top:4px"><div><span>Kennzeichen</span>${E(v.plate)||'–'}</div><div><span>Erstzulassung</span>${fmt(v.ez)} · ${pkAgeTxt(c)}</div><div><span>Letzte Begutachtung</span>${c.last?fmt(c.last):v.used?'nicht eingetragen':'noch keine'}${c.man?' · Termin manuell laut Plakette':''}</div></div>
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn p" onclick="pkDone('${v.fin}')">${IC.check} Begutachtung eintragen</button><button class="btn" onclick="pkModal('${v.fin}')">${IC.edit} Bearbeiten</button></div></div></div>`}
 function pkHelp(){modal(`<header><div style="flex:1"><h3>So wird das Pickerl berechnet</h3><span class="muted">§ 57a KFG, Pkw (Klasse M1)</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
- <div class="sb pk-help"><p><b>Erstzulassung bis 18.05.2027 (3-2-1):</b> erste Begutachtung 3 Jahre nach der Erstzulassung, dann nach 2 Jahren, danach jährlich. Toleranz: 1 Monat vor bis 4 Monate nach dem gelochten Monat.</p>
- <p><b>Erstzulassung ab 19.05.2027 (4-2-2-2-1):</b> erste Begutachtung 4 Jahre nach der Erstzulassung, dann alle 2 Jahre bis zum 10. Jahr, danach jährlich. Die Begutachtung ist bis zu 4 Monate vor dem gelochten Monat möglich, eine Nachfrist gibt es nicht mehr.</p>
- <p><b>Maßgeblich ist nur das Datum der Erstzulassung:</b> Ein Fahrzeug, das vor dem 19.05.2027 zugelassen wurde, bleibt für immer bei 3-2-1 – auch bei Terminen nach Mai 2027. Ob Neu- oder Gebrauchtwagen spielt dafür keine Rolle; beim Gebrauchtwagen ergibt sich aus Erstzulassung und letzter Begutachtung, ob er alle 2 Jahre oder jährlich dran ist.</p>
+ <div class="sb pk-help"><p><b>Bis 18.05.2027 (3-2-1):</b> erste Begutachtung 3 Jahre nach der Erstzulassung, dann nach 2 Jahren, danach jährlich. Toleranz: 1 Monat vor bis 4 Monate nach dem gelochten Monat.</p>
+ <p><b>Ab 19.05.2027 (4-2-2-2-1):</b> erste Begutachtung 4 Jahre nach der Erstzulassung, dann alle 2 Jahre bis zum 10. Jahr, danach jährlich. Die Begutachtung ist bis zu 4 Monate vor dem gelochten Monat möglich, eine Nachfrist gibt es nicht mehr.</p>
+ <p><b>Gilt auch für bereits zugelassene Fahrzeuge:</b> Neu- und Gebrauchtwagen werden nach ihrem Alter eingeordnet. Liegt die nächste Fälligkeit ab Mai 2027, zählt schon die neue Regel; nach einer Begutachtung folgt die nächste bis zum 10. Jahr nach 2 Jahren, danach jährlich.</p>
+ <p><b>Plakette noch nach alter Regel gelocht?</b> Wurde das Pickerl vor dem 19.05.2027 ausgegeben, zeigt die Plakette den alten Termin (z. B. Erstzulassung 06/2026 → gelocht 06/2029, neu fällig 06/2030). Ab 19.05.2027 gibt es dafür eine Austauschplakette ohne Begutachtung. Die Grafik zeigt die echte Lochung, der Termin daneben die Fälligkeit nach neuer Regel.</p>
+ <p><b>Plaketten mit Lochung Jänner bis Oktober 2027</b> behalten die alte Nachfrist, längstens bis Ende November 2027.</p>
  <p class="hint">Der Monat der Fälligkeit ist der Monat der Erstzulassung. Steht auf der Plakette ein anderer Termin, kann er beim Fahrzeug unter „Bearbeiten“ als „Termin laut Plakette“ eingetragen werden. Angaben ohne Gewähr – maßgeblich ist die gelochte Plakette bzw. das Gutachten.</p></div>
  <footer><button class="btn p" onclick="closeM()">Verstanden</button></footer>`)}
 function pkModal(fin){const v=veh(fin),p=v.pk||{};
@@ -1791,7 +1796,7 @@ function pkModal(fin){const v=veh(fin),p=v.pk||{};
  <p class="msg err" id="pkerr"></p></div></div>
  <footer>${v.ez||p.last?`<button class="btn" style="margin-right:auto" onclick="pkClear('${fin}')">Entfernen</button>`:''}<button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="pksv" onclick="pkSave('${fin}')">Speichern</button></footer>`);pkPrev(fin)}
 function pkForm(fin){const v=veh(fin);return{...v,plate:$('pkk').value.trim().toUpperCase().replace(/\s+/g,' '),ez:$('pkez').value,pk:{last:$('pkl').value,due:$('pkd').value}}}
-function pkPrev(fin){const x=pkForm(fin),c=pkCalc(x),el=$('pkpv');if(!el)return;el.innerHTML=pkSVG(x,c,'big')+(c?`<div class="pk-pt"><b>${ymT(c.due)}</b><span class="pill ${pkSt(c).c}">${pkSt(c).t}</span><small>${pkRule(c).t}</small></div>`:`<div class="pk-pt"><small>Datum eintragen – der Termin wird sofort berechnet.</small></div>`)}
+function pkPrev(fin){const x=pkForm(fin),c=pkCalc(x),el=$('pkpv');if(!el)return;el.innerHTML=pkSVG(x,c,'big')+(c?`<div class="pk-pt"><b>${ymT(c.due)}</b><span class="pill ${pkSt(c).c}">${pkSt(c).t}</span>${c.pl?`<small>Plakette gelocht: ${ymS(c.pl)}</small>`:''}<small>${pkRule(c).t}</small></div>`:`<div class="pk-pt"><small>Datum eintragen – der Termin wird sofort berechnet.</small></div>`)}
 async function pkSave(fin){const x=pkForm(fin),v=veh(fin),T=TD(),e=t=>$('pkerr').textContent=t;
  if(!x.ez)return e(v.used?'Bitte die Erstzulassung eintragen.':'Bitte das Datum der Zulassung eintragen.');
  if(x.ez>T||(x.pk.last&&x.pk.last>T))return e('Das Datum darf nicht in der Zukunft liegen.');
