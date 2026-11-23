@@ -265,6 +265,36 @@ main{padding-bottom:110px}
 .ngh{display:grid;grid-template-columns:96px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:12px 16px 6px;cursor:pointer}.ngh:hover b{color:var(--ac)}
 .ngh .thumb{width:96px;height:44px}.ngh .t2{font-size:12px;color:var(--mu);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;align-items:center}.ngh .t2 .ic{width:13px;height:13px}.ngh .chev{color:var(--mu);display:flex}
 .ngp .tl li.cmp{margin:0 16px 0 126px;padding:8px 0 8px 12px;border-bottom:1px solid var(--bd)}.ngp .tl li.cmp:last-child{border-bottom:0;margin-bottom:8px}
+/* §57a-Pickerl */
+.pkpl{display:block;width:100%;height:auto;filter:drop-shadow(0 1px 2px rgba(20,32,43,.12))}.pkpl.pk-empty{opacity:.45}
+.kz{display:inline-block;margin-left:8px;padding:1px 7px;border:1.5px solid var(--tx);border-radius:4px;font:600 12px/1.4 var(--f-disp);letter-spacing:.04em;vertical-align:2px;white-space:nowrap}
+.pkl .pkr{display:grid;grid-template-columns:104px minmax(220px,1.25fr) minmax(170px,.9fr) minmax(200px,1.1fr) auto;gap:18px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--bd);cursor:pointer}
+.pkl .pkr:last-child{border-bottom:0}.pkl .pkr:hover{background:var(--sf2)}
+.pk-pl{width:104px}
+.pk-car{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center}.pk-car .thumb{width:96px;height:44px}.pk-car b{font-size:16px}
+.pk-car .t2,.pkd .t2{font-size:12px;color:var(--mu);margin-top:3px}
+.pk-due{display:flex;flex-direction:column;align-items:flex-start;gap:4px}.pk-due .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);font-weight:600}.pk-due b{font:600 20px/1.15 var(--f-disp)}
+.pk-meta{display:grid;gap:5px;font-size:13px}.pk-meta span{display:block;font-size:11px;color:var(--mu)}.pk-meta em{font-style:normal;color:var(--mu)}
+.pk-note{font-size:12px;color:var(--wa);background:var(--wab);border-radius:8px;padding:5px 8px}
+.pk-act{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.pkd{display:grid;grid-template-columns:44px minmax(0,1fr) auto auto;gap:14px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--bd);cursor:pointer}.pkd:last-child{border-bottom:0}.pkd:hover{background:var(--sf2)}
+.pkd .pkpl{width:44px}.pkd-d{display:flex;flex-direction:column;align-items:flex-end;gap:3px}.pkd-d b{font:600 15px var(--f-disp)}.pkd .chev{color:var(--mu);display:flex}
+.pk-tab{display:grid;grid-template-columns:200px minmax(0,1fr);gap:28px;align-items:start}.pk-tab>.pkpl{width:200px}.pk-tab .pk-due{margin-bottom:12px}.pk-tab .pk-due b{font-size:26px}
+.sheet>.sb.pk-form{display:grid;grid-template-columns:170px minmax(0,1fr);gap:20px;align-items:start}.pk-form .fg1{display:grid;gap:12px;width:100%;min-width:0}.pk-prev .pkpl{width:170px}
+.pk-pt{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:10px;text-align:center}.pk-pt b{font:600 18px var(--f-disp)}.pk-pt small{color:var(--mu);font-size:11.5px}
+.pk-adv summary{cursor:pointer;font-size:13px;color:var(--ac)}
+.pk-help p{margin:0 0 12px;line-height:1.5}
+@media(max-width:1100px){.pkl .pkr{grid-template-columns:84px minmax(0,1fr) minmax(0,1fr);row-gap:10px}.pk-pl{width:84px;grid-row:1/span 2}.pk-car{grid-column:2/-1}.pk-act{grid-column:2/-1;flex-direction:row;flex-wrap:wrap}}
+@media(max-width:760px){
+ .pkl .pkr{grid-template-columns:76px minmax(0,1fr);gap:8px 14px;padding:14px 16px}.pk-pl{width:76px;grid-row:1/span 3;align-self:start}
+ .pk-car{grid-column:2;grid-template-columns:minmax(0,1fr)}.pk-car .thumb{display:none}.pk-car b{font-size:15px}
+ .pkl .pkr>.pk-due,.pkl .pkr>.pk-meta,.pkl .pkr>div:empty{grid-column:2}.pkl .pkr>div:empty{display:none}
+ .pk-act{grid-column:1/-1;flex-direction:row}.pk-act .btn{flex:1 1 auto;justify-content:center;min-width:0}.pk-act .btn:not(.p):has(.bt){flex:0 0 48px;padding:0}.pk-act .bt{display:none}.pkl .pk-mr{display:none}.pk-tab .pk-mr{display:block}
+ .pk-form .f input{width:100%}
+ .pk-tab{grid-template-columns:110px minmax(0,1fr);gap:16px}.pk-tab>.pkpl{width:110px}
+ .sheet>.sb.pk-form{grid-template-columns:minmax(0,1fr)}.pk-prev{display:flex;gap:14px;align-items:center}.pk-prev .pkpl{width:96px}.pk-pt{align-items:flex-start;text-align:left;margin:0}
+ .pkd{grid-template-columns:40px minmax(0,1fr) auto;padding:10px 14px}.pkd .pkpl{width:40px}.pkd .chev{display:none}.pkd-d b{font-size:13.5px}
+}
 /* Rundgang */
 .tloc{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px;font-size:16px}.tloc .ic{width:18px;height:18px;align-self:center;color:var(--ac)}.tloc .muted{font-size:13px;font-weight:400}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px}
@@ -685,6 +715,7 @@ const IC={
  user:SV('<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.5-6.5 8-6.5s7 2 8 6.5"/>'),
  km:SV('<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/>'),
  clock:SV('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
+ pk:SV('<path d="M6.5 3h11a1.5 1.5 0 0 1 1.5 1.5V13a7 7 0 0 1-14 0V4.5A1.5 1.5 0 0 1 6.5 3z"/><circle cx="12" cy="13" r="3"/>'),
  reload:SV('<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>'),
  b12:SV('<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h2v2M15 7V5h2v2M6.5 13h3M14.5 13h3M16 11.5v3"/>'),
  hv:SV('<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5h2v2M15 7V5h2v2M13 9.5l-2.5 3.5h3L11 16.5"/>'),
@@ -1649,7 +1680,136 @@ function vCard(v){const nx=S.tasks.filter(t=>t.fin===v.fin&&t.status!=='Erledigt
  ${nx?`<span class="nx">${icon(catOf(nx))} ${fmt(nx.due)} · ${E(nx.title)}</span>`:'<span>Keine offenen Termine</span>'}
  <span style="display:flex;gap:4px;flex-wrap:wrap">${late?`<span class="pill s-ba">${late} überfällig</span>`:''}${v.used?'<span class="tag">Gebrauchtwagen</span>':''}${v.transp?'<span class="tag">Transportmodus</span>':''}${v.show?'<span class="tag">Schauraum</span>':''}${v.ev?'<span class="tag ac">Elektro</span>':v.hyb?'<span class="tag ac">Hybrid</span>':''}</span></span></button>`}
 function togG(el,f){el.open?S.openG.add(f):S.openG.delete(f)}
-function openVeh(f){S.sel=f;S.view='veh';S.tab='plan';render();window.scrollTo(0,0)}
+function openVeh(f,tb){S.sel=f;S.view='veh';S.tab=typeof tb==='string'?tb:'plan';render();window.scrollTo(0,0)}
+
+/* ---------- §57a-Pickerl (wiederkehrende Begutachtung) ----------
+   Bisher 3-2-1, ab 19.05.2027 für alle Pkw (M1) 4-2-2-2-1 – auch für bereits zugelassene Fahrzeuge (KFG-Novelle, § 132 Abs 37).
+   Stichtag-Monat = Monat der Erstzulassung. Toleranz alt −1/+4 Monate (für Lochungen bis Okt. 2027, längstens Ende Nov. 2027), neu −4/+0. */
+const PK_SW='2027-05',PK_DAY='2027-05-19';
+const PKMON=['Jänner','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const ymA=(m,n)=>{let y=+m.slice(0,4),k=+m.slice(5,7)-1+n;y+=Math.floor(k/12);k=((k%12)+12)%12;return y+'-'+String(k+1).padStart(2,'0')};
+const ymD=(a,b)=>(+b.slice(0,4)-+a.slice(0,4))*12+(+b.slice(5,7)-+a.slice(5,7));
+const mEnd=m=>iso(new Date(+m.slice(0,4),+m.slice(5,7),0));
+const ymT=m=>m?PKMON[+m.slice(5,7)-1]+' '+m.slice(0,4):'–',ymS=m=>m?m.slice(5,7)+'/'+m.slice(0,4):'–';
+function pkWin(m){return m<='2027-10'?{from:ymA(m,-1)+'-01',to:mEnd(m>'2027-07'?'2027-11':ymA(m,4)),old:1}:{from:ymA(m,-4)+'-01',to:mEnd(m),old:0}}
+/* nächstes Begutachtungsalter nach einer Begutachtung im Alter a (a=0: noch nie begutachtet) */
+function pkStepN(a){return a===0?4:a<10?a+2:a+1}
+function pkStep(ez,a){const o=a<3?3:a<5?5:a+1;return ymA(ez,o*12)<(TD()>=PK_DAY?'2027-01':PK_SW)?o:pkStepN(a)}
+function pkCalc(v){const p=v.pk||{},ez=v.ez&&/^\d{4}-\d\d/.test(v.ez)?v.ez.slice(0,7):'';if(!ez)return null;
+ const at=a=>ymA(ez,a*12),lm=p.last?p.last.slice(0,7):'';let a=lm?Math.max(0,Math.floor((ymD(ez,lm)+4)/12)):0,est=0,due,ag;
+ if(p.due&&/^\d{4}-\d\d$/.test(p.due)){due=p.due;ag=Math.max(0,Math.round(ymD(ez,due)/12))}
+ else{ag=pkStep(ez,a);due=at(ag);
+  /* Gebrauchtwagen ohne letzte Begutachtung: Termine als pünktlich eingehalten annehmen (Schätzung) */
+  if(!lm&&v.used){const T=TD();while(pkWin(due).to<T&&ag<90){ag=pkStep(ez,ag);due=at(ag);est=1}}}
+ const nag=pkStep(ez,ag),c={ez,due,age:ag,win:pkWin(due),next:at(nag),nextAge:nag,est,last:p.last||'',man:!!p.due,newRule:due>=PK_SW,issueY:+(lm||ez).slice(0,4)};
+ /* Plakette noch nach alter Regel gelocht (Fälligkeit Jän.–Apr. 2027): ab 19.05.2027 Austauschplakette möglich */
+ if(!c.newRule&&!est&&due>='2027-01'&&TD()<PK_DAY){const x=at(pkStepN(lm?a:0));if(x!==due)c.alt=x}
+ return c}
+function pkRule(c){if(!c.newRule)return{t:'3-2-1 (bisherige Regel)',d:c.age<=3?'erste Begutachtung 3 Jahre nach der Erstzulassung':c.age<=5?'zweite Begutachtung nach weiteren 2 Jahren':'jährlich ab dem 5. Jahr'};
+ return{t:'4-2-2-2-1 (ab 19.05.2027)',d:c.age<=4&&!c.last?'erste Begutachtung 4 Jahre nach der Erstzulassung':c.age<=10?'alle 2 Jahre bis zum 10. Jahr':'jährlich ab dem 10. Jahr'}}
+function pkSt(c){const T=TD(),w=c.win,me=mEnd(c.due);
+ if(T>w.to)return{k:'late',t:'überfällig seit '+fmt(addD(w.to,1)),c:'s-ba'};
+ if(T>me)return{k:'grace',t:'Nachfrist bis '+fmt(w.to),c:'s-ba'};
+ if(T>=w.from)return{k:'now',t:'jetzt begutachten',c:'s-wa'};
+ const d=dDiff(w.from);if(d<=60)return{k:'soon',t:'möglich '+rel(w.from),c:'s-gr'};
+ const mo=ymD(T.slice(0,7),c.due);return{k:'ok',t:mo>=24?`in ${Math.floor(mo/12)} Jahren`:`in ${mo} Monaten`,c:'s-ok'}}
+const pkDueK=k=>k==='late'||k==='grace'||k==='now';
+function pkRows(){return S.veh.filter(v=>!v.archived).map(v=>{const c=pkCalc(v);return{v,c,s:c?pkSt(c):null}})}
+function pkCount(){return pkRows().filter(r=>r.s&&pkDueK(r.s.k)).length}
+const pkAgeTxt=c=>{const n=ymD(c.ez,TD().slice(0,7)),y=Math.floor(n/12),m=n%12;return n<0?'noch nicht zugelassen':y?`${y} ${y===1?'Jahr':'Jahre'}${m?` ${m} Mon.`:''}`:`${m} ${m===1?'Monat':'Monate'}`};
+
+/* Prüfplakette als Grafik: Kennzeichen als Lochschrift, Monat außen, Jahr innen – gelocht wie in echt */
+const PKF={'0':'0E11131519110E','1':'040C040404040E','2':'0E110102040 81F'.replace(' ',''),'3':'1F020402011 10E'.replace(' ',''),'4':'02060A121F0202','5':'1F101E0101110E','6':'0608101E11110E','7':'1F010204080808','8':'0E11110E11110E','9':'0E11110F01020C',
+ A:'0E1111111F1111',B:'1E11111E11111E',C:'0E11101010110E',D:'1C121111111 21C'.replace(' ',''),E:'1F10101E10101F',F:'1F10101E101010',G:'0E111017111 10F'.replace(' ',''),H:'1111111F111111',I:'0E04040404040E',J:'07020202021 20C'.replace(' ',''),
+ K:'11121418141211',L:'1010101010101F',M:'111B1515111111',N:'11111915131111',O:'0E11111111110E',P:'1E11111E101010',Q:'0E11111115120D',R:'1E11111E141211',S:'0F10100E01011E',T:'1F040404040404',
+ U:'1111111111110E',V:'11111111110A04',W:'1111111515150A',X:'11110A040A1111',Y:'1111110A040404',Z:'1F01020408101F','-':'0000001F000000'};
+function pkDots(t,cx,y,w){const s=String(t||'').toUpperCase().replace(/Ä/g,'A').replace(/Ö/g,'O').replace(/Ü/g,'U').replace(/[^A-Z0-9\- ]/g,'').replace(/\s+/g,' ').trim().slice(0,10);
+ const n=s.length;if(!n)return'';const p=Math.min(3.8,w/(n*6-1)),x0=cx-(n*6-2)*p/2;let o='';
+ [...s].forEach((ch,i)=>{const g=PKF[ch];if(!g)return;for(let r=0;r<7;r++){const b=parseInt(g.substr(r*2,2),16);for(let k=0;k<5;k++)if(b&(16>>k))o+=`<circle cx="${(x0+(i*6+k)*p).toFixed(1)}" cy="${(y+r*p).toFixed(1)}" r="${(p*.36).toFixed(2)}"/>`}});
+ return`<g fill="#2f353b">${o}</g>`}
+let pkN=0;
+function pkSVG(v,c,cls){const cx=80,cy=134,R1=76,R2=51,R3=29,id='pka'+(++pkN),pt=(r,a)=>[cx+r*Math.sin(a*Math.PI/180),cy-r*Math.cos(a*Math.PI/180)],f=n=>n.toFixed(1);
+ const dm=c?+c.due.slice(5,7):0,dy=c?+c.due.slice(0,4):0,y0=c?Math.min(c.issueY,dy-1):new Date().getFullYear();let g='';
+ for(let i=0;i<12;i++){const a=i*30+15,[x1,y1]=pt(R2,a),[x2,y2]=pt(R1,a);g+=`<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}"/>`}
+ for(let j=0;j<7;j++){const a=j*360/7+180/7,[x1,y1]=pt(R3,a),[x2,y2]=pt(R2,a);g+=`<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}"/>`}
+ let t='';for(let m=1;m<=12;m++){const[x,y]=pt(63.5,(m%12)*30);t+=`<text x="${f(x)}" y="${f(y)}" font-size="15">${m}</text>`}
+ for(let j=0;j<7;j++){const[x,y]=pt(40,j*360/7);t+=`<text x="${f(x)}" y="${f(y)}" font-size="13.5">${String((y0+j)%100).padStart(2,'0')}</text>`}
+ let h='';if(c){const[mx,my]=pt(63.5,(dm%12)*30),j=dy-y0,[yx,yy]=pt(40,j*360/7);h=`<g fill="#1c2227" stroke="#0e1215" stroke-width=".8"><circle cx="${f(mx+1.5)}" cy="${f(my+1)}" r="7"/><circle cx="${f(yx+1.2)}" cy="${f(yy+1)}" r="6.6"/></g>`}
+ return`<svg class="pkpl ${cls||''}${c?'':' pk-empty'}" viewBox="0 0 160 214" role="img" aria-label="Prüfplakette${c?', gelocht '+ymT(c.due):', noch nicht eingetragen'}${v.plate?', Kennzeichen '+E(v.plate):''}">
+ <path d="M13 2H147Q158 2 158 13V134A78 78 0 0 1 2 134V13Q2 2 13 2Z" fill="#f2f3f1" stroke="#c9ced2" stroke-width="1.5"/>
+ ${v.plate?pkDots(v.plate,cx,17,128):`<text x="80" y="28" font-size="10" fill="#9aa3ab" text-anchor="middle" font-family="Inter,Arial,sans-serif">ohne Kennzeichen</text>`}
+ <g fill="none" stroke="#1f2428" stroke-width="2"><circle cx="${cx}" cy="${cy}" r="${R1}"/><circle cx="${cx}" cy="${cy}" r="${R2}"/><circle cx="${cx}" cy="${cy}" r="${R3}"/>${g}</g>
+ <g fill="#1f2428" text-anchor="middle" dominant-baseline="central" font-family="'Barlow Semi Condensed',Arial,sans-serif" font-weight="600">${t}</g>
+ <defs><radialGradient id="${id}g" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#8d9aa6"/><stop offset="1" stop-color="#4b5864"/></radialGradient><path id="${id}" d="M${cx-21.5} ${cy+2}A21.5 21.5 0 1 1 ${cx+21.5} ${cy+2}"/></defs>
+ <circle cx="${cx}" cy="${cy}" r="${R3-3}" fill="url(#${id}g)"/><text font-size="4.7" fill="#dfe5ea" letter-spacing=".25" font-family="Inter,Arial,sans-serif"><textPath href="#${id}" startOffset="50%" text-anchor="middle">REPUBLIK ÖSTERREICH</textPath></text>
+ <path d="M${cx} ${cy-9}l3 4 5-2-2 5 3 3-5 1-1 7h-6l-1-7-5-1 3-3-2-5 5 2z" fill="#2d3741" opacity=".75"/>${h}</svg>`}
+
+function pkInfo(v,c){const s=pkSt(c),r=pkRule(c);
+ return`<div class="pk-due"><span class="lbl">Nächstes Pickerl</span><b>${ymT(c.due)}</b><span class="pill ${s.c}">${s.t}</span></div>
+ <div class="pk-meta"><div><span>Begutachtung möglich</span>${fmt(c.win.from)} – ${fmt(c.win.to)}${c.win.old?'<em> inkl. Nachfrist</em>':''}</div>
+ <div class="pk-mr"><span>Regel</span>${r.t} · ${r.d}</div><div class="pk-mr"><span>Danach</span>${ymT(c.next)}</div>
+ ${c.est?`<div class="pk-note">Geschätzt: keine letzte Begutachtung eingetragen.</div>`:''}${c.alt?`<div class="pk-note">Ab 19.05.2027 Austauschplakette möglich → dann fällig ${ymT(c.alt)}.</div>`:''}</div>`}
+function pkRow({v,c}){const f=v.fin;
+ return`<div class="pkr" onclick="openVeh('${f}','pk')" role="button" tabindex="0">
+ <div class="pk-pl">${pkSVG(v,c)}</div>
+ <div class="pk-car" style="--carbg:var(--sf)">${carSVG(v,'thumb')}<div style="min-width:0"><b>${vname(v)}</b>${v.plate?`<span class="kz">${E(v.plate)}</span>`:''}<div class="t2">${finCopy(f)}</div>
+  <div class="t2">${c?`EZ ${ymS(c.ez)} · ${pkAgeTxt(c)} · `:''}${v.used?'Gebrauchtwagen':'Neuwagen'}${c&&c.last?` · zuletzt ${fmt(c.last)}`:''}</div></div></div>
+ ${c?pkInfo(v,c):`<div class="pk-due"><span class="lbl">Nächstes Pickerl</span><b class="muted">nicht eingetragen</b><span class="muted" style="font-size:12.5px">${v.used?'Erstzulassung und letzte Begutachtung fehlen':'z. B. noch nicht zugelassen'}</span></div><div></div>`}
+ <div class="pk-act">${c?`<button class="btn sm p" onclick="event.stopPropagation();pkDone('${f}')">${IC.check} Begutachtung eintragen</button>`:''}<button class="btn sm${c?'':' p'}" onclick="event.stopPropagation();pkModal('${f}')" title="Pickerl-Daten bearbeiten">${c?IC.edit+'<span class="bt"> Bearbeiten</span>':IC.plus+' Pickerl eintragen'}</button></div></div>`}
+function pkPage(){const R=pkRows(),has=R.filter(r=>r.c).sort((a,b)=>a.c.due<b.c.due?-1:a.c.due>b.c.due?1:0),none=R.filter(r=>!r.c),T=TD();
+ const F={'':has,due:has.filter(r=>pkDueK(r.s.k)),q:has.filter(r=>r.c.win.from<=addD(T,92)&&!pkDueK(r.s.k)),none};
+ if(!F[S.pkF||''])S.pkF='';const L=F[S.pkF||''],ch=(k,l)=>`<button role="tab" aria-selected="${(S.pkF||'')===k}" class="${(S.pkF||'')===k?'on':''}${k==='due'&&F.due.length?' miss':''}" onclick="S.pkF='${k}';render()">${l} <span class="n">${F[k].length}</span></button>`;
+ return`<div class="head"><h2><span class="eye">Wiederkehrende Begutachtung</span>§57a-Pickerl</h2><button class="btn" onclick="pkHelp()">${IC.pk} So wird gerechnet</button></div>
+ <div class="chips" role="tablist" aria-label="Pickerl filtern">${ch('','Alle')}${ch('due','Fällig / überfällig')}${ch('q','Nächste 3 Monate')}${ch('none','Ohne Daten')}</div>
+ <section class="panel pkl">${L.length?L.map(pkRow).join(''):`<p class="empty">${S.pkF==='none'?'Bei allen Fahrzeugen sind Pickerl-Daten eingetragen.':S.pkF?'Keine Fahrzeuge in dieser Auswahl.':'Noch keine Pickerl-Daten eingetragen.<br>Öffne unten „Ohne Daten“ oder ein Fahrzeug und trage die Erstzulassung ein.'}</p>`}</section>
+ ${!S.pkF&&none.length?`<section class="panel pkl" style="margin-top:16px"><div class="ph"><h3>Ohne Pickerl-Daten</h3><span class="muted">${none.length} ${none.length===1?'Fahrzeug':'Fahrzeuge'} · z. B. noch nicht zugelassen</span></div>${none.map(pkRow).join('')}</section>`:''}`}
+function pkDash(){const R=pkRows().filter(r=>r.s&&(pkDueK(r.s.k)||r.s.k==='soon')).sort((a,b)=>a.c.due<b.c.due?-1:1);if(!R.length)return'';
+ return`<section class="panel"><div class="ph"><h3>§57a-Pickerl</h3><span class="muted">${R.length} fällig oder bald fällig</span><button class="btn sm" onclick="go('pk')">Alle anzeigen</button></div>
+ ${R.slice(0,5).map(({v,c,s})=>`<div class="pkd" onclick="openVeh('${v.fin}','pk')" role="button" tabindex="0">${pkSVG(v,c,'mini')}<div style="min-width:0"><b>${vname(v)}</b>${v.plate?`<span class="kz">${E(v.plate)}</span>`:''}<div class="t2">${finCopy(v.fin)}</div></div><div class="pkd-d"><b>${ymT(c.due)}</b><span class="pill ${s.c}">${s.t}</span></div><span class="chev">${IC.chev}</span></div>`).join('')}</section>`}
+function pkTab(v){const c=pkCalc(v);
+ if(!c)return`<div class="pb pk-tab">${pkSVG(v,null,'big')}<div><h3 style="margin:0 0 6px">Noch keine Pickerl-Daten</h3><p class="muted" style="margin:0 0 14px">Trage die Erstzulassung${v.used?' und die letzte §57a-Begutachtung':''} ein. Daraus wird der nächste Termin nach § 57a KFG berechnet – ab 19.05.2027 nach der neuen 4-2-2-2-1-Regel.</p><button class="btn p" onclick="pkModal('${v.fin}')">${IC.plus} Pickerl eintragen</button></div></div>`;
+ return`<div class="pb pk-tab">${pkSVG(v,c,'big')}<div style="min-width:0">${pkInfo(v,c)}
+ <div class="pk-meta" style="margin-top:4px"><div><span>Kennzeichen</span>${E(v.plate)||'–'}</div><div><span>Erstzulassung</span>${fmt(v.ez)} · ${pkAgeTxt(c)}</div><div><span>Letzte Begutachtung</span>${c.last?fmt(c.last):v.used?'nicht eingetragen':'noch keine'}${c.man?' · Termin manuell laut Plakette':''}</div></div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn p" onclick="pkDone('${v.fin}')">${IC.check} Begutachtung eintragen</button><button class="btn" onclick="pkModal('${v.fin}')">${IC.edit} Bearbeiten</button></div></div></div>`}
+function pkHelp(){modal(`<header><div style="flex:1"><h3>So wird das Pickerl berechnet</h3><span class="muted">§ 57a KFG, Pkw (Klasse M1)</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb pk-help"><p><b>Bis 18.05.2027 (3-2-1):</b> erste Begutachtung 3 Jahre nach der Erstzulassung, dann nach 2 Jahren, danach jährlich. Toleranz: 1 Monat vor bis 4 Monate nach dem gelochten Monat.</p>
+ <p><b>Ab 19.05.2027 (4-2-2-2-1):</b> erste Begutachtung 4 Jahre nach der Erstzulassung, dann alle 2 Jahre bis zum 10. Jahr, danach jährlich. Die Begutachtung ist bis zu 4 Monate vor dem gelochten Monat möglich, eine Nachfrist gibt es nicht mehr.</p>
+ <p><b>Gilt auch für bereits zugelassene Fahrzeuge</b> – Neu- und Gebrauchtwagen werden nach ihrem Alter eingeordnet. Liegt die nächste Fälligkeit ab Mai 2027, zählt schon die neue Regel; nach einer Begutachtung folgt die nächste bis zum 10. Jahr nach 2 Jahren.</p>
+ <p><b>Plaketten mit Lochung Jänner bis Oktober 2027</b> behalten die alte Nachfrist, längstens bis Ende November 2027. Für „falsch“ gelochte Plaketten gibt es ab 19.05.2027 eine Austauschplakette.</p>
+ <p class="hint">Der Monat der Fälligkeit ist der Monat der Erstzulassung. Steht auf der Plakette ein anderer Termin, kann er beim Fahrzeug unter „Bearbeiten“ als „Termin laut Plakette“ eingetragen werden. Angaben ohne Gewähr – maßgeblich ist die gelochte Plakette bzw. das Gutachten.</p></div>
+ <footer><button class="btn p" onclick="closeM()">Verstanden</button></footer>`)}
+function pkModal(fin){const v=veh(fin),p=v.pk||{};
+ modal(`<header><div style="flex:1"><h3>§57a-Pickerl eintragen</h3><span class="muted">${vname(v)} · ${v.used?'Gebrauchtwagen':'Neuwagen'}</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb pk-form"><div class="pk-prev" id="pkpv"></div><div class="fg1">
+ <label class="f">Kennzeichen<input id="pkk" value="${E(v.plate)}" placeholder="z. B. VB-123AB" style="text-transform:uppercase" oninput="pkPrev('${fin}')"></label>
+ <label class="f">${v.used?'Erstzulassung (Zulassungsschein, Feld B)':'Zugelassen am / Pickerl erhalten am'}<input type="date" id="pkez" value="${E(v.ez)}" max="${TD()}" oninput="pkPrev('${fin}')"></label>
+ <label class="f">Letzte §57a-Begutachtung ${v.used?'(Pickerl erhalten am)':'<em style="font-style:normal;font-weight:400">– leer lassen, wenn noch keine</em>'}<input type="date" id="pkl" value="${E(p.last)}" max="${TD()}" oninput="pkPrev('${fin}')"></label>
+ <details class="pk-adv" ${p.due?'open':''}><summary>Termin weicht von der Plakette ab?</summary><label class="f" style="margin-top:8px">Termin laut Plakette (Monat)<input type="month" id="pkd" value="${E(p.due)}" oninput="pkPrev('${fin}')"></label><span class="hint">Nur ausfüllen, wenn die gelochte Plakette einen anderen Monat zeigt. Leer = automatisch berechnen.</span></details>
+ <p class="msg err" id="pkerr"></p></div></div>
+ <footer>${v.ez||p.last?`<button class="btn" style="margin-right:auto" onclick="pkClear('${fin}')">Entfernen</button>`:''}<button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="pksv" onclick="pkSave('${fin}')">Speichern</button></footer>`);pkPrev(fin)}
+function pkForm(fin){const v=veh(fin);return{...v,plate:$('pkk').value.trim().toUpperCase().replace(/\s+/g,' '),ez:$('pkez').value,pk:{last:$('pkl').value,due:$('pkd').value}}}
+function pkPrev(fin){const x=pkForm(fin),c=pkCalc(x),el=$('pkpv');if(!el)return;el.innerHTML=pkSVG(x,c,'big')+(c?`<div class="pk-pt"><b>${ymT(c.due)}</b><span class="pill ${pkSt(c).c}">${pkSt(c).t}</span><small>${pkRule(c).t}</small></div>`:`<div class="pk-pt"><small>Datum eintragen – der Termin wird sofort berechnet.</small></div>`)}
+async function pkSave(fin){const x=pkForm(fin),v=veh(fin),T=TD(),e=t=>$('pkerr').textContent=t;
+ if(!x.ez)return e(v.used?'Bitte die Erstzulassung eintragen.':'Bitte das Datum der Zulassung eintragen.');
+ if(x.ez>T||(x.pk.last&&x.pk.last>T))return e('Das Datum darf nicht in der Zukunft liegen.');
+ if(x.pk.last&&x.pk.last<x.ez)return e('Die letzte Begutachtung kann nicht vor der Erstzulassung liegen.');
+ busy('pksv',true,'Speichern …');
+ try{await db.doc('vehicles/'+fin).update({plate:x.plate,ez:x.ez,pk:x.pk})}catch(err){busy('pksv',false,'Speichern');return e('Speichern nicht möglich: keine Schreibrechte.')}
+ Object.assign(v,{plate:x.plate,ez:x.ez,pk:x.pk});const c=pkCalc(v);log(fin,`§57a-Pickerl eingetragen: Erstzulassung ${fmt(x.ez)}${x.pk.last?', letzte Begutachtung '+fmt(x.pk.last):''} · fällig ${ymT(c.due)}`);
+ closeM();render();toast(`Pickerl gespeichert · fällig ${ymT(c.due)}`)}
+async function pkClear(fin){if(!confirm('Pickerl-Daten (letzte Begutachtung, Termin laut Plakette) entfernen? Erstzulassung und Kennzeichen bleiben erhalten.'))return;
+ try{await db.doc('vehicles/'+fin).update({pk:{last:'',due:''}})}catch(e){return $('pkerr').textContent='Speichern nicht möglich: keine Schreibrechte.'}
+ veh(fin).pk={last:'',due:''};log(fin,'§57a-Pickerl-Daten entfernt');closeM();render()}
+function pkDone(fin){const v=veh(fin),c=pkCalc(v);
+ modal(`<header><div style="flex:1"><h3>Begutachtung eintragen</h3><span class="muted">${vname(v)}${v.plate?' · '+E(v.plate):''}</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
+ <div class="sb"><label class="f">Begutachtet am (neues Pickerl erhalten)<input type="date" id="pkdd" value="${TD()}" max="${TD()}"></label>
+ <p class="hint">Bisher fällig: ${c?ymT(c.due):'–'}. Der nächste Termin wird danach automatisch berechnet.</p><p class="msg err" id="pkerr"></p></div>
+ <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="pksv" onclick="pkDoneSave('${fin}')">Speichern</button></footer>`)}
+async function pkDoneSave(fin){const v=veh(fin),d=$('pkdd').value;if(!d)return $('pkerr').textContent='Bitte das Datum eintragen.';if(d>TD())return $('pkerr').textContent='Das Datum darf nicht in der Zukunft liegen.';
+ if(v.ez&&d<v.ez)return $('pkerr').textContent='Das Datum liegt vor der Erstzulassung.';
+ const pk={last:d,due:''};busy('pksv',true,'Speichern …');
+ try{await db.doc('vehicles/'+fin).update({pk})}catch(e){busy('pksv',false,'Speichern');return $('pkerr').textContent='Speichern nicht möglich: keine Schreibrechte.'}
+ v.pk=pk;const c=pkCalc(v);log(fin,`§57a-Begutachtung am ${fmt(d)} · nächstes Pickerl ${c?ymT(c.due):'–'}`);closeM();render();toast(`Begutachtung gespeichert · nächstes Pickerl ${c?ymT(c.due):'–'}`)}
 
 function dash(){const T=TD(),a=S.veh.filter(v=>!v.archived),op=activeTasks().filter(t=>t.status!=='Erledigt'),bl=battLow(),pr=S.prob.filter(p=>p.status==='Offen'&&!veh(p.fin).archived);
  const late=op.filter(t=>t.due<T).sort((x,y)=>x.due<y.due?-1:x.due>y.due?1:0),nxA=op.filter(t=>t.due>=T).sort((x,y)=>x.due<y.due?-1:x.due>y.due?1:0),nx=nxA.slice(0,5);
@@ -1664,6 +1824,7 @@ function dash(){const T=TD(),a=S.veh.filter(v=>!v.archived),op=activeTasks().fil
   <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
   ${gl.length?`<section class="panel"><div class="ph"><h3>Überfällig</h3><span class="muted">${late.length} ${late.length===1?'Maßnahme':'Maßnahmen'} bei ${glA.length} ${glA.length===1?'Fahrzeug':'Fahrzeugen'}</span>${S.selMode?'':`<button class="btn sm" onclick="selStart()">${IC.sel} Auswählen</button>`}<button class="btn sm" onclick="go('tour')">Alle anzeigen${glA.length>gl.length?` (${glA.length})`:''}</button></div>
    ${gl.map(([f,l])=>{const v=veh(f),o=S.selMode||S.openG.has(f);return`<details class="vgp" ${o?'open':''} ontoggle="togG(this,'${f}')"><summary style="--carbg:var(--sf)">${carSVG(v,'thumb')}<div style="min-width:0"><b>${vname(v)}</b><div class="t2">${finCopy(f)}${v.spot||v.loc?`<span>${IC.pin} ${E([v.loc,v.spot].filter(Boolean).join(' · '))}</span>`:''}</div></div><span class="pill s-ba">${l.length} überfällig · ${rel(l[0].due)}</span><span class="chev">${IC.chev}</span></summary><ul class="tl">${l.map(t=>taskLi(t,{del:1,cmp:1})).join('')}</ul></details>`}).join('')}</section>`:''}
+  ${pkDash()}
   <section class="panel"><div class="ph"><h3>Als Nächstes</h3><span class="muted">die nächsten ${nx.length} von ${nxA.length}</span><button class="btn sm" onclick="S.view='cal';render()">${IC.cal} Kalender</button><button class="btn sm" onclick="go('tour')">Alle anzeigen</button></div>
    ${nx.length?(()=>{const ng=[];nx.forEach(t=>{const g=ng.find(x=>x[0]===t.fin);g?g[1].push(t):ng.push([t.fin,[t]])});
     return ng.map(([f,l])=>{const v=veh(f);return`<div class="ngp"><div class="ngh" style="--carbg:var(--sf)" onclick="openVeh('${f}')" title="Fahrzeug öffnen">${carSVG(v,'thumb')}<div style="min-width:0"><b>${vname(v)}</b><div class="t2">${finCopy(f)}${v.spot||v.loc?`<span>${IC.pin} ${E([v.loc,v.spot].filter(Boolean).join(' · '))}</span>`:''}</div></div><span class="pill s-gr">${l.length} ${l.length===1?'Maßnahme':'Maßnahmen'}</span><span class="chev">${IC.chev}</span></div><ul class="tl">${l.map(t=>taskLi(t,{cmp:1})).join('')}</ul></div>`}).join('')})():`<p class="empty">${S.veh.length?'Keine anstehenden Maßnahmen.':'Keine offenen Maßnahmen. Lege ein Fahrzeug an, dann erscheint hier sein Pflegeplan.'}</p>`}</section>
@@ -1717,11 +1878,12 @@ function battTab(v){const rs=readings(v.fin),r12=rs.filter(r=>r.cat==='b12'),rhv
  ${rs.slice().reverse().map(r=>{const pct=r.cat==='hv'?r.v:Math.max(0,Math.min(100,(r.v-11.8)/(12.9-11.8)*100)),bad=low(r);return`<tr class="cl" data-id="${r.t._id}" onclick="taskModal('${r.t._id}')"><td class="num"><span class="c-bn">${fmt(r.d)}</span><span class="c-bs">${fmt(r.d).slice(0,6)+fmt(r.d).slice(8)}</span></td><td>${icon(r.cat)} <span class="c-bn">${CAT[r.cat]}</span><span class="c-bs">${r.cat==='b12'?'12V':'HV'}</span></td><td class="num"><b>${r.cat==='b12'?nf(r.v,2)+' V':nf(r.v)+' %'}</b></td><td class="c-bar"><span class="bar"><i style="width:${pct}%;background:${bad?'var(--ba)':'var(--ok)'}"></i></span></td><td><span class="pill ${bad?'s-ba':'s-ok'}"><span class="c-bn">${bad?'Bitte Laden!':'In Ordnung'}</span><span class="c-bs">${bad?'Laden!':'OK'}</span></span></td></tr>`}).join('')}</table></div>`:`<p class="hint">Messwerte erscheinen hier, sobald eine Batterie-Maßnahme mit Spannung oder Ladezustand erledigt wurde.</p>`}</div>`}
 function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug nicht gefunden.</p>';
  const ts=S.tasks.filter(t=>t.fin===v.fin).sort((a,b)=>a.due<b.due?-1:1),ps=S.prob.filter(p=>p.fin===v.fin),lg=S.log.filter(l=>l.fin===v.fin).sort((a,b)=>a.at<b.at?1:-1),op=ts.filter(t=>t.status!=='Erledigt'),rs=readings(v.fin);
- const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['notes','Notizen',S.notes.filter(n=>n.fin===v.fin).length],['log','Historie']];
+ const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['pk','Pickerl'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['notes','Notizen',S.notes.filter(n=>n.fin===v.fin).length],['log','Historie']];
  let body='';
  if(S.tab==='plan'){const rmv=(S.taskAll||[]).filter(t=>t.fin===v.fin&&t.removed).sort((a,b)=>a.due<b.due?-1:1);if(S.planF==='del'&&!rmv.length)S.planF='open';const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='del'?rmv:S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(planEnd(v))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length],...(rmv.length?[['del','Gelöscht',rmv.length]]:[])].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div>${(()=>{const od=op.filter(t=>t.due<TD());return S.planF==='del'?`<button class="btn sm" onclick="restoreTasks(${E(JSON.stringify(rmv.map(t=>t._id)))})">${IC.restore} Alle wiederherstellen</button>`:(op.length&&S.planF!=='done'&&!S.selMode?`<button class="btn sm" onclick="selStart()">${IC.sel} Auswählen</button>`:'')+(od.length?`<button class="btn sm" style="color:var(--ba)" onclick="removeTasks(${E(JSON.stringify(od.map(t=>t._id)))})">${IC.trash} Überfällige löschen (${od.length})</button>`:'')})()}<button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(t=>taskLi(t,{del:1,restore:S.planF==='del'})).join('')}</ul>`:`<p class="empty">${S.planF==='del'?'Keine gelöschten Maßnahmen.':S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
  else if(S.tab==='batt')body=battTab(v);
- else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',siteOf(v)],['Bereich',v.loc],['Stellplatz / Lagerort',v.spot],['Kennzeichen',v.plate],['Interne Nr.',v.nr],['Fahrzeugart',v.used?'Gebrauchtwagen':'Neufahrzeug'],['Kilometerstand',kmTxt(v)],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}${(v.auto||[]).some(k=>k===AUTOL[x[0]]||(x[0]==='Antrieb'&&k==='hyb'))?'<span class="autob">automatisch eingefügt</span>':''}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
+ else if(S.tab==='data')body=`<div class="pb"><div class="dl">${[['Marke',v.brand],['Modell',v.model],['Ausstattung',v.variant],['Karosserie',BODIES[bodyOf(v)].l],['Farbe',`<span class="sw" style="background:${colHex(v)}"></span> ${E(v.color)||'–'}`,1],['FIN',`<span class="mono">${v.fin}</span>`,1],['Eingangsdatum',fmt(v.deliv)],['Standort',siteOf(v)],['Bereich',v.loc],['Stellplatz / Lagerort',v.spot],['Kennzeichen',v.plate],['Erstzulassung',fmt(v.ez)],['Interne Nr.',v.nr],['Fahrzeugart',v.used?'Gebrauchtwagen':'Neufahrzeug'],['Kilometerstand',kmTxt(v)],['Transportmodus',v.transp?'an':offTxt(v)],['Schauraummodus',showTxt(v)],['Antrieb',v.ev?'Elektro':v.hyb?'Hybrid':'Verbrenner'],['Solarpanel',v.solar?'ja':'nein']].map(x=>`<div><span>${x[0]}${(v.auto||[]).some(k=>k===AUTOL[x[0]]||(x[0]==='Antrieb'&&k==='hyb'))?'<span class="autob">automatisch eingefügt</span>':''}</span><b>${x[2]?x[1]:(E(x[1])||'–')}</b></div>`).join('')}</div></div>`;
+ else if(S.tab==='pk')body=pkTab(v);
  else if(S.tab==='notes')body=`<div class="pb">${noteForm(v.fin)}${noteList(S.notes.filter(n=>n.fin===v.fin),0)}</div>`;
  else if(S.tab==='prob')body=`<div class="ph"><span style="flex:1"></span><button class="btn sm" onclick="probModal('${v.fin}')">${IC.plus} Problem melden</button></div>${probTbl(ps)}`;
  else body=lg.length?`<div class="scroll"><table><tr><th>Zeitpunkt</th><th>Mitarbeiter:in</th><th>Änderung</th></tr>${lg.map(l=>`<tr><td class="num">${new Date(l.at).toLocaleString('de-AT',{dateStyle:'short',timeStyle:'short'})}</td><td>${E(l.by)}</td><td style="white-space:normal">${E(l.text)}</td></tr>`).join('')}</table></div>`:'<p class="empty">Noch keine Einträge.</p>';
@@ -2126,16 +2288,16 @@ function tour(){const T=TD(),end=S.tourR==='week'?addD(T,7):T,ts=activeTasks().f
 document.addEventListener('change',e=>{if(e.target.id==='tourL'){S.tourL=e.target.value;render()}});
 
 /* ---------- Rahmen ---------- */
-const NAV=[['dash','Dashboard',IC.dash],['tour','Rundgang',IC.route],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car],['prob','Probleme',IC.warn],['notes','Notizen',IC.note],['set','Einstellungen',IC.set]];
+const NAV=[['dash','Dashboard',IC.dash],['tour','Rundgang',IC.route],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car],['pk','§57a-Pickerl',IC.pk],['prob','Probleme',IC.warn],['notes','Notizen',IC.note],['set','Einstellungen',IC.set]];
 /* Seitenleiste: Gruppen mit Unterpunkten (am Handy nur die Hauptpunkte) */
-function navHtml(late,pr){const A=S.veh.filter(v=>!v.archived),cnt={'':A.length,new:A.filter(v=>!v.used).length,used:A.filter(v=>v.used).length,show:A.filter(v=>v.show).length,miss:A.filter(v=>missingOf(v).length).length,arch:S.veh.length-A.length};
- const a=n=>`<a data-v="${n[0]}" class="${(S.view===n[0]||(S.view==='veh'&&n[0]==='veh_l'))&&!(n[0]==='veh_l'&&S.view==='veh_l'&&S.fl&&VSUB.some(x=>x[0]===S.fl))?'on':''}" onclick="${n[0]==='veh_l'?"goVeh('')":`go('${n[0]}')`}" title="${n[1]}">${n[2]}<span class="lb">${n[1]}</span>${n[0]==='dash'&&late?`<span class="cnt">${late}</span>`:n[0]==='prob'&&pr?`<span class="cnt">${pr}</span>`:''}</a>`;
+function navHtml(late,pr){const pkc=pkCount();const A=S.veh.filter(v=>!v.archived),cnt={'':A.length,new:A.filter(v=>!v.used).length,used:A.filter(v=>v.used).length,show:A.filter(v=>v.show).length,miss:A.filter(v=>missingOf(v).length).length,arch:S.veh.length-A.length};
+ const a=n=>`<a data-v="${n[0]}" class="${(S.view===n[0]||(S.view==='veh'&&n[0]==='veh_l'))&&!(n[0]==='veh_l'&&S.view==='veh_l'&&S.fl&&VSUB.some(x=>x[0]===S.fl))?'on':''}" onclick="${n[0]==='veh_l'?"goVeh('')":`go('${n[0]}')`}" title="${n[1]}">${n[2]}<span class="lb">${n[1]}</span>${n[0]==='dash'&&late?`<span class="cnt">${late}</span>`:n[0]==='prob'&&pr?`<span class="cnt">${pr}</span>`:n[0]==='pk'&&pkc?`<span class="cnt">${pkc}</span>`:''}</a>`;
  const sub=([f,l])=>(f==='show'||f==='miss')&&!cnt[f]?'':`<a class="sub ${S.view==='veh_l'&&S.fl===f?'on':''}" onclick="goVeh('${f}')">${l}<span class="n${f==='miss'?' r':''}">${cnt[f]}</span></a>`;
  const N=Object.fromEntries(NAV.map(n=>[n[0],n]));
  const cs=x=>RAW.veh.filter(v=>!v.archived&&(x==='*'||siteOf(v)===x)).length,q=x=>E(x).replace(/'/g,"\\'");
  const st=`<div class="nsec">Standort</div>${SITES().map(x=>`<a class="sub site ${S.site===x?'on':''}" onclick="setSite('${q(x)}')">${IC.pin}${E(x)}<span class="n">${cs(x)}</span></a>`).join('')}${SITES().length>1?`<a class="sub site ${S.site==='*'?'on':''}" onclick="setSite('*')">${IC.pin}Alle Standorte<span class="n">${cs('*')}</span></a>`:''}<a class="sub site add" onclick="siteModal()">${IC.plus}Standort hinzufügen</a>`;
  return`${DEMO?`<div class="nsec">Demo</div><a class="sub site on">${IC.pin}${DEMO_SITE}</a><a class="sub site add" onclick="endDemo()">${IC.up}Zur Anmeldung</a>`:st}<div class="nsec">Übersicht</div>${a(N.dash)}${a(N.tour)}${a(N.cal)}
- <div class="nsec">Bestand</div>${a(N.veh_l).replace('</a>',`<button class="ntog ${navVehOpen()?'open':''}" onclick="event.stopPropagation();navVehToggle()" title="${navVehOpen()?'Unterpunkte einklappen':'Neuwagen, Gebrauchtwagen, Schauraum, Archiv anzeigen'}" aria-label="Unterpunkte ein-/ausklappen" aria-expanded="${navVehOpen()}">${IC.chevd}</button></a>`)}${VSUB.filter(([f])=>navVehOpen()||!NVFOLD.includes(f)||(S.view==='veh_l'&&S.fl===f)).map(sub).join('')}${a(N.prob)}${a(N.notes)}
+ <div class="nsec">Bestand</div>${a(N.veh_l).replace('</a>',`<button class="ntog ${navVehOpen()?'open':''}" onclick="event.stopPropagation();navVehToggle()" title="${navVehOpen()?'Unterpunkte einklappen':'Neuwagen, Gebrauchtwagen, Schauraum, Archiv anzeigen'}" aria-label="Unterpunkte ein-/ausklappen" aria-expanded="${navVehOpen()}">${IC.chevd}</button></a>`)}${VSUB.filter(([f])=>navVehOpen()||!NVFOLD.includes(f)||(S.view==='veh_l'&&S.fl===f)).map(sub).join('')}${a(N.pk)}${a(N.prob)}${a(N.notes)}
  <div class="nsec">Verwaltung</div><a data-v="imp" onclick="importModal()" title="Fahrzeugliste importieren">${IC.up}<span class="lb">Liste importieren</span></a>${a(N.set)}`}
 /* Unterpunkte Neuwagen / Gebrauchtwagen / Im Schauraum / Archiv einklappbar (pro Gerät gemerkt) */
 const NVFOLD=['new','used','show','arch'];
@@ -2148,7 +2310,7 @@ function renderNav(){const late=activeTasks().filter(t=>t.status!=='Erledigt'&&t
  <button class="scanb" onclick="scanModal()" title="FIN scannen oder suchen">${IC.scan}<span class="lb">FIN scannen</span></button>
  <div class="sitem">${DEMO?`<button class="btn sm sitebtn" onclick="endDemo()">Demo beenden</button>`:dd(IC.pin+'<span>'+E(siteLbl())+'</span>'+IC.chevd,[...SITES().map(x=>[IC.pin,E(x)+(S.site===x?' ✓':''),`setSite('${E(x).replace(/'/g,"\\'")}')`]),SITES().length>1?[IC.pin,'Alle Standorte'+(S.site==='*'?' ✓':''),"setSite('*')"]:null,'-',[IC.plus,'Standort hinzufügen','siteModal()']],{b:'sm sitebtn',title:'Standort wechseln'})}</div>
  <button class="relb relb-m${syncWait.size?' spin':''}" onclick="appReload(this)" title="App aktualisieren" aria-label="App aktualisieren">${IC.reload}</button>
- <div class="mnav">${dd(IC.menu+(pr?`<span class="mn-n">${pr}</span>`:''),[[IC.warn,'Probleme'+(pr?` <b class="mn-c">${pr}</b>`:''),"go('prob')"],[IC.note,'Notizen',"go('notes')"],[IC.up,'Liste importieren<small>Excel, CSV oder PDF</small>','importModal()'],[IC.set,'Einstellungen',"go('set')"],'-',[IC.user,E(me())+`<small>${E(S.acct.email||'')}</small>`,'profileModal()']],{b:'mnb',title:'Menü'})}</div>
+ <div class="mnav">${dd(IC.menu+(pr?`<span class="mn-n">${pr}</span>`:''),[[IC.pk,'§57a-Pickerl'+(pkCount()?` <b class="mn-c">${pkCount()}</b>`:''),"go('pk')"],[IC.warn,'Probleme'+(pr?` <b class="mn-c">${pr}</b>`:''),"go('prob')"],[IC.note,'Notizen',"go('notes')"],[IC.up,'Liste importieren<small>Excel, CSV oder PDF</small>','importModal()'],[IC.set,'Einstellungen',"go('set')"],'-',[IC.user,E(me())+`<small>${E(S.acct.email||'')}</small>`,'profileModal()']],{b:'mnb',title:'Menü'})}</div>
  <button class="me" onclick="profileModal()" title="Profil"><span class="av">${E(initials(me()))}</span><div><b>${E(me())}</b><small>${E(S.acct.email)}</small></div></button>`;
  const on=v=>S.view===v||(S.view==='veh'&&v==='veh_l'),TB=[['dash','Start',IC.dash,late],['tour','Rundgang',IC.route],['scan','Scannen',IC.scan],['cal','Kalender',IC.cal],['veh_l','Fahrzeuge',IC.car]];
  $('tabbar').innerHTML=TB.map(([v,l,ic,c])=>v==='scan'?`<button class="tb-scan" onclick="scanModal()" aria-label="FIN scannen"><span class="tb-c">${ic}</span><span>${l}</span></button>`:
@@ -2246,7 +2408,7 @@ function render(){if(!db||!S.acct||$('app').hidden)return;applySite();
  renderNav();
  /* Noch keine Daten (z. B. direkt nach „Aktualisieren“, Zwischenspeicher leer): Ladeanzeige statt lauter Nullen */
  if((syncWait.has('veh')&&!S.veh.length)||(syncWait.has('tasks')&&!S.tasks.length)){$('main').innerHTML='<div style="display:grid;place-items:center;min-height:50vh;color:var(--mu)"><p>Wird geladen …</p></div>';return}
- const f={dash,tour,cal,veh_l:vlist,veh:vdet,notes:notesPage,prob:()=>`<div class="head"><h2>Probleme</h2><button class="btn p" onclick="probModal()">${IC.plus} Problem melden</button></div><section class="panel">${probTbl(S.prob.slice(),1)}</section>`,set:sett}[S.view]||dash;
+ const f={dash,tour,cal,veh_l:vlist,veh:vdet,notes:notesPage,pk:pkPage,prob:()=>`<div class="head"><h2>Probleme</h2><button class="btn p" onclick="probModal()">${IC.plus} Problem melden</button></div><section class="panel">${probTbl(S.prob.slice(),1)}</section>`,set:sett}[S.view]||dash;
  const a=document.activeElement&&document.activeElement.id;$('main').innerHTML=demoBar()+f()+(S.selMode?selBar():'');document.body.classList.toggle('has-sel',S.selMode);
  if(a&&$(a)&&(a==='q'||a==='nq'||a==='ntx')){const e=$(a);e.focus();try{e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}
 document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;render()}else if(e.target.id==='nq'){S.nq=e.target.value;render()}else if(e.target.id==='ntx')S.nDraft[S.view+'|'+S.sel]=e.target.value});
