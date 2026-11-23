@@ -811,8 +811,8 @@ let db=null;
 const me=()=>S.acct?S.acct.name:'unbekannt';
 
 /* ---------- Pflegeplan (TQS Anlage 1, 3.2) ---------- */
-/* Plan reicht immer bis 2 Jahre nach heute (mindestens 2 Jahre nach Eingang) */
-const planEnd=v=>{const a=addM(v.deliv||TD(),24),b=addM(TD(),24);return a>b?a:b};
+/* Plan reicht immer bis Jahresende in 2 Jahren (2026 → 31.12.2028); am 1. Jänner wird er für alle Fahrzeuge um ein Jahr verlängert. Mindestens 2 Jahre nach Eingang. */
+const planEnd=v=>{const a=addM(v.deliv||TD(),24),b=(new Date().getFullYear()+2)+'-12-31';return a>b?a:b};
 function planFor(v){const out=[];if(!v.deliv||v.archived)return out;const d=v.deliv,hv=v.hyb||v.ev;
  if(hv)out.push({k:'hv0',cat:'hv',t:'HV-Batterie prüfen',w:'≤ 14 Tage nach Eingang',due:addD(d,14)});
  out.push({k:'pflege',cat:'folie',t:'Folie applizieren (falls erforderlich)',w:'≤ 14 Tage nach Eingang',due:addD(d,14)});
@@ -1939,7 +1939,7 @@ function sett(){const c=S.cfg,tab=SETT.some(t=>t[0]===S.setTab)?S.setTab:'allg',
  ${G('plan',`<section class="panel"><div class="ph"><h3>Pflegeprogramm Neufahrzeuge</h3><span class="muted">TQS Anlage 1, Abschnitt 3.2 · Fristen ab Eingangsdatum</span></div>
  <div class="scroll"><table class="mx"><tr><th>Termin</th><th>Reifendruck</th><th>12V-Batterie</th><th>HV-Batterie</th><th>Bremsen</th><th>Folie</th><th>Säuberung</th></tr>
  ${rows.map(r=>`<tr><td><b>${r[0]}</b></td>${r[1]==='wdh'?`<td colspan="6" class="muted" style="text-align:center">${r[2]}</td>`:r[1].map(x=>`<td>${x?icon(x):''}</td>`).join('')}</tr>`).join('')}</table></div>
- <div class="pb hint" style="display:flex;flex-direction:column;gap:6px"><span>HV-Batterie nur bei Hybrid- und Elektrofahrzeugen. Der Plan reicht immer <b>2 Jahre über das heutige Datum</b> hinaus und wird automatisch verlängert (Eingang 2025 → Termine bis 2028). Die Termine wiederholen sich danach im Rhythmus von 3, 6, 9 und 12 Monaten. Neue Fahrzeuge starten mit Transportmodus <b>an</b> (12V vierteljährlich). Wird er auf der Fahrzeugseite mit Datum ausgeschaltet, ersetzt ab diesem Tag eine 12V-Batteriepflege alle 6 Wochen die vierteljährliche Prüfung. Einschalten ist danach nicht mehr möglich.</span><span>Für Porsche, Bentley und den Crafter gelten teilweise andere Vorgaben (TQS 3.1 Checkliste); diese sind hier nicht abgebildet.</span></div></section>
+ <div class="pb hint" style="display:flex;flex-direction:column;gap:6px"><span>HV-Batterie nur bei Hybrid- und Elektrofahrzeugen. Der Plan reicht immer <b>bis zum Jahresende in 2 Jahren</b> und wird <b>jeden 1. Jänner für alle Fahrzeuge um ein Jahr verlängert</b> (2026 → Termine bis 31.12.2028, ab 01.01.2027 bis 31.12.2029). Die Termine wiederholen sich danach im Rhythmus von 3, 6, 9 und 12 Monaten. Neue Fahrzeuge starten mit Transportmodus <b>an</b> (12V vierteljährlich). Wird er auf der Fahrzeugseite mit Datum ausgeschaltet, ersetzt ab diesem Tag eine 12V-Batteriepflege alle 6 Wochen die vierteljährliche Prüfung. Einschalten ist danach nicht mehr möglich.</span><span>Für Porsche, Bentley und den Crafter gelten teilweise andere Vorgaben (TQS 3.1 Checkliste); diese sind hier nicht abgebildet.</span></div></section>
  <section class="panel" style="max-width:640px"><div class="ph"><h3>Grenzwerte und Intervalle</h3></div><div class="pb" style="display:flex;flex-direction:column;gap:14px">
  <label class="f">12V-Batteriepflege bei Transportmodus aus: Intervall in Tagen<input type="number" min="7" id="s_wk" value="${c.wk}"></label>
  <label class="f">„Bitte Laden!“ bei 12V-Spannung unter (Volt)<input type="number" step="0.1" id="s_v12" value="${c.v12}"></label>
@@ -2450,8 +2450,10 @@ function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=
    Die Einstellungen sind nötig, weil der 12V-Pflegeabstand (cfg.wk) die Termine bestimmt: ohne sie würde mit dem
    Standardwert (6 Wochen) gerechnet und der Plan bei jedem Neuladen umgeschrieben. */
 const srvOk={veh:0,tasks:0,cfg:0};
-async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks||!srvOk.veh||!srvOk.tasks||!srvOk.cfg)return;S.migrated=true;try{for(const v of RAW.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
+async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks||!srvOk.veh||!srvOk.tasks||!srvOk.cfg)return;S.migrated=true;S.migY=new Date().getFullYear();try{for(const v of RAW.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
 function signedIn(u){S.acct={email:u.email,uid:u.uid,name:u.displayName||u.email.split('@')[0]};enterApp()}
+/* Jahreswechsel bei offener App: Pflegepläne aller Fahrzeuge sofort um ein Jahr verlängern */
+setInterval(()=>{if(S.migrated&&S.migY&&new Date().getFullYear()!==S.migY){S.migrated=false;migrate().then(()=>render())}},6e4);
 function signedOut(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];subscribed=false;S.migrated=false;srvOk.veh=srvOk.tasks=srvOk.cfg=0;S.ready={veh:0,tasks:0};S.veh=[];S.tasks=[];S.taskAll=[];S.prob=[];S.log=[];RAW.veh=[];RAW.tasks=[];RAW.prob=[];RAW.log=[];RAW.notes=[];S.notes=[];
  const was=!!S.acct||autoOut;S.acct=null;S.pickSite=false;S.cfgOk=0;$('sitepick').hidden=true;$('sitepick').innerHTML='';try{localStorage.removeItem('tqsAct')}catch(e){}$('mod').hidden=true;$('mb').innerHTML='';$('app').hidden=true;$('boot').hidden=true;$('auth').hidden=false;if(was){authTab('login');msg('mLogin',autoOut?'Du wurdest nach 4 Stunden ohne Nutzung automatisch abgemeldet. Bitte neu anmelden.':'Du wurdest abgemeldet.',1)}autoOut=false}
 
