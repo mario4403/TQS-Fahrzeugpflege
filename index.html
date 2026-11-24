@@ -41,7 +41,7 @@ const firebaseConfig = {
  --ok:#1d8a54;--okb:#e2f4ea;--wa:#a26700;--wab:#fdf1d4;--ba:#cc3a32;--bab:#fde7e4;--gr:#5f6c7a;--grb:#edf1f5;
  --pub:#f1edfc;--glass:#2b3a48;--carline:rgba(15,25,35,.45);--shadow:rgba(16,28,39,.12);
  --sh1:0 1px 2px rgba(16,28,39,.05),0 1px 1px rgba(16,28,39,.03);--sh2:0 2px 6px rgba(16,28,39,.05),0 10px 28px rgba(16,28,39,.07);--sh3:0 24px 60px rgba(8,16,24,.22);
- --ease:cubic-bezier(.2,.8,.2,1);--ease-in:cubic-bezier(.4,0,1,1);--t1:120ms;--t2:200ms;--t3:280ms;
+ --ease:cubic-bezier(.2,.8,.2,1);--ease-in:cubic-bezier(.4,0,1,1);--ease-io:cubic-bezier(.45,0,.25,1);--t1:120ms;--t2:200ms;--t3:280ms;--th:240ms;
  --f-disp:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
  --f-body:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -628,11 +628,23 @@ body.mopen{overflow:hidden}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* ===== Bewegung: kurz (120–280 ms), zweckgebunden, abschaltbar über „Bewegung reduzieren“ ===== */
-.btn,.chips button,.qchk,.kpi,.panel,.vc,.tl li,.fleet tr,.pkr,.pkd,.ngh,nav a,.tabs button,.toggle,.sw-t,.sw-t::after,input,select,textarea{transition:background-color var(--t2) var(--ease),border-color var(--t2) var(--ease),color var(--t2) var(--ease),box-shadow var(--t2) var(--ease),transform var(--t1) var(--ease),opacity var(--t2) var(--ease)}
+/* Hover: jeder Zustandswechsel blendet mit sanftem Ease-in-out ein und wieder aus */
+.btn,.chips button,.qchk,.kpi,.panel,.vc,.tl li,.fleet tr,.fleet td,.pkr,.pkd,.ngh,.vgp summary,.scl li,nav a,.nl a,.me,.relb,.scanb,.ntog,.del-x,.fin-copy,.tabs button,.ddm button,.yr button,.toggle,.sw-t,.chip,.tag,.vhero img.photo,input,select,textarea{transition:background-color var(--th) var(--ease-io),border-color var(--th) var(--ease-io),color var(--th) var(--ease-io),box-shadow var(--th) var(--ease-io),transform var(--th) var(--ease-io),opacity var(--th) var(--ease-io),filter var(--th) var(--ease-io)}
+.ntog .ic,.vgp summary .ic,.ngh .chev{transition:transform var(--th) var(--ease-io)}
+.btn:hover{background-color:var(--sf2);box-shadow:var(--sh1)}
+.btn.p:hover{background-color:var(--ac);filter:brightness(1.08);box-shadow:0 4px 12px color-mix(in srgb,var(--ac) 30%,transparent);transform:translateY(-1px)}
+.btn.p:active,.btn:active{transform:scale(.97);box-shadow:none}
+.nl a:hover:not(.on){transform:translateX(2px)}
+.chips button:hover:not(.on){background-color:var(--sf2);color:var(--tx)}
+.tabs button:hover:not(.on){color:var(--tx);background-color:var(--sf2)}
+.ddm button:hover{background-color:var(--sf2)}
+.fleet tbody tr:hover td{background-color:var(--sf2)}
+.pkr:hover .pkpl,.pkd:hover .pkpl{transform:rotate(-2deg) scale(1.03)}.pkpl{transition:transform var(--th) var(--ease-io)}
+.tl li:hover .qchk{border-color:color-mix(in srgb,var(--ok) 55%,var(--bd))}
 .sw-t::after{transition:left var(--t2) var(--ease),background-color var(--t2) var(--ease)}
 .btn:active,.chips button:active,.qchk:active,.relb:active{transform:scale(.97)}
 .panel{box-shadow:var(--sh1)}
-.vc:hover,.kpi[role=button]:hover{transform:translateY(-1px);box-shadow:var(--sh2)}
+.vc:hover,.kpi[role=button]:hover,.pkr:hover{box-shadow:var(--sh2)}.vc:hover,.kpi[role=button]:hover{transform:translateY(-2px)}
 input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px var(--acs);border-color:var(--ac)}
 /* Seitenwechsel: Inhalt gleitet sanft herein, Bereiche leicht versetzt */
 @keyframes pgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
