@@ -14,7 +14,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>/* Erscheinungsbild vor dem ersten Zeichnen setzen (kein Aufflackern) */
-(function(){var t='auto';try{t=localStorage.getItem('tqs_theme')||'auto'}catch(e){}if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)})();</script>
+(function(){var t='auto';try{t=localStorage.getItem('tqs_theme')||'auto'}catch(e){}if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);if(t==='light'){var m=document.querySelector('meta[name=theme-color]');if(m)m.content='#ffffff'}})();</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -690,6 +690,24 @@ summary .chev,details>summary svg:last-child{transition:transform var(--t2) var(
 .chips button.on{box-shadow:var(--sh1)}
 @keyframes pkPunch{from{transform:scale(1.6);opacity:0}to{transform:none;opacity:1}}
 .pk-prev .pkpl g[fill="#1c2227"] circle{transform-box:fill-box;transform-origin:center;animation:pkPunch 240ms var(--ease) both}
+/* ===== Anzeige „Hell“: Seitenleiste, obere und untere Leiste ebenfalls hell ===== */
+:root[data-theme="light"] nav,:root[data-theme="light"] #tabbar{--nav:#ffffff;--navtx:#56636f;--navhi:#0f1c27;--navac:#e09412}
+:root[data-theme="light"] nav{border-right:1px solid var(--bd);box-shadow:4px 0 18px rgba(16,28,39,.035)}
+:root[data-theme="light"] .nl a:hover{background:var(--sf2);color:var(--navhi)}
+:root[data-theme="light"] .nl a.on{background:var(--acs);color:var(--ac)}
+:root[data-theme="light"] .nl a.sub.on,:root[data-theme="light"] .nl a.sub.site.on{background:var(--sf2);color:var(--navhi)}
+:root[data-theme="light"] .nsec{opacity:.75}
+:root[data-theme="light"] .ntog:hover,:root[data-theme="light"] .relb-n:hover{background:var(--sf2);color:var(--navhi)}
+:root[data-theme="light"] .me{background:var(--sf2);border:1px solid var(--bd)}:root[data-theme="light"] .me:hover{background:var(--grb)}
+:root[data-theme="light"] .scanb{background:#fff4e0;color:#a86400}:root[data-theme="light"] .scanb:hover{background:#ffe9c2}
+@media(max-width:760px){
+ :root[data-theme="light"] nav{border-right:0;border-bottom:1px solid var(--bd);box-shadow:0 2px 12px rgba(16,28,39,.05)}
+ :root[data-theme="light"] .sitem .sitebtn,:root[data-theme="light"] .mnav .mnb{background:var(--sf2);border:1px solid var(--bd);color:var(--navhi)}
+ :root[data-theme="light"] .relb-m{color:var(--navtx)}
+ :root[data-theme="light"] #tabbar{border-top:1px solid var(--bd);box-shadow:0 -2px 14px rgba(16,28,39,.06)}
+ :root[data-theme="light"] #tabbar button{color:#66737f}
+ :root[data-theme="light"] #tabbar button.on{color:var(--ac);background:var(--acs)}
+}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}}
 </style>
 
@@ -2089,7 +2107,7 @@ function appPanel(){let body;
 async function installApp(){if(!installEvt)return;installEvt.prompt();try{await installEvt.userChoice}catch(e){}installEvt=null;render()}
 function getTheme(){try{return localStorage.getItem('tqs_theme')||'auto'}catch(e){return'auto'}}
 function setTheme(t){try{localStorage.setItem('tqs_theme',t)}catch(e){}
- if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);render()}
+ if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);{const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#ffffff':'#132029'}render()}
 async function saveCfg(){const c={wk:+$('s_wk').value||42,v12:+$('s_v12').value||12.5,hv:+$('s_hv').value||25};try{await db.doc('settings/cfg').set(c,{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}S.cfg={...S.cfg,...c};for(const v of S.veh)await sync(v);toast('Gespeichert. Termine wurden neu berechnet.')}
 
 /* ---------- FIN scannen / suchen ---------- */
