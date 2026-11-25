@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=2">
-<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png?v=2">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png?v=3">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <meta name="theme-color" content="#132029">
 <meta name="apple-mobile-web-app-title" content="TQS Pflege">
 <link rel="manifest" href="manifest.webmanifest">
@@ -161,7 +161,7 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:50
 .a-side{background:var(--nav);color:var(--navtx);padding-block:48px;padding-left:max(40px,env(safe-area-inset-left,0px));padding-right:40px;display:flex;flex-direction:column;justify-content:space-between;gap:32px;position:relative;overflow:hidden}
 .a-side::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:repeating-linear-gradient(-45deg,var(--navac) 0 14px,transparent 14px 28px);opacity:.85}
 .brand{display:flex;align-items:center;gap:10px;color:var(--navhi)}
-.brand .mk{width:36px;height:36px;border-radius:9px;display:block;flex:0 0 auto;object-fit:cover;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.brand .mk{width:36px;height:36px;border-radius:9px;display:block;flex:0 0 auto;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .brand b{font:600 18px var(--f-disp);letter-spacing:.02em}
 .brand small{display:block;font-size:11px;color:var(--navtx);letter-spacing:.06em;text-transform:uppercase}
 .a-side h1{color:var(--navhi);font-size:clamp(30px,4vw,46px);line-height:1.05;max-width:14ch}
@@ -718,7 +718,7 @@ summary .chev,details>summary svg:last-child{transition:transform var(--t2) var(
 <div id="sitepick" hidden></div>
 <div id="auth" hidden>
  <aside class="a-side">
-  <div class="brand"><img class="mk" src="icon-192.png?v=3" alt="TQS Fahrzeugpflege" width="34" height="34"><div><b>Fahrzeugpflege</b><small>Autohaus Reiser</small></div></div>
+  <div class="brand"><svg class="mk" viewBox="0 0 120 120" role="img" aria-label="Fahrzeugpflege"><rect width="120" height="120" rx="27" fill="#0c6fa4"/><g transform="translate(13.2 13.2) scale(.78)"><path d="M48.96 7.14A54 54 0 0 1 71.04 7.14L68.18 20.85A40 40 0 0 0 51.82 20.85Z" fill="#ffffff"/><path d="M76.87 8.70A54 54 0 0 1 95.99 19.74L86.66 30.18A40 40 0 0 0 72.49 22.00Z" fill="#ffffff"/><path d="M100.26 24.01A54 54 0 0 1 111.30 43.13L98.00 47.51A40 40 0 0 0 89.82 33.34Z" fill="#f2a93b"/><path d="M112.86 48.96A54 54 0 0 1 112.86 71.04L99.15 68.18A40 40 0 0 0 99.15 51.82Z" fill="#ffffff"/><path d="M111.30 76.87A54 54 0 0 1 100.26 95.99L89.82 86.66A40 40 0 0 0 98.00 72.49Z" fill="#ffffff"/><path d="M95.99 100.26A54 54 0 0 1 76.87 111.30L72.49 98.00A40 40 0 0 0 86.66 89.82Z" fill="#ffffff"/><path d="M71.04 112.86A54 54 0 0 1 48.96 112.86L51.82 99.15A40 40 0 0 0 68.18 99.15Z" fill="#ffffff"/><path d="M43.13 111.30A54 54 0 0 1 24.01 100.26L33.34 89.82A40 40 0 0 0 47.51 98.00Z" fill="#ffffff"/><path d="M19.74 95.99A54 54 0 0 1 8.70 76.87L22.00 72.49A40 40 0 0 0 30.18 86.66Z" fill="#ffffff"/><path d="M7.14 71.04A54 54 0 0 1 7.14 48.96L20.85 51.82A40 40 0 0 0 20.85 68.18Z" fill="#ffffff"/><path d="M8.70 43.13A54 54 0 0 1 19.74 24.01L30.18 33.34A40 40 0 0 0 22.00 47.51Z" fill="#ffffff"/><path d="M24.01 19.74A54 54 0 0 1 43.13 8.70L47.51 22.00A40 40 0 0 0 33.34 30.18Z" fill="#ffffff"/><circle cx="60" cy="60" r="33" fill="#ffffff"/><path d="M45.5 61l9.5 9.5 20-21" fill="none" stroke="#0c6fa4" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g></svg><div><b>Fahrzeugpflege</b></div></div>
   <div>
    <h1>Pflegeplan für jedes Fahrzeug</h1>
    <p>Jedes Fahrzeug bekommt beim Anlegen automatisch seinen Pflegeplan, immer bis zwei Jahre im Voraus: Batterie, Reifendruck, Bremsen, Folie und Säuberung, nach TQS Anlage 1, Abschnitt 3.2.</p>
@@ -734,7 +734,7 @@ summary .chev,details>summary svg:last-child{transition:transform var(--t2) var(
    <form id="fLogin" novalidate>
     <div><h2>Willkommen zurück</h2><p class="hint">Melde dich mit deiner Firmen-E-Mail an.</p></div>
     <p class="msg" id="mLogin" role="alert"></p>
-    <label class="f">E-Mail<input id="lEmail" type="email" autocomplete="username" placeholder="vorname.nachname@autohaus-reiser.at"></label>
+    <label class="f">E-Mail<input id="lEmail" type="email" autocomplete="username" placeholder="vorname.nachname@firma.at"></label>
     <label class="f">Passwort<span class="pw"><input id="lPw" type="password" autocomplete="current-password"><button type="button" onclick="togglePw('lPw',this)">Zeigen</button></span></label>
     <div class="row"><span class="muted" style="font-size:12.5px">Nach 4 Stunden ohne Nutzung wirst du automatisch abgemeldet.</span><button type="button" class="link" onclick="authTab('reset')">Passwort vergessen?</button></div>
     <button class="btn p" type="submit" id="lBtn" style="justify-content:center;padding:11px">Anmelden</button>
@@ -745,10 +745,10 @@ summary .chev,details>summary svg:last-child{transition:transform var(--t2) var(
    </form>
 
    <form id="fReg" novalidate hidden>
-    <div><h2>Konto erstellen</h2><p class="hint">Nur mit einer E-Mail-Adresse <b>@autohaus-reiser.at</b>.</p></div>
+    <div><h2>Konto erstellen</h2><p class="hint">Nur mit deiner Firmen-E-Mail-Adresse.</p></div>
     <p class="msg" id="mReg" role="alert"></p>
     <div class="fg"><label class="f">Vorname<input id="rFirst" autocomplete="given-name"></label><label class="f">Nachname<input id="rLast" autocomplete="family-name"></label></div>
-    <label class="f">Firmen-E-Mail<input id="rEmail" type="email" autocomplete="email" placeholder="vorname.nachname@autohaus-reiser.at"></label>
+    <label class="f">Firmen-E-Mail<input id="rEmail" type="email" autocomplete="email" placeholder="vorname.nachname@firma.at"></label>
     <label class="f">Passwort<span class="pw"><input id="rPw" type="password" autocomplete="new-password"><button type="button" onclick="togglePw('rPw',this)">Zeigen</button></span>
      <span class="meter" id="rMeter"><i></i><i></i><i></i><i></i></span><span class="hint" id="rPwHint">Mindestens 8 Zeichen, mit Buchstaben und Ziffern.</span></label>
     <label class="f">Passwort wiederholen<input id="rPw2" type="password" autocomplete="new-password"></label>
@@ -980,6 +980,8 @@ let tT;function toast(m,undo){const t=$('toast');t.innerHTML='';const s=document
 
 /* ---------- Konto (Firebase Authentication) ---------- */
 const DOMAIN='@autohaus-reiser.at';
+/* Logo: Siegel mit 12 Monatssegmenten (Prüfintervall), ein Segment gelocht, Haken */
+const LOGO='<svg class="mk" viewBox="0 0 120 120" role="img" aria-label="Fahrzeugpflege"><rect width="120" height="120" rx="27" fill="#0c6fa4"/><g transform="translate(13.2 13.2) scale(.78)"><path d="M48.96 7.14A54 54 0 0 1 71.04 7.14L68.18 20.85A40 40 0 0 0 51.82 20.85Z" fill="#ffffff"/><path d="M76.87 8.70A54 54 0 0 1 95.99 19.74L86.66 30.18A40 40 0 0 0 72.49 22.00Z" fill="#ffffff"/><path d="M100.26 24.01A54 54 0 0 1 111.30 43.13L98.00 47.51A40 40 0 0 0 89.82 33.34Z" fill="#f2a93b"/><path d="M112.86 48.96A54 54 0 0 1 112.86 71.04L99.15 68.18A40 40 0 0 0 99.15 51.82Z" fill="#ffffff"/><path d="M111.30 76.87A54 54 0 0 1 100.26 95.99L89.82 86.66A40 40 0 0 0 98.00 72.49Z" fill="#ffffff"/><path d="M95.99 100.26A54 54 0 0 1 76.87 111.30L72.49 98.00A40 40 0 0 0 86.66 89.82Z" fill="#ffffff"/><path d="M71.04 112.86A54 54 0 0 1 48.96 112.86L51.82 99.15A40 40 0 0 0 68.18 99.15Z" fill="#ffffff"/><path d="M43.13 111.30A54 54 0 0 1 24.01 100.26L33.34 89.82A40 40 0 0 0 47.51 98.00Z" fill="#ffffff"/><path d="M19.74 95.99A54 54 0 0 1 8.70 76.87L22.00 72.49A40 40 0 0 0 30.18 86.66Z" fill="#ffffff"/><path d="M7.14 71.04A54 54 0 0 1 7.14 48.96L20.85 51.82A40 40 0 0 0 20.85 68.18Z" fill="#ffffff"/><path d="M8.70 43.13A54 54 0 0 1 19.74 24.01L30.18 33.34A40 40 0 0 0 22.00 47.51Z" fill="#ffffff"/><path d="M24.01 19.74A54 54 0 0 1 43.13 8.70L47.51 22.00A40 40 0 0 0 33.34 30.18Z" fill="#ffffff"/><circle cx="60" cy="60" r="33" fill="#ffffff"/><path d="M45.5 61l9.5 9.5 20-21" fill="none" stroke="#0c6fa4" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g></svg>';
 const okDomain=e=>/^[^\s@]+@autohaus-reiser\.at$/i.test(e.trim());
 const okMail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
 const pwOk=p=>p.length>=8&&/[A-Za-zÄÖÜäöüß]/.test(p)&&/\d/.test(p);
@@ -993,13 +995,13 @@ const errText=e=>ERR[e&&e.code]||('Das hat nicht geklappt'+(e&&e.code?' ('+e.cod
 let holdAuth=false;
 
 $('rPw').addEventListener('input',e=>{const s=pwScore(e.target.value),col=['var(--ba)','var(--ba)','var(--wa)','var(--ok)','var(--ok)'];[...$('rMeter').children].forEach((i,k)=>i.style.background=k<s?col[s]:'');$('rPwHint').textContent=e.target.value?(['','Sehr schwach','Schwach','Gut','Stark'][s]+(pwOk(e.target.value)?'':' · mindestens 8 Zeichen, Buchstaben und Ziffern')):'Mindestens 8 Zeichen, mit Buchstaben und Ziffern.'});
-$('rEmail').addEventListener('blur',e=>{const v=e.target.value.trim();if(v&&okMail(v)&&!okDomain(v))msg('mReg','Kein Firmenkonto! Registrierung nur mit einer E-Mail-Adresse '+DOMAIN+' möglich.')});
+$('rEmail').addEventListener('blur',e=>{const v=e.target.value.trim();if(v&&okMail(v)&&!okDomain(v))msg('mReg','Kein Firmenkonto! Registrierung nur mit deiner Firmen-E-Mail-Adresse möglich.')});
 
 $('fReg').addEventListener('submit',async e=>{e.preventDefault();msg('mReg','');
  const first=$('rFirst').value.trim(),last=$('rLast').value.trim(),email=$('rEmail').value.trim().toLowerCase(),pw=$('rPw').value,pw2=$('rPw2').value;
  if(!first||!last)return msg('mReg','Bitte Vor- und Nachnamen eingeben.');
  if(!okMail(email))return msg('mReg','Bitte eine gültige E-Mail-Adresse eingeben.');
- if(!okDomain(email))return msg('mReg','Kein Firmenkonto! Registrierung nur mit einer E-Mail-Adresse '+DOMAIN+' möglich.');
+ if(!okDomain(email))return msg('mReg','Kein Firmenkonto! Registrierung nur mit deiner Firmen-E-Mail-Adresse möglich.');
  if(!pwOk(pw))return msg('mReg','Das Passwort braucht mindestens 8 Zeichen, mit Buchstaben und Ziffern.');
  if(pw!==pw2)return msg('mReg','Die Passwörter stimmen nicht überein.');
  if(!$('rAgree').checked)return msg('mReg','Bitte bestätige die dienstliche Nutzung.');
@@ -1012,7 +1014,7 @@ $('fReg').addEventListener('submit',async e=>{e.preventDefault();msg('mReg','');
 $('fLogin').addEventListener('submit',async e=>{e.preventDefault();msg('mLogin','');
  const email=$('lEmail').value.trim().toLowerCase(),pw=$('lPw').value;
  if(!okMail(email))return msg('mLogin','Bitte eine gültige E-Mail-Adresse eingeben.');
- if(!okDomain(email))return msg('mLogin','Kein Firmenkonto! Anmeldung nur mit einer E-Mail-Adresse '+DOMAIN+' möglich.');
+ if(!okDomain(email))return msg('mLogin','Kein Firmenkonto! Anmeldung nur mit deiner Firmen-E-Mail-Adresse möglich.');
  if(!pw)return msg('mLogin','Bitte das Passwort eingeben.');
  busy('lBtn',true,'Anmelden …');holdAuth=true;
  try{await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
@@ -1024,7 +1026,7 @@ $('fLogin').addEventListener('submit',async e=>{e.preventDefault();msg('mLogin',
 
 $('fReset').addEventListener('submit',async e=>{e.preventDefault();msg('mReset','');
  const email=$('xEmail').value.trim().toLowerCase();
- if(!okDomain(email))return msg('mReset','Kein Firmenkonto! Nur E-Mail-Adressen '+DOMAIN+'.');
+ if(!okDomain(email))return msg('mReset','Kein Firmenkonto! Nur mit deiner Firmen-E-Mail-Adresse möglich.');
  try{await auth.sendPasswordResetEmail(email);msg('mReset','Falls zu '+email+' ein Konto existiert, ist der Link zum Zurücksetzen jetzt unterwegs. Bitte Postfach prüfen.',1)}
  catch(err){msg('mReset',err.code==='auth/user-not-found'?'Falls zu dieser E-Mail ein Konto existiert, ist der Link jetzt unterwegs.':errText(err))}});
 
@@ -1078,7 +1080,7 @@ function sessCheck(){if(DEMO)return;if(S.acct&&actAge()>SESS){autoOut=true;auth.
 setInterval(sessCheck,30e3);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sessCheck()});
 /* Nach dem Anmelden: Standort wählen */
 function sitePickHtml(){const L=SITES(),n=x=>RAW.veh.filter(v=>!v.archived&&siteOf(v)===x).length;
- return`<div class="sp-box"><img class="mk" src="icon-192.png?v=3" alt="" width="46" height="46"><h1>Standort wählen</h1><p class="muted">Hallo ${E((S.acct&&S.acct.name||'').split(' ')[0])}, an welchem Standort arbeitest du heute?</p>
+ return`<div class="sp-box">${LOGO.replace('class="mk"','class="mk" style="width:46px;height:46px"')}<h1>Standort wählen</h1><p class="muted">Hallo ${E((S.acct&&S.acct.name||'').split(' ')[0])}, an welchem Standort arbeitest du heute?</p>
  ${S.cfgOk?`<div class="sp-list">${L.map((x,i)=>`<button class="sp-btn" onclick="pickSite(${i})">${IC.pin}<b>${E(x)}</b>${S.ready.veh?`<small>${n(x)} ${n(x)===1?'Fahrzeug':'Fahrzeuge'}</small>`:''}</button>`).join('')}</div>
  ${L.length>1?`<button class="link" onclick="pickSite(-1)">Alle Standorte anzeigen</button>`:''}`:'<p class="muted">Wird geladen …</p>'}
  <button class="link sp-out" onclick="logout()">Abmelden</button></div>`}
@@ -2409,7 +2411,7 @@ function navVehToggle(){const open=navVehOpen(),set=()=>{try{localStorage.setIte
  Promise.all(els.map(a=>a.animate([{opacity:1,height:a.offsetHeight+'px'},{opacity:0,height:'0px',paddingTop:'0px',paddingBottom:'0px',marginTop:'0px',marginBottom:'0px'}],{duration:180,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'}).finished)).then(set,set)}
 const VSUB=[['new','Neuwagen'],['used','Gebrauchtwagen'],['show','Im Schauraum'],['miss','Fehlende Daten'],['arch','Archiv']];
 function renderNav(){const late=activeTasks().filter(t=>t.status!=='Erledigt'&&t.due<TD()).length,pr=S.prob.filter(p=>p.status==='Offen').length;
- $('nav').innerHTML=`<div class="brand"><img class="mk" src="icon-192.png?v=3" alt="TQS Fahrzeugpflege" width="34" height="34"><div><b>Fahrzeugpflege</b><small>${DEMO?'Demo-Version':'Autohaus Reiser'}</small></div><button class="relb relb-n${syncWait.size?' spin':''}" onclick="appReload(this)" title="App aktualisieren (neueste Version laden)" aria-label="App aktualisieren">${IC.reload}</button></div>
+ $('nav').innerHTML=`<div class="brand">${LOGO}<div><b>Fahrzeugpflege</b>${DEMO?'<small>Demo-Version</small>':''}</div><button class="relb relb-n${syncWait.size?' spin':''}" onclick="appReload(this)" title="App aktualisieren (neueste Version laden)" aria-label="App aktualisieren">${IC.reload}</button></div>
  <div class="nl">${navHtml(late,pr)}</div>
  <button class="scanb" onclick="scanModal()" title="FIN scannen oder suchen">${IC.scan}<span class="lb">FIN scannen</span></button>
  <div class="sitem">${DEMO?`<button class="btn sm sitebtn" onclick="endDemo()">Demo beenden</button>`:dd(IC.pin+'<span>'+E(siteLbl())+'</span>'+IC.chevd,[...SITES().map(x=>[IC.pin,E(x)+(S.site===x?' ✓':''),`setSite('${E(x).replace(/'/g,"\\'")}')`]),SITES().length>1?[IC.pin,'Alle Standorte'+(S.site==='*'?' ✓':''),"setSite('*')"]:null,'-',[IC.plus,'Standort hinzufügen','siteModal()']],{b:'sm sitebtn',title:'Standort wechseln'})}</div>

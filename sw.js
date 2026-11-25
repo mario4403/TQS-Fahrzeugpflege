@@ -1,6 +1,6 @@
 /* TQS Fahrzeugpflege: Offline-Zwischenspeicher für die App selbst.
    Die Daten (Fahrzeuge, Maßnahmen) speichert Firebase offline selbst. */
-const V='tqs-shell-v3';
+const V='tqs-shell-v4';
 const SHELL=['./','./index.html','./favicon-32.png','./favicon-192.png','./apple-touch-icon.png','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon-maskable-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL)).catch(()=>{}).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
