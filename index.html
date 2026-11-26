@@ -969,9 +969,14 @@ function tireFromNote(n){if(!n)return null;const s=String(n).replace(/(\d),(\d)/
  const xs=[...s.matchAll(/(\d+(?:\.\d+)?)\s*(bar)?/gi)].filter(m=>m[2]||m[1].includes('.')).map(m=>+m[1]).filter(x=>x>=1&&x<=6);
  return xs.length?Math.min(...xs):null}
 async function tireMigrate(){if(DEMO||S.cfg.tireMig)return;const ts=RAW.tasks.filter(t=>catOf(t)==='reifen'&&t.status==='Erledigt'&&pnum(t.val)==null&&t.note&&tireFromNote(t.note)!=null);let n=0,fail=0;
- await pool(ts.map(t=>async()=>{const x=tireFromNote(t.note);try{await db.doc('tasks/'+t._id).update({val:String(x),cat:'reifen'});n++;log(t.fin,`Reifendruck aus der Bemerkung übernommen: ${nf(x,1)} bar (${t.title}, erledigt ${fmt(t.done||t.due)})`)}catch(e){fail++}}),6);
+ await pool(ts.map(t=>async()=>{const x=tireFromNote(t.note);t.note0=t.note;try{await db.doc('tasks/'+t._id).update({val:String(x),cat:'reifen',note:''});t.val=String(x);t.note='';n++;log(t.fin,`Reifendruck aus der Bemerkung übernommen: ${nf(x,1)} bar (${t.title}, erledigt ${fmt(t.done||t.due)}). Bisherige Bemerkung: „${t.note0||''}“`)}catch(e){fail++}}),6);
  if(!fail)try{await db.doc('settings/cfg').set({tireMig:new Date().toISOString(),tireMigN:n},{merge:true})}catch(e){}
  if(n)toast(`Reifendruck bei ${n} erledigten Maßnahmen aus der Bemerkung übernommen.`)}
+/* Einmalig: bei den Maßnahmen, deren Reifendruck aus der Bemerkung übernommen wurde, die Bemerkung leeren (alter Text bleibt in der Historie) */
+async function tireNoteClean(){if(DEMO||S.cfg.tireNoteMig)return;const ts=RAW.tasks.filter(t=>catOf(t)==='reifen'&&t.status==='Erledigt'&&t.note&&pnum(t.val)!=null&&tireFromNote(t.note)!=null&&Math.abs(tireFromNote(t.note)-pnum(t.val))<1e-9);let n=0,fail=0;
+ await pool(ts.map(t=>async()=>{try{await db.doc('tasks/'+t._id).update({note:''});n++;log(t.fin,`${t.title} (erledigt ${fmt(t.done||t.due)}): Bemerkung entfernt, Reifendruck ${nf(pnum(t.val),1)} bar ist als Messwert eingetragen. Bisherige Bemerkung: „${t.note}“`)}catch(e){fail++}}),6);
+ if(!fail)try{await db.doc('settings/cfg').set({tireNoteMig:new Date().toISOString(),tireNoteMigN:n},{merge:true})}catch(e){}
+ if(n)toast(`Bemerkung bei ${n} Reifendruck-Maßnahmen entfernt – der Wert steht jetzt in der Spalte „Reifendruck“.`)}
 function readings(fin){return S.tasks.filter(t=>(!fin||t.fin===fin)&&t.status==='Erledigt'&&isMeas(catOf(t))&&pnum(t.val)!=null).map(t=>({t,cat:catOf(t),v:pnum(t.val),d:t.done||t.due})).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0)}
 const low=r=>lowV(r.cat,r.v);
 function battLow(){const last={};readings().filter(r=>r.cat==='b12'||r.cat==='hv').forEach(r=>{if(!veh(r.t.fin).archived)last[r.t.fin+r.cat]=r});return[...new Set(Object.values(last).filter(low).map(r=>r.t.fin))]}
@@ -2577,7 +2582,7 @@ function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=
    Die Einstellungen sind nötig, weil der 12V-Pflegeabstand (cfg.wk) die Termine bestimmt: ohne sie würde mit dem
    Standardwert (6 Wochen) gerechnet und der Plan bei jedem Neuladen umgeschrieben. */
 const srvOk={veh:0,tasks:0,cfg:0};
-async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks||!srvOk.veh||!srvOk.tasks||!srvOk.cfg)return;S.migrated=true;S.migY=new Date().getFullYear();setTimeout(tireMigrate,2000);try{for(const v of RAW.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
+async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks||!srvOk.veh||!srvOk.tasks||!srvOk.cfg)return;S.migrated=true;S.migY=new Date().getFullYear();setTimeout(async()=>{await tireMigrate();await tireNoteClean()},2000);try{for(const v of RAW.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
 function signedIn(u){S.acct={email:u.email,uid:u.uid,name:u.displayName||u.email.split('@')[0]};enterApp()}
 /* Jahreswechsel bei offener App: Pflegepläne aller Fahrzeuge sofort um ein Jahr verlängern */
 setInterval(()=>{if(S.migrated&&S.migY&&new Date().getFullYear()!==S.migY){S.migrated=false;migrate().then(()=>render())}},6e4);
