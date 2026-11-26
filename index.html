@@ -451,14 +451,14 @@ td .car{width:84px;height:38px;display:block}
 .dl div b{font-weight:500}
 .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
 /* Batterieladung: Diagramme schmal links, Tabelle daneben */
-.bt-wrap{display:grid;grid-template-columns:minmax(400px,42%) minmax(0,1fr);gap:16px;align-items:start}
-.bt-wrap>.charts{grid-template-columns:minmax(0,1fr);gap:12px}
+.bt-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+.bt-wrap>.charts{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.bt-wrap>.charts>.wide{grid-column:1/-1}
 .bt-wrap .chart{padding:12px 12px 6px;position:relative}.bt-wrap .chart h4{font-size:15px}
 .bt-wrap>.hint{margin:0}
 .bt-tab td,.bt-tab th{padding:8px 10px}.bt-tab .bar{width:70px}
 @media(max-width:1360px){.bt-tab .c-bar{display:none}}
 .bt-tab td:last-child{white-space:normal}
-@media(max-width:1180px){.bt-wrap{grid-template-columns:minmax(0,1fr)}.bt-wrap>.charts{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+@media(max-width:760px){.bt-wrap>.charts{grid-template-columns:minmax(0,1fr)}}
 .bt-tab .c-bs{display:none}
 .bt-wrap .chart svg text{font-size:13px}
 .chart .pt{cursor:pointer;outline:none}.chart .pt .dot{transition:r .12s}
@@ -843,10 +843,10 @@ function ctip(g){let t=$('ctip');if(!t){t=document.createElement('div');t.id='ct
  let d;try{d=JSON.parse(g.dataset.tip)}catch(e){return}
  document.querySelectorAll('.pt.on,.bt-tab tr.hl').forEach(e=>e.classList.remove('on','hl'));g.classList.add('on');
  const row=document.querySelector(`.bt-tab tr[data-id="${g.dataset.id}"]`);if(row)row.classList.add('hl');
- t.innerHTML=`<div class="ct-h"><b>${E(d.v)}</b><span class="pill ${d.bad?'s-ba':'s-ok'}">${d.bad?'Bitte Laden!':'In Ordnung'}</span></div>
+ t.innerHTML=`<div class="ct-h"><b>${E(d.v)}</b><span class="pill ${d.bad?'s-ba':'s-ok'}">${d.bad?E(d.bt||'Bitte Laden!'):'In Ordnung'}</span></div>
  <div class="ct-r"><span>${E(d.b)}</span><span>${E(d.d)}</span></div>
  ${d.diff?`<div class="ct-r"><span>Veränderung</span><span>${E(d.diff)}</span></div>`:''}
- <div class="ct-r"><span>Ladegrenze</span><span>${E(d.thr)}</span></div>
+ <div class="ct-r"><span>${E(d.gl||'Ladegrenze')}</span><span>${E(d.thr)}</span></div>
  ${d.w?`<div class="ct-r"><span>Gemessen von</span><span>${E(d.w)}</span></div>`:''}
  <div class="ct-t">${E(d.t)}</div>${d.n?`<div class="ct-n">${E(d.n)}</div>`:''}<div class="ct-f">Klicken für Details</div>`;
  t.hidden=false;const r=g.querySelector('.dot').getBoundingClientRect(),tw=t.offsetWidth,th=t.offsetHeight,cx=r.left+r.width/2;
@@ -892,7 +892,7 @@ function carSVG(v,cls){
  return`<svg class="${cls||'car'}" viewBox="12 24 376 158" role="img" aria-label="Skizze ${E(v.brand)} ${E(v.model)}${v.color?', '+E(v.color):''}">${t.svg.replace('{C}',c)}</svg>`}
 
 /* ---------- Zustand ---------- */
-const DEF={wk:42,v12:12.5,hv:25};
+const DEF={wk:42,v12:12.5,hv:25,tire:3.5};
 const S={veh:[],tasks:[],prob:[],log:[],cfg:{...DEF},view:'dash',cv:'month',cd:TD(),q:'',fl:'',sel:null,tab:'plan',planF:'open',selMode:false,pick:new Set(),vis:[],openG:new Set(),tourR:'due',tourL:'',acct:null,uid:null,ready:{veh:0,tasks:0},migrated:false};
 let db=null;
 const me=()=>S.acct?S.acct.name:'unbekannt';
@@ -956,9 +956,25 @@ const veh=f=>RAW.veh.find(v=>v.fin===f)||{};
 const vname=v=>`${E(v.brand)} ${E(v.model)}`.trim()||'Fahrzeug';
 const activeTasks=()=>{const ids=new Set(S.veh.filter(v=>!v.archived).map(v=>v.fin));return S.tasks.filter(t=>ids.has(t.fin))};
 const log=(fin,text)=>db.collection('log').add({fin,text,by:me(),at:new Date().toISOString()}).catch(()=>{});
-function readings(fin){return S.tasks.filter(t=>(!fin||t.fin===fin)&&t.status==='Erledigt'&&['b12','hv'].includes(catOf(t))&&pnum(t.val)!=null).map(t=>({t,cat:catOf(t),v:pnum(t.val),d:t.done||t.due})).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0)}
-const low=r=>r.cat==='b12'?r.v<S.cfg.v12:r.v<S.cfg.hv;
-function battLow(){const last={};readings().forEach(r=>{if(!veh(r.t.fin).archived)last[r.t.fin+r.cat]=r});return[...new Set(Object.values(last).filter(low).map(r=>r.t.fin))]}
+/* Messwerte: 12V-Spannung, HV-Ladezustand, Reifendruck */
+const MEAS={
+ b12:{u:'V',d:2,lbl:'Gemessene Spannung 12V-Batterie (Volt)',ql:'Gemessene Spannung (Volt)',ph:'z. B. 12,6',max:20,err:'Bitte eine Spannung in Volt eingeben, z. B. 12,6.',thr:()=>S.cfg.v12,td:1,bad:'Bitte Laden!',badS:'Laden!',gl:'Ladegrenze',hint:()=>`Unter ${nf(S.cfg.v12,1)} V muss die Batterie geladen werden.`,warn:'Wert unter der Ladegrenze: Bitte Laden!'},
+ hv:{u:'%',d:0,lbl:'Ladezustand HV-Batterie (%)',ql:'Ladezustand HV-Batterie (%)',ph:'z. B. 68',max:100,err:'Bitte einen Prozentwert zwischen 0 und 100 eingeben.',thr:()=>S.cfg.hv,td:0,bad:'Bitte Laden!',badS:'Laden!',gl:'Ladegrenze',hint:()=>`Unter ${nf(S.cfg.hv)} % muss die HV-Batterie geladen werden.`,warn:'Wert unter der Ladegrenze: Bitte Laden!'},
+ reifen:{u:'bar',d:1,lbl:'Gemessener Reifendruck (bar)',ql:'Gemessener Reifendruck (bar)',ph:'z. B. 3,5',max:8,err:'Bitte den Reifendruck in bar eingeben, z. B. 3,5.',thr:()=>S.cfg.tire??3.5,td:1,bad:'Bitte Reifendruck erhöhen',badS:'Erhöhen!',gl:'Untergrenze',hint:()=>`Unter ${nf(S.cfg.tire??3.5,1)} bar muss der Reifendruck erhöht werden.`,warn:'Wert unter der Untergrenze: Bitte Reifendruck erhöhen!'}};
+const isMeas=c=>!!MEAS[c],lowV=(c,n)=>n!=null&&isMeas(c)&&n<MEAS[c].thr();
+const valOk=(c,n)=>n!=null&&n>=0&&n<=MEAS[c].max;
+/* Einmalig: bei erledigten Reifendruck-Maßnahmen den Wert aus der Bemerkung als Messwert übernehmen */
+function tireFromNote(n){if(!n)return null;const s=String(n).replace(/(\d),(\d)/g,'$1.$2');
+ const auf=s.match(/auf\s*(\d+(?:\.\d+)?)\s*(?:bar)?/i);if(auf){const x=+auf[1];if(x>=1&&x<=6)return x}
+ const xs=[...s.matchAll(/(\d+(?:\.\d+)?)\s*(bar)?/gi)].filter(m=>m[2]||m[1].includes('.')).map(m=>+m[1]).filter(x=>x>=1&&x<=6);
+ return xs.length?Math.min(...xs):null}
+async function tireMigrate(){if(DEMO||S.cfg.tireMig)return;const ts=RAW.tasks.filter(t=>catOf(t)==='reifen'&&t.status==='Erledigt'&&pnum(t.val)==null&&t.note&&tireFromNote(t.note)!=null);let n=0,fail=0;
+ await pool(ts.map(t=>async()=>{const x=tireFromNote(t.note);try{await db.doc('tasks/'+t._id).update({val:String(x),cat:'reifen'});n++;log(t.fin,`Reifendruck aus der Bemerkung übernommen: ${nf(x,1)} bar (${t.title}, erledigt ${fmt(t.done||t.due)})`)}catch(e){fail++}}),6);
+ if(!fail)try{await db.doc('settings/cfg').set({tireMig:new Date().toISOString(),tireMigN:n},{merge:true})}catch(e){}
+ if(n)toast(`Reifendruck bei ${n} erledigten Maßnahmen aus der Bemerkung übernommen.`)}
+function readings(fin){return S.tasks.filter(t=>(!fin||t.fin===fin)&&t.status==='Erledigt'&&isMeas(catOf(t))&&pnum(t.val)!=null).map(t=>({t,cat:catOf(t),v:pnum(t.val),d:t.done||t.due})).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0)}
+const low=r=>lowV(r.cat,r.v);
+function battLow(){const last={};readings().filter(r=>r.cat==='b12'||r.cat==='hv').forEach(r=>{if(!veh(r.t.fin).archived)last[r.t.fin+r.cat]=r});return[...new Set(Object.values(last).filter(low).map(r=>r.t.fin))]}
 
 /* ---------- Modal / Alert / Toast ---------- */
 let modalLock=false;
@@ -969,9 +985,9 @@ function closeM(){modalLock=false;if(typeof stopScan==='function')stopScan();$('
 function modalNudge(){const b=$('mb');b.classList.remove('nudge');void b.offsetWidth;b.classList.add('nudge')}
 $('mod').addEventListener('click',e=>{if(e.target.id==='mod'){if(modalLock)modalNudge();else closeM()}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('alrt').hidden)closeA();else if(!$('mod').hidden){if(modalLock)modalNudge();else closeM()}}});
-function chargeAlert(cat,v,fin){const x=veh(fin);$('ab').innerHTML=`<div class="top">${IC.warn}<h3>Bitte Laden!</h3></div><div class="bd">
- <div class="val num">${cat==='b12'?nf(v,2)+' V':nf(v)+' %'}</div>
- <p style="margin:0">${cat==='b12'?`Die 12V-Batterie liegt unter <b>${nf(S.cfg.v12,1)} V</b>.`:`Die HV-Batterie liegt unter <b>${nf(S.cfg.hv)} %</b>.`}<br>${vname(x)} · <span class="mono">${E(fin)}</span></p>
+function chargeAlert(cat,v,fin){const x=veh(fin),tr=cat==='reifen';$('ab').innerHTML=`<div class="top">${IC.warn}<h3>${tr?'Bitte Reifendruck erhöhen!':'Bitte Laden!'}</h3></div><div class="bd">
+ <div class="val num">${valTxt(cat,v)}</div>
+ <p style="margin:0">${cat==='b12'?`Die 12V-Batterie liegt unter <b>${nf(S.cfg.v12,1)} V</b>.`:tr?`Der Reifendruck liegt unter <b>${nf(MEAS.reifen.thr(),1)} bar</b>.`:`Die HV-Batterie liegt unter <b>${nf(S.cfg.hv)} %</b>.`}<br>${vname(x)} · <span class="mono">${E(fin)}</span></p>
  <button class="btn p" style="justify-content:center" onclick="closeA()">Verstanden</button></div>`;$('alrt').hidden=false}
 function closeA(){$('alrt').hidden=true;render()}
 let tT;function toast(m,undo){const t=$('toast');t.innerHTML='';const s=document.createElement('span');s.textContent=m;t.appendChild(s);
@@ -1102,25 +1118,25 @@ async function delAcct(b){if(!b.dataset.c){b.dataset.c=1;b.textContent='Wirklich
  try{await reauth();await auth.currentUser.delete()}catch(e){msg('mP',e.code==='need-pw'?'Bitte das aktuelle Passwort eingeben.':errText(e))}}
 
 /* ---------- Aufgaben-Modal ---------- */
-function taskModal(id){const t=S.tasks.find(x=>x._id===id);if(!t)return;const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t),bat=c==='b12'||c==='hv';
+function taskModal(id){const t=S.tasks.find(x=>x._id===id);if(!t)return;const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t),bat=isMeas(c);
  modal(`<header><div style="flex:1"><span class="tag ac">${icon(c)} ${CAT[c]}</span><h3 style="margin-top:8px">${E(t.title)}</h3><span class="muted">${E(t.when||'')}</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
  <div class="sb">
   <div class="prev">${carSVG(v)}<div><b>${vname(v)}</b><br><span class="mono">${E(t.fin)}</span><br><small>Fällig ${fmt(t.due)} · ${rel(t.due)}</small> <span class="pill ${sc}">${sl}</span></div></div>
-  ${bat?`<div class="meas"><label class="f">${c==='b12'?'Gemessene Spannung 12V-Batterie (Volt)':'Ladezustand HV-Batterie (%)'}<input id="tv" inputmode="decimal" placeholder="${c==='b12'?'z. B. 12,6':'z. B. 68'}" value="${E(t.val)}"></label>
-   <span class="hint">${c==='b12'?`Unter ${nf(S.cfg.v12,1)} V muss die Batterie geladen werden.`:`Unter ${nf(S.cfg.hv)} % muss die HV-Batterie geladen werden.`}</span><span class="warn" id="tvw"></span></div>`:''}
+  ${bat?`<div class="meas"><label class="f">${MEAS[c].lbl}<input id="tv" inputmode="decimal" placeholder="${MEAS[c].ph}" value="${E(t.val)}"></label>
+   <span class="hint">${MEAS[c].hint()}</span><span class="warn" id="tvw"></span></div>`:''}
   <div class="fg"><label class="f">Status<select id="ts">${['Offen','In Bearbeitung','Erledigt'].map(s=>`<option ${(t.status==='Offen'?'Erledigt':t.status)===s?'selected':''}>${s}</option>`).join('')}</select></label>
   <label class="f">Durchgeführt am<input type="date" id="td" value="${t.done||TD()}"></label>
   <label class="f full">Mitarbeiter:in<input id="tw" value="${E(t.who||me())}"></label>
   <label class="f full">Bemerkung<textarea id="tn" rows="2">${E(t.note)}</textarea></label></div>
  </div>
  <footer>${t.manual?`<button class="btn" style="margin-right:auto;color:var(--ba)" onclick="delManual('${t._id}')">Löschen</button>`:t.status!=='Erledigt'&&t.due<TD()?`<button class="btn" style="margin-right:auto;color:var(--ba)" onclick="closeM();removeTasks(['${t._id}'])">Löschen</button>`:''}<button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" onclick="saveTask('${t._id}')">Speichern</button></footer>`);
- if(bat){const chk=()=>{const n=pnum($('tv').value);$('tvw').textContent=n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv)?'Wert unter der Ladegrenze: Bitte Laden!':''};$('tv').addEventListener('input',chk);chk()}}
-async function saveTask(id){const t=S.tasks.find(x=>x._id===id),c=catOf(t),bat=c==='b12'||c==='hv',s=$('ts').value;let d=$('td').value;if(s==='Erledigt'&&!d)d=TD();
- let val='';if(bat){const raw=$('tv').value.trim();if(raw){const n=pnum(raw);if(n==null||n<0||(c==='hv'&&n>100)||(c==='b12'&&n>20)){$('tvw').textContent=c==='b12'?'Bitte eine Spannung in Volt eingeben, z. B. 12,6.':'Bitte einen Prozentwert zwischen 0 und 100 eingeben.';return}val=String(n)}}
+ if(bat){const chk=()=>{const n=pnum($('tv').value);$('tvw').textContent=lowV(c,n)?MEAS[c].warn:''};$('tv').addEventListener('input',chk);chk()}}
+async function saveTask(id){const t=S.tasks.find(x=>x._id===id),c=catOf(t),bat=isMeas(c),s=$('ts').value;let d=$('td').value;if(s==='Erledigt'&&!d)d=TD();
+ let val='';if(bat){const raw=$('tv').value.trim();if(raw){const n=pnum(raw);if(!valOk(c,n)){$('tvw').textContent=MEAS[c].err;return}val=String(n)}}
  try{await db.doc('tasks/'+id).update({status:s,done:s==='Erledigt'?d:'',who:$('tw').value,val,note:$('tn').value,cat:c});}catch(e){toast('Speichern nicht möglich: keine Schreibrechte.');return}
- log(t.fin,`${t.title}: ${s}${val?' ('+(c==='b12'?nf(val,2)+' V':nf(val)+' %')+')':''}`);
+ log(t.fin,`${t.title}: ${s}${val?' ('+valTxt(c,val)+')':''}`);
  $('mod').hidden=true;$('mb').innerHTML='';
- const n=pnum(val);if(n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv))chargeAlert(c,n,t.fin);else{toast('Gespeichert.');render()}}
+ const n=pnum(val);if(lowV(c,n))chargeAlert(c,n,t.fin);else{toast('Gespeichert.');render()}}
 
 /* ---------- Eigene Maßnahme (außerhalb des TQS-Intervalls) ---------- */
 const MANUAL=[['reinigung','Fahrzeugwäsche'],['b12','12V-Batterie prüfen / laden'],['hv','HV-Batterie prüfen / laden'],['reifen','Reifendruck kontrollieren'],['bremse','Bremsen freibremsen'],['folie','Folie applizieren'],['sonst','Sonstige Maßnahme']];
@@ -1139,20 +1155,20 @@ function manualModal(fin){const v=veh(fin);if(!v.fin)return;
  </div><span class="hint">Eigene Maßnahmen ändern den TQS-Pflegeplan nicht und werden bei einer Neuberechnung nicht gelöscht.</span></div>
  <footer><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" onclick="saveManual('${fin}')">Hinzufügen</button></footer>`);
  let last=opts[0][1];
- const upd=()=>{const o=opts[+$('mc').value],c=o[0],bat=c==='b12'||c==='hv',done=$('ms').value==='Erledigt';
+ const upd=()=>{const o=opts[+$('mc').value],c=o[0],bat=isMeas(c),done=$('ms').value==='Erledigt';
   if($('mt').value===last||!$('mt').value.trim())$('mt').value=o[1];last=o[1];
   $('mdl').textContent=done?'Durchgeführt am':'Geplant für';
-  $('mvw').hidden=!(bat&&done);$('mvl').textContent=c==='b12'?'Gemessene Spannung (Volt, optional)':'Ladezustand HV-Batterie (%, optional)';$('mv').placeholder=c==='b12'?'z. B. 12,6':'z. B. 68'};
+  $('mvw').hidden=!(bat&&done);if(bat){$('mvl').textContent=MEAS[c].ql.replace(')',', optional)');$('mv').placeholder=MEAS[c].ph}};
  $('mc').addEventListener('change',upd);$('ms').addEventListener('change',upd);upd();
  manualModal.opts=opts}
-async function saveManual(fin){const o=manualModal.opts[+$('mc').value],c=o[0],bat=c==='b12'||c==='hv',done=$('ms').value==='Erledigt',d=$('md').value||TD(),title=$('mt').value.trim()||o[1];
- let val='';if(bat&&done){const raw=$('mv').value.trim();if(raw){const n=pnum(raw);if(n==null||n<0||(c==='hv'&&n>100)||(c==='b12'&&n>20)){$('mvx').textContent=c==='b12'?'Bitte eine Spannung in Volt eingeben, z. B. 12,6.':'Bitte einen Prozentwert zwischen 0 und 100 eingeben.';return}val=String(n)}}
+async function saveManual(fin){const o=manualModal.opts[+$('mc').value],c=o[0],bat=isMeas(c),done=$('ms').value==='Erledigt',d=$('md').value||TD(),title=$('mt').value.trim()||o[1];
+ let val='';if(bat&&done){const raw=$('mv').value.trim();if(raw){const n=pnum(raw);if(!valOk(c,n)){$('mvx').textContent=MEAS[c].err;return}val=String(n)}}
  const k='m'+Date.now().toString(36),id=fin+'_'+k;
  try{await db.doc('tasks/'+id).set({fin,k,cat:c,title,when:'Eigene Maßnahme',manual:true,due:d,status:done?'Erledigt':'Offen',done:done?d:'',who:$('mw').value,val,note:$('mn').value,by:me(),created:new Date().toISOString()})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}
- log(fin,`Eigene Maßnahme ${done?'durchgeführt':'geplant'}: ${title}${val?' ('+(c==='b12'?nf(val,2)+' V':nf(val)+' %')+')':''}`);
+ log(fin,`Eigene Maßnahme ${done?'durchgeführt':'geplant'}: ${title}${val?' ('+valTxt(c,val)+')':''}`);
  if(done&&S.planF==='open')S.planF='all';
  $('mod').hidden=true;$('mb').innerHTML='';
- const n=pnum(val);if(n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv))chargeAlert(c,n,fin);else{toast('Maßnahme hinzugefügt.');render()}}
+ const n=pnum(val);if(lowV(c,n))chargeAlert(c,n,fin);else{toast('Maßnahme hinzugefügt.');render()}}
 async function removeTasks(ids){const ts=ids.map(id=>S.tasks.find(t=>t._id===id)).filter(t=>t&&t.status!=='Erledigt');if(!ts.length)return;
  const now=new Date().toISOString(),done=[];
  await pool(ts.map(t=>async()=>{try{if(t.manual)await db.doc('tasks/'+t._id).delete();else await db.doc('tasks/'+t._id).update({removed:true,removedAt:now,removedBy:me()});done.push(t);log(t.fin,`Überfällige Maßnahme gelöscht: ${t.title} (geplant ${fmt(t.due)})`)}catch(e){}}),6);
@@ -1626,7 +1642,7 @@ function PDFDoc(W,H){const pages=[],imgs=[];let cur=null;
    const u=new Uint8Array(out.length);for(let i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;return u}};
  return api}
 function pdfChart(doc,x,y,w,h,[title,rs,o],C){
- doc.rect(x,y,w,h,'#ffffff',C.bd,.6);doc.text(x+10,y+16,title,{size:9.5,bold:true});{const tx=x+18+pw(title,9.5,true);doc.line([[tx,y+13],[tx+16,y+13]],C.ba,.8,[3,2]);doc.text(tx+20,y+15.5,`Ladegrenze ${nf(o.thr,o.d===2?1:0)} ${o.u}`,{size:7,color:C.ba})}
+ doc.rect(x,y,w,h,'#ffffff',C.bd,.6);doc.text(x+10,y+16,title,{size:9.5,bold:true});{const tx=x+18+pw(title,9.5,true);doc.line([[tx,y+13],[tx+16,y+13]],C.ba,.8,[3,2]);doc.text(tx+20,y+15.5,`${o.gl||'Ladegrenze'} ${nf(o.thr,o.td??(o.d===2?1:0))} ${o.u}`,{size:7,color:C.ba})}
  if(rs.length){const l=rs[rs.length-1];doc.text(x+w-10,y+16,`zuletzt ${nf(l.v,o.d)} ${o.u} (${fmt(l.d)})`,{size:8,bold:true,color:low(l)?C.ba:C.ok,align:'right'})}
  const px=x+40,py=y+28,pW=w-54,pH=h-56;
  if(!rs.length){doc.text(x+w/2,y+h/2+4,'Noch keine Messwerte erfasst.',{size:9,color:C.mu,align:'center'});return}
@@ -1676,7 +1692,7 @@ async function pdfProtokoll(fin){const v=veh(fin);if(!v.fin)return;
  if(!ts.length){doc.text(M+5,y+16,'Bis heute war noch keine Maßnahme fällig.',{size:9,color:C.mu});y+=26}
  ts.forEach((t,i)=>{const c=catOf(t),dn=t.status==='Erledigt',lt=!dn&&t.due<T;
   const sx=dn?['Erledigt',C.ok,C.okb]:lt?['Überfällig',C.ba,C.bab]:t.status==='In Bearbeitung'?['In Bearbeitung',C.wa,C.wab]:['Offen',C.mu,C.grb];
-  const mv=pnum(t.val)!=null?(c==='b12'?nf(pnum(t.val),2)+' V':c==='hv'?nf(pnum(t.val))+' %':String(t.val)):'–';
+  const mv=pnum(t.val)!=null?valTxt(c,pnum(t.val)):'–';
   const tl=doc.wrap(t.title,cols[1][1]-10,8.5,true,2),wl=doc.wrap(t.when||'',cols[2][1]-10,7.5,false,2),nl=doc.wrap(t.note||'',cols[7][1]-10,7.5,false,4);
   const h=Math.max(20,10+Math.max(tl.length*10,wl.length*9,nl.length*9));
   if(y+h>H-M-44){head();thead()}
@@ -1691,14 +1707,17 @@ async function pdfProtokoll(fin){const v=veh(fin);if(!v.fin)return;
   doc.text(x+5,ty,mv,{size:8.5,color:mv==='–'?C.mu:C.tx});x+=cols[6][1];
   nl.forEach((l,j)=>doc.text(x+5,ty+j*9,l,{size:7.5,color:C.mu}));
   doc.line([[M,y+h],[W-M,y+h]],C.bd,.4);y+=h});
- const rs=readings(fin).filter(r=>r.d<=T),r12=rs.filter(r=>r.cat==='b12'),rhv=rs.filter(r=>r.cat==='hv');
- const charts=[['12V-Batterie · Spannung (Volt)',r12,{min:11.8,max:13.2,thr:S.cfg.v12,u:'V',d:2,step:.2}]];
- if(v.hyb||v.ev||rhv.length)charts.push(['HV-Batterie · Ladezustand (%)',rhv,{min:0,max:100,thr:S.cfg.hv,u:'%',d:0,step:20}]);
- const chH=200;
- if(y+34+chH>H-M-44)head();else y+=22;
- doc.text(M,y+10,'Batterieverlauf',{size:12,bold:true});doc.text(M+pw('Batterieverlauf',12,true)+10,y+10,'grün = in Ordnung, rot = unter der Ladegrenze',{size:7.5,color:C.mu});y+=18;
- const gw=charts.length>1?(W-2*M-16)/2:W-2*M;
- charts.forEach((ch,i)=>pdfChart(doc,M+i*(gw+16),y,gw,chH,ch,C));
+ const rs=readings(fin).filter(r=>r.d<=T),r12=rs.filter(r=>r.cat==='b12'),rhv=rs.filter(r=>r.cat==='hv'),rti=rs.filter(r=>r.cat==='reifen'),hasHv=v.hyb||v.ev||rhv.length>0;
+ const c12=['12V-Batterie · Spannung (Volt)',r12,{min:11.8,max:13.2,thr:S.cfg.v12,u:'V',d:2,step:.2}],
+  cHv=['HV-Batterie · Ladezustand (%)',rhv,{min:0,max:100,thr:S.cfg.hv,u:'%',d:0,step:20}],
+  cTi=['Reifendruck (bar)',rti,{min:2.5,max:4,thr:MEAS.reifen.thr(),u:'bar',d:1,td:1,step:.5,gl:'Untergrenze'}];
+ /* Messwerte-Block bleibt immer zusammen auf einer Seite: oben 12V über die volle Breite, darunter Reifendruck (mit HV-Batterie: beide nebeneinander) */
+ const bot=H-M-44,gap=12,need=h=>22+18+h*2+gap;let chH=Math.min(190,Math.floor((bot-y-22-18-gap)/2));
+ if(chH<130){head();chH=Math.min(190,Math.floor((bot-y-18-gap)/2))}else y+=22;
+ doc.text(M,y+10,'Messwerte',{size:12,bold:true});doc.text(M+pw('Messwerte',12,true)+10,y+10,'grün = in Ordnung, rot = unter dem Grenzwert',{size:7.5,color:C.mu});y+=18;
+ const full=W-2*M,half=(full-16)/2;
+ pdfChart(doc,M,y,full,chH,c12,C);y+=chH+gap;
+ if(hasHv){pdfChart(doc,M,y,half,chH,cHv,C);pdfChart(doc,M+half+16,y,half,chH,cTi,C)}else pdfChart(doc,M,y,full,chH,cTi,C);
  const N=doc.count;for(let i=0;i<N;i++){doc.goto(i);
   doc.text(M,H-16,`TQS Fahrzeugpflege · ${v.fin} · erstellt am ${fmt(T)} von ${me()}`,{size:7,color:C.mu});
   doc.text(W-M,H-16,`Seite ${i+1} von ${N}`,{size:7,color:C.mu,align:'right'});
@@ -1733,7 +1752,7 @@ function taskLi(t,o){o=o||{};const v=veh(t.fin),c=catOf(t),[sc,sl]=st(t),open=t.
  <div class="due"><b ${t.status==='Erledigt'&&t.done?`title="geplant ${fmt(t.due)}"`:''}>${fmt(t.status==='Erledigt'&&t.done?t.done:t.due)}</b>${o.restore?`<span class="pill s-gr">gelöscht</span>`:`<span class="pill ${sc}">${t.due<TD()&&t.status!=='Erledigt'?rel(t.due):sl==='Geplant'?rel(t.due):sl}</span>`}</div><div class="ra">${ra}</div></li>`}
 /* ---------- Schnell erledigen, Rückgängig, Mehrfachauswahl ---------- */
 const isBat=c=>c==='b12'||c==='hv';
-const valTxt=(c,v)=>c==='b12'?nf(v,2)+' V':nf(v)+' %';
+const valTxt=(c,v)=>MEAS[c]?nf(v,MEAS[c].d)+' '+MEAS[c].u:String(v);
 async function markDone(ts,vals){vals=vals||{};const T=TD(),prev=ts.map(t=>({id:t._id,fin:t.fin,title:t.title,d:{status:t.status,done:t.done||'',who:t.who||'',val:t.val||''}}));let ok=0,fail=false;
  await pool(ts.map(t=>async()=>{const c=catOf(t),val=vals[t._id]||t.val||'';try{await db.doc('tasks/'+t._id).update({status:'Erledigt',done:T,who:me(),val,cat:c});ok++;log(t.fin,`${t.title}: Erledigt${val?' ('+valTxt(c,val)+')':''}`)}catch(e){fail=true}}),6);
  if(fail)toast('Nicht alles gespeichert: keine Schreibrechte.');
@@ -1744,21 +1763,21 @@ function rowOut(id){const b=document.querySelector(`[onclick*="quickDone('${id}'
  return li.animate([{transform:'none',opacity:1},{transform:'none',opacity:1,offset:.35},{transform:'translateX(56px)',opacity:0}],{duration:420,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'}).finished
   .then(()=>li.animate([{height:h+'px',paddingTop:cs.paddingTop,paddingBottom:cs.paddingBottom,marginTop:cs.marginTop,marginBottom:cs.marginBottom},{height:'0px',paddingTop:'0px',paddingBottom:'0px',marginTop:'0px',marginBottom:'0px'}],{duration:220,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'}).finished).catch(()=>{})}
 async function quickDone(id){const t=S.tasks.find(x=>x._id===id);if(!t||t.status==='Erledigt')return;const c=catOf(t);
- if(isBat(c))return quickMeas(id);
+ if(isMeas(c))return quickMeas(id);
  const an=rowOut(id),r=await markDone([t]);await an;holdR=0;render();if(r.ok)toast(`„${t.title}“ erledigt`,r.undo)}
 function quickMeas(id){const t=S.tasks.find(x=>x._id===id);if(!t)return;const v=veh(t.fin),c=catOf(t);
  modal(`<header><div style="flex:1"><span class="tag ac">${icon(c)} ${CAT[c]}</span><h3 style="margin-top:8px">${E(t.title)}</h3><span class="muted">${vname(v)} · <span class="mono">${E(t.fin)}</span>${v.spot?' · '+E(v.spot):''}</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
- <div class="sb"><label class="f">${c==='b12'?'Gemessene Spannung (Volt)':'Ladezustand HV-Batterie (%)'}<input id="qv" class="big-in" inputmode="decimal" enterkeyhint="done" placeholder="${c==='b12'?'z. B. 12,6':'z. B. 68'}" autocomplete="off"></label>
- <span class="hint">${c==='b12'?`Unter ${nf(S.cfg.v12,1)} V muss geladen werden.`:`Unter ${nf(S.cfg.hv)} % muss geladen werden.`} Erledigt am ${fmt(TD())} von ${E(me())}.</span><span class="warn" id="qvw"></span></div>
+ <div class="sb"><label class="f">${MEAS[c].ql}<input id="qv" class="big-in" inputmode="decimal" enterkeyhint="done" placeholder="${MEAS[c].ph}" autocomplete="off"></label>
+ <span class="hint">${MEAS[c].hint()} Erledigt am ${fmt(TD())} von ${E(me())}.</span><span class="warn" id="qvw"></span></div>
  <footer><button class="btn" style="margin-right:auto" onclick="saveQuick('${id}',true)">Ohne Messwert</button><button class="btn" onclick="closeM()">Abbrechen</button><button class="btn p" id="qvs" onclick="saveQuick('${id}')">${IC.check} Erledigt</button></footer>`);
  const i=$('qv');setTimeout(()=>i.focus(),50);
- i.addEventListener('input',()=>{const n=pnum(i.value);$('qvw').textContent=n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv)?'Wert unter der Ladegrenze: Bitte Laden!':''});
+ i.addEventListener('input',()=>{const n=pnum(i.value);$('qvw').textContent=lowV(c,n)?MEAS[c].warn:''});
  i.addEventListener('keydown',e=>{if(e.key==='Enter')saveQuick(id)})}
 async function saveQuick(id,noVal){const t=S.tasks.find(x=>x._id===id);if(!t)return closeM();const c=catOf(t);let val='';
  if(!noVal){const raw=$('qv').value.trim();if(!raw)return $('qvw').textContent='Bitte einen Messwert eintragen oder „Ohne Messwert“ wählen.';
-  const n=pnum(raw);if(n==null||n<0||(c==='hv'&&n>100)||(c==='b12'&&n>20))return $('qvw').textContent=c==='b12'?'Bitte eine Spannung in Volt eingeben, z. B. 12,6.':'Bitte einen Prozentwert zwischen 0 und 100 eingeben.';val=String(n)}
+  const n=pnum(raw);if(!valOk(c,n))return $('qvw').textContent=MEAS[c].err;val=String(n)}
  busy('qvs',true);const r=await markDone([t],{[id]:val});$('mod').hidden=true;$('mb').innerHTML='';
- const n=pnum(val);if(n!=null&&(c==='b12'?n<S.cfg.v12:n<S.cfg.hv))chargeAlert(c,n,t.fin);else{const an=rowOut(id);if(r.ok)toast(`„${t.title}“ erledigt${val?' · '+valTxt(c,val):''}`,r.undo);await an;holdR=0;render();return}
+ const n=pnum(val);if(lowV(c,n))chargeAlert(c,n,t.fin);else{const an=rowOut(id);if(r.ok)toast(`„${t.title}“ erledigt${val?' · '+valTxt(c,val):''}`,r.undo);await an;holdR=0;render();return}
  if(r.ok)toast(`„${t.title}“ erledigt${val?' · '+valTxt(c,val):''}`,r.undo)}
 function selStart(){S.selMode=true;S.pick=new Set();S.selKey=S.view+'|'+S.sel+'|'+S.tab;render()}
 function selEnd(){S.selMode=false;S.pick=new Set();render()}
@@ -1966,25 +1985,27 @@ function lineChart(pts,o){const W=o.w||600,H=o.h||210,L=o.w?38:46,R=o.w?10:16,T=
  ${tick.map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--bd)" stroke-width="1"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end">${nf(v,o.dec)}</text>`).join('')}
  <rect x="${L}" y="${thrY}" width="${W-L-R}" height="${Math.max(0,H-B-thrY)}" fill="var(--ba)" opacity=".07"/>
  <line x1="${L}" x2="${W-R}" y1="${thrY}" y2="${thrY}" stroke="var(--ba)" stroke-width="1.5" stroke-dasharray="5 4"/>
- <text x="${W-R}" y="${thrY-6}" text-anchor="end" style="fill:var(--ba);font-weight:600">Ladegrenze ${nf(o.thr,o.dec)} ${o.unit}</text>
+ <text x="${W-R}" y="${thrY-6}" text-anchor="end" style="fill:var(--ba);font-weight:600">${o.gl||'Ladegrenze'} ${nf(o.thr,o.dec)} ${o.unit}</text>
  ${area?`<path d="${area}" fill="var(--ac)" opacity=".10"/>`:''}<path d="${line}" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linejoin="round"/>
  ${pts.map((p,i)=>{const tip=p.tip?E(JSON.stringify(p.tip)):'';return`<g class="pt" ${tip?`data-tip="${tip}"`:''} ${p.id?`data-id="${p.id}" tabindex="0" role="button" aria-label="${fmt(p.d)}: ${nf(p.v,o.dec+(o.unit==='V'?1:0))} ${o.unit}"`:''}><circle class="hit" cx="${X(ts[i])}" cy="${Y(p.v)}" r="16" fill="transparent"/><circle class="dot" cx="${X(ts[i])}" cy="${Y(p.v)}" r="5.5" fill="${p.v<o.thr?'var(--ba)':'var(--ac)'}" stroke="var(--sf)" stroke-width="2"/>${p.tip?'':`<title>${fmt(p.d)}: ${nf(p.v,o.dec)} ${o.unit}</title>`}</g>`}).join('')}
  <text x="${X(t0)}" y="${H-8}" text-anchor="${t1===t0?'middle':'start'}">${fmt(pts[0].d)}</text>${t1!==t0?`<text x="${X(t1)}" y="${H-8}" text-anchor="end">${fmt(pts[pts.length-1].d)}</text>`:''}
  </svg>`}
-function battTab(v){const rs=readings(v.fin),r12=rs.filter(r=>r.cat==='b12'),rhv=rs.filter(r=>r.cat==='hv'),hv=v.hyb||v.ev;
- const pts=a=>a.map((r,i)=>{const pv=a[i-1],u=r.cat==='b12'?'V':'%',dd=r.cat==='b12'?2:0;
-  return{d:r.d,v:r.v,id:r.t._id,tip:{d:fmt(r.d),v:nf(r.v,dd)+' '+u,bad:low(r),thr:(r.cat==='b12'?nf(S.cfg.v12,1):nf(S.cfg.hv))+' '+u,
+function battTab(v){const rs=readings(v.fin),r12=rs.filter(r=>r.cat==='b12'),rhv=rs.filter(r=>r.cat==='hv'),rti=rs.filter(r=>r.cat==='reifen'),hv=v.hyb||v.ev||rhv.length>0;
+ const pts=a=>a.map((r,i)=>{const pv=a[i-1],m=MEAS[r.cat],u=m.u,dd=m.d;
+  return{d:r.d,v:r.v,id:r.t._id,tip:{d:fmt(r.d),v:nf(r.v,dd)+' '+u,bad:low(r),bt:m.bad,gl:m.gl,thr:nf(m.thr(),m.td)+' '+u,
    diff:pv?((r.v-pv.v>=0?'+':'−')+nf(Math.abs(r.v-pv.v),dd)+' '+u+' seit '+fmt(pv.d)):'',t:r.t.title,w:r.t.who||'',n:r.t.note||'',b:CAT[r.cat]}}});
- const two=hv||rhv.length>0,ch=two?250:380;
- const last=(a,u,d)=>a.length?`<span class="pill ${low(a[a.length-1])?'s-ba':'s-ok'}">zuletzt ${nf(a[a.length-1].v,d)} ${u}</span>`:'';
+ const last=(a,c)=>a.length?`<span class="pill ${low(a[a.length-1])?'s-ba':'s-ok'}">zuletzt ${valTxt(c,a[a.length-1].v)}</span>`:'';
+ const box=(c,a,o,cls)=>`<div class="chart ${cls}"><h4>${icon(c)} ${CAT[c]} <span style="margin-left:auto">${last(a,c)}</span></h4>${lineChart(pts(a),o)}</div>`;
+ const pct=r=>r.cat==='hv'?r.v:r.cat==='b12'?(r.v-11.8)/(12.9-11.8)*100:(r.v-2)/(4.5-2)*100;
  return`<div class="pb bt-wrap">
- <div class="charts"><div class="chart"><h4>${icon('b12')} 12V-Batterie <span style="margin-left:auto">${last(r12,'V',2)}</span></h4>${lineChart(pts(r12),{min:11.8,max:13.2,pad:.1,thr:S.cfg.v12,unit:'V',dec:1,w:600,h:ch,label:'Verlauf Spannung 12V-Batterie'})}</div>
- ${hv||rhv.length?`<div class="chart"><h4>${icon('hv')} HV-Batterie <span style="margin-left:auto">${last(rhv,'%',0)}</span></h4>${lineChart(pts(rhv),{min:0,max:100,pad:0,thr:S.cfg.hv,unit:'%',dec:0,w:600,h:ch,label:'Verlauf Ladezustand HV-Batterie'})}</div>`:''}</div>
- ${rs.length?`<div class="scroll bt-tab" style="border:1px solid var(--bd);border-radius:10px"><table><tr><th>Datum</th><th>Batterie</th><th><span class="c-bn">Messwert</span><span class="c-bs">Wert</span></th><th class="c-bar">Ladung</th><th><span class="c-bn">Bewertung</span><span class="c-bs">Status</span></th></tr>
- ${rs.slice().reverse().map(r=>{const pct=r.cat==='hv'?r.v:Math.max(0,Math.min(100,(r.v-11.8)/(12.9-11.8)*100)),bad=low(r);return`<tr class="cl" data-id="${r.t._id}" onclick="taskModal('${r.t._id}')"><td class="num"><span class="c-bn">${fmt(r.d)}</span><span class="c-bs">${fmt(r.d).slice(0,6)+fmt(r.d).slice(8)}</span></td><td>${icon(r.cat)} <span class="c-bn">${CAT[r.cat]}</span><span class="c-bs">${r.cat==='b12'?'12V':'HV'}</span></td><td class="num"><b>${r.cat==='b12'?nf(r.v,2)+' V':nf(r.v)+' %'}</b></td><td class="c-bar"><span class="bar"><i style="width:${pct}%;background:${bad?'var(--ba)':'var(--ok)'}"></i></span></td><td><span class="pill ${bad?'s-ba':'s-ok'}"><span class="c-bn">${bad?'Bitte Laden!':'In Ordnung'}</span><span class="c-bs">${bad?'Laden!':'OK'}</span></span></td></tr>`}).join('')}</table></div>`:`<p class="hint">Messwerte erscheinen hier, sobald eine Batterie-Maßnahme mit Spannung oder Ladezustand erledigt wurde.</p>`}</div>`}
+ <div class="charts">${box('b12',r12,{min:11.8,max:13.2,pad:.1,thr:S.cfg.v12,unit:'V',dec:1,w:1100,h:250,label:'Verlauf Spannung 12V-Batterie'},'wide')}
+ ${hv?box('hv',rhv,{min:0,max:100,pad:0,thr:S.cfg.hv,unit:'%',dec:0,w:600,h:280,label:'Verlauf Ladezustand HV-Batterie'},''):''}
+ ${box('reifen',rti,{min:2.5,max:4,pad:.1,thr:MEAS.reifen.thr(),unit:'bar',dec:1,gl:'Untergrenze',w:hv?600:1100,h:hv?280:250,label:'Verlauf Reifendruck'},hv?'':'wide')}</div>
+ ${rs.length?`<div class="scroll bt-tab" style="border:1px solid var(--bd);border-radius:10px"><table><tr><th>Datum</th><th>Messung</th><th><span class="c-bn">Messwert</span><span class="c-bs">Wert</span></th><th class="c-bar">Stand</th><th><span class="c-bn">Bewertung</span><span class="c-bs">Status</span></th></tr>
+ ${rs.slice().reverse().map(r=>{const p=Math.max(0,Math.min(100,pct(r))),bad=low(r),m=MEAS[r.cat];return`<tr class="cl" data-id="${r.t._id}" onclick="taskModal('${r.t._id}')"><td class="num"><span class="c-bn">${fmt(r.d)}</span><span class="c-bs">${fmt(r.d).slice(0,6)+fmt(r.d).slice(8)}</span></td><td>${icon(r.cat)} <span class="c-bn">${CAT[r.cat]}</span><span class="c-bs">${r.cat==='b12'?'12V':r.cat==='hv'?'HV':'Reifen'}</span></td><td class="num"><b>${valTxt(r.cat,r.v)}</b></td><td class="c-bar"><span class="bar"><i style="width:${p}%;background:${bad?'var(--ba)':'var(--ok)'}"></i></span></td><td><span class="pill ${bad?'s-ba':'s-ok'}"><span class="c-bn">${bad?m.bad:'In Ordnung'}</span><span class="c-bs">${bad?m.badS:'OK'}</span></span></td></tr>`}).join('')}</table></div>`:`<p class="hint">Messwerte erscheinen hier, sobald eine Batterie- oder Reifendruck-Maßnahme mit Messwert erledigt wurde.</p>`}</div>`}
 function vdet(){const v=veh(S.sel);if(!v.fin)return'<p class="empty">Fahrzeug nicht gefunden.</p>';
  const ts=S.tasks.filter(t=>t.fin===v.fin).sort((a,b)=>a.due<b.due?-1:1),ps=S.prob.filter(p=>p.fin===v.fin),lg=S.log.filter(l=>l.fin===v.fin).sort((a,b)=>a.at<b.at?1:-1),op=ts.filter(t=>t.status!=='Erledigt'),rs=readings(v.fin);
- const tabs=[['plan','Pflegeplan',op.length],['batt','Batterieladung',rs.length],['data','Stammdaten'],['pk','Pickerl'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['notes','Notizen',S.notes.filter(n=>n.fin===v.fin).length],['log','Historie']];
+ const tabs=[['plan','Pflegeplan',op.length],['batt','Batterie & Reifen',rs.length],['data','Stammdaten'],['pk','Pickerl'],['prob','Probleme',ps.filter(p=>p.status==='Offen').length],['notes','Notizen',S.notes.filter(n=>n.fin===v.fin).length],['log','Historie']];
  let body='';
  if(S.tab==='plan'){const rmv=(S.taskAll||[]).filter(t=>t.fin===v.fin&&t.removed).sort((a,b)=>a.due<b.due?-1:1);if(S.planF==='del'&&!rmv.length)S.planF='open';const dn=ts.filter(t=>t.status==='Erledigt'),shown=S.planF==='del'?rmv:S.planF==='done'?dn.slice().sort((a,b)=>(b.done||b.due)<(a.done||a.due)?-1:1):S.planF==='all'?ts:op;body=`<div class="ph" style="border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px"><span class="muted" style="flex:1">${op.length} offen · ${ts.length-op.length} erledigt · Plan bis ${fmt(planEnd(v))}</span><div class="pf-seg" role="radiogroup" aria-label="Maßnahmen anzeigen">${[['open','Offen',op.length],['done','Erledigt',dn.length],['all','Alle',ts.length],...(rmv.length?[['del','Gelöscht',rmv.length]]:[])].map(o=>`<button role="radio" aria-checked="${S.planF===o[0]}" class="${S.planF===o[0]?'on':''}" onclick="S.planF='${o[0]}';render()">${o[1]} <span class="c">${o[2]}</span></button>`).join('')}</div>${(()=>{const od=op.filter(t=>t.due<TD());return S.planF==='del'?`<button class="btn sm" onclick="restoreTasks(${E(JSON.stringify(rmv.map(t=>t._id)))})">${IC.restore} Alle wiederherstellen</button>`:(op.length&&S.planF!=='done'&&!S.selMode?`<button class="btn sm" onclick="selStart()">${IC.sel} Auswählen</button>`:'')+(od.length?`<button class="btn sm" style="color:var(--ba)" onclick="removeTasks(${E(JSON.stringify(od.map(t=>t._id)))})">${IC.trash} Überfällige löschen (${od.length})</button>`:'')})()}<button class="btn sm p" onclick="manualModal('${v.fin}')" title="Eigene Maßnahme hinzufügen">${IC.plus} Maßnahme</button></div>${shown.length?`<ul class="tl">${shown.map(t=>taskLi(t,{del:1,restore:S.planF==='del'})).join('')}</ul>`:`<p class="empty">${S.planF==='del'?'Keine gelöschten Maßnahmen.':S.planF==='done'?'Noch keine erledigten Maßnahmen.':S.planF==='open'?'Keine offenen Maßnahmen.':'Keine Termine.'}</p>`}`}
  else if(S.tab==='batt')body=battTab(v);
@@ -2042,6 +2063,7 @@ function sett(){const c=S.cfg,tab=SETT.some(t=>t[0]===S.setTab)?S.setTab:'allg',
  <label class="f">12V-Batteriepflege bei Transportmodus aus: Intervall in Tagen<input type="number" min="7" id="s_wk" value="${c.wk}"></label>
  <label class="f">„Bitte Laden!“ bei 12V-Spannung unter (Volt)<input type="number" step="0.1" id="s_v12" value="${c.v12}"></label>
  <label class="f">„Bitte Laden!“ bei HV-Ladezustand unter (%)<input type="number" min="0" max="100" id="s_hv" value="${c.hv}"></label>
+ <label class="f">„Bitte Reifendruck erhöhen“ bei Reifendruck unter (bar)<input type="number" step="0.1" min="0" max="8" id="s_tire" value="${c.tire??3.5}"></label>
  <div><button class="btn p" onclick="saveCfg()">Speichern und Termine neu berechnen</button></div></div></section>`)}
  ${G('veh',`<section class="panel" style="max-width:640px"><div class="ph"><h3>Standorte</h3><button class="btn sm" ${DEMO?'hidden':''} onclick="siteModal()">${IC.plus} Standort hinzufügen</button></div><div class="pb" style="display:flex;flex-direction:column;gap:8px">
  <p class="hint" style="margin:0">Jeder Standort hat seine eigenen Fahrzeuge und Maßnahmen. Fahrzeuge ohne Zuordnung gehören zum ersten Standort.</p>
@@ -2114,7 +2136,7 @@ async function installApp(){if(!installEvt)return;installEvt.prompt();try{await 
 function getTheme(){try{return localStorage.getItem('tqs_theme')||'auto'}catch(e){return'auto'}}
 function setTheme(t){try{localStorage.setItem('tqs_theme',t)}catch(e){}
  if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);{const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#ffffff':'#132029'}render()}
-async function saveCfg(){const c={wk:+$('s_wk').value||42,v12:+$('s_v12').value||12.5,hv:+$('s_hv').value||25};try{await db.doc('settings/cfg').set(c,{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}S.cfg={...S.cfg,...c};for(const v of S.veh)await sync(v);toast('Gespeichert. Termine wurden neu berechnet.')}
+async function saveCfg(){const c={wk:+$('s_wk').value||42,v12:+$('s_v12').value||12.5,hv:+$('s_hv').value||25,tire:+$('s_tire').value||3.5};try{await db.doc('settings/cfg').set(c,{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}S.cfg={...S.cfg,...c};for(const v of S.veh)await sync(v);toast('Gespeichert. Termine wurden neu berechnet.')}
 
 /* ---------- FIN scannen / suchen ---------- */
 const SCANF=['code_39','code_128','data_matrix','qr_code','pdf417'];
@@ -2554,7 +2576,7 @@ function enterApp(){$('auth').hidden=true;$('boot').hidden=true;$('app').hidden=
    Die Einstellungen sind nötig, weil der 12V-Pflegeabstand (cfg.wk) die Termine bestimmt: ohne sie würde mit dem
    Standardwert (6 Wochen) gerechnet und der Plan bei jedem Neuladen umgeschrieben. */
 const srvOk={veh:0,tasks:0,cfg:0};
-async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks||!srvOk.veh||!srvOk.tasks||!srvOk.cfg)return;S.migrated=true;S.migY=new Date().getFullYear();try{for(const v of RAW.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
+async function migrate(){if(S.migrated||!S.ready.veh||!S.ready.tasks||!srvOk.veh||!srvOk.tasks||!srvOk.cfg)return;S.migrated=true;S.migY=new Date().getFullYear();setTimeout(tireMigrate,2000);try{for(const v of RAW.veh)await sync(v)}catch(e){console.warn('Plan-Abgleich übersprungen',e)}}
 function signedIn(u){S.acct={email:u.email,uid:u.uid,name:u.displayName||u.email.split('@')[0]};enterApp()}
 /* Jahreswechsel bei offener App: Pflegepläne aller Fahrzeuge sofort um ein Jahr verlängern */
 setInterval(()=>{if(S.migrated&&S.migY&&new Date().getFullYear()!==S.migY){S.migrated=false;migrate().then(()=>render())}},6e4);
