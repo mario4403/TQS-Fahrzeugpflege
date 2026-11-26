@@ -1679,7 +1679,7 @@ async function pdfProtokoll(fin){const v=veh(fin);if(!v.fin)return;
   const mv=pnum(t.val)!=null?(c==='b12'?nf(pnum(t.val),2)+' V':c==='hv'?nf(pnum(t.val))+' %':String(t.val)):'–';
   const tl=doc.wrap(t.title,cols[1][1]-10,8.5,true,2),wl=doc.wrap(t.when||'',cols[2][1]-10,7.5,false,2),nl=doc.wrap(t.note||'',cols[7][1]-10,7.5,false,4);
   const h=Math.max(20,10+Math.max(tl.length*10,wl.length*9,nl.length*9));
-  if(y+h>H-M-12){head();thead()}
+  if(y+h>H-M-44){head();thead()}
   if(i%2)doc.rect(M,y,W-2*M,h,C.z);
   let x=M;const ty=y+13;
   doc.text(x+5,ty,fmt(t.due),{size:8.5});x+=cols[0][1];
@@ -1695,13 +1695,17 @@ async function pdfProtokoll(fin){const v=veh(fin);if(!v.fin)return;
  const charts=[['12V-Batterie · Spannung (Volt)',r12,{min:11.8,max:13.2,thr:S.cfg.v12,u:'V',d:2,step:.2}]];
  if(v.hyb||v.ev||rhv.length)charts.push(['HV-Batterie · Ladezustand (%)',rhv,{min:0,max:100,thr:S.cfg.hv,u:'%',d:0,step:20}]);
  const chH=200;
- if(y+34+chH>H-M-12)head();else y+=22;
+ if(y+34+chH>H-M-44)head();else y+=22;
  doc.text(M,y+10,'Batterieverlauf',{size:12,bold:true});doc.text(M+pw('Batterieverlauf',12,true)+10,y+10,'grün = in Ordnung, rot = unter der Ladegrenze',{size:7.5,color:C.mu});y+=18;
  const gw=charts.length>1?(W-2*M-16)/2:W-2*M;
  charts.forEach((ch,i)=>pdfChart(doc,M+i*(gw+16),y,gw,chH,ch,C));
  const N=doc.count;for(let i=0;i<N;i++){doc.goto(i);
   doc.text(M,H-16,`TQS Fahrzeugpflege · ${v.fin} · erstellt am ${fmt(T)} von ${me()}`,{size:7,color:C.mu});
-  doc.text(W-M,H-16,`Seite ${i+1} von ${N}`,{size:7,color:C.mu,align:'right'})}
+  doc.text(W-M,H-16,`Seite ${i+1} von ${N}`,{size:7,color:C.mu,align:'right'});
+  /* Unterschriftsfeld unten rechts auf jeder Seite */
+  const sw=250,sh=30,sx=W-M-sw,sy=H-58;
+  doc.rect(sx,sy,sw,sh,'#ffffff',C.bd,.7);doc.line([[sx+10,sy+19],[sx+sw-10,sy+19]],C.mu,.5);
+  doc.text(sx+10,sy+27,'Datum, Unterschrift',{size:6.5,color:C.mu});doc.text(sx+sw-10,sy+27,'geprüft',{size:6.5,color:C.mu,align:'right'})}
  const blob=new Blob([doc.bytes(`Pflegeprotokoll ${v.fin}`)],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download=`Pflegeprotokoll_${v.fin}_${T}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
  toast('PDF-Protokoll wird heruntergeladen.')
