@@ -25,7 +25,7 @@ GitHub → Repository **TQS-Fahrzeugpflege** → **Settings** → **Secrets and 
 | `SMTP_PORT` | meist `465` (oder `587`) |
 | `SMTP_USER` | Absender-Adresse / Benutzername |
 | `SMTP_PASS` | Passwort bzw. **App-Passwort** |
-| `MAIL_FROM` | optional, z. B. `TQS Fahrzeugpflege <pflege@autohaus-reiser.at>` |
+| `MAIL_FROM` | optional, z. B. `Fahrzeugpflege <pflege@firma.at>` |
 
 **Welches Postfach?**
 - **Firmenpostfach** (z. B. Microsoft 365): SMTP-Daten bei der IT erfragen (`smtp.office365.com`, Port `587`). Bei Microsoft 365 muss „SMTP AUTH“ für das Postfach erlaubt sein.
@@ -45,4 +45,4 @@ In der App erscheint unter **Einstellungen → Erinnerungs-E-Mails**, wann die l
 - **Uhrzeit ist ungefähr:** GitHub startet geplante Läufe teils mit Verzögerung (bis ca. 1 Stunde).
 - **Pause nach 60 Tagen:** Bei öffentlichen Repositorys schaltet GitHub geplante Abläufe ab, wenn 60 Tage lang nichts im Repository geändert wurde. Dann unter **Actions** wieder **Enable workflow** klicken.
 - **Kosten:** keine. Pro Stunde wird 1 Dokument gelesen; nur wenn jemand dran ist, zusätzlich Fahrzeuge und offene Maßnahmen.
-- Inhalt der E-Mail: alle Maßnahmen, die heute fällig sind (wahlweise inkl. überfälliger), sortiert nach Standort und Stellplatz.
+- Inhalt der E-Mail: alle Maßnahmen, die heute fällig sind (wahlweise inkl. überfälliger), sortiert nach Standort, Bereich und Stellplatz. Jede Person wählt in der App, ob sie alle Standorte oder nur einen bekommt.

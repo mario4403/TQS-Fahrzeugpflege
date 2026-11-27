@@ -1,4 +1,4 @@
-/* TQS Fahrzeugpflege – Erinnerungs-E-Mails
+/* Fahrzeugpflege – Erinnerungs-E-Mails
    Läuft stündlich per GitHub Actions (.github/workflows/erinnerungen.yml).
    Ablauf:
    1. settings/reminders lesen (1 Lesezugriff). Wer hat E-Mails an, ist seine Uhrzeit erreicht, und hat heute noch keine bekommen?
@@ -29,28 +29,32 @@ export function due(reminders, now) {
     .map(([uid, p]) => ({ uid, ...p }));
 }
 
-/* Liste der Maßnahmen für eine Person (gleiche Regeln wie in der App: aktive Fahrzeuge, nicht erledigt, nicht gelöscht) */
-export function listFor(person, vehicles, tasks, today) {
-  const vm = new Map(vehicles.filter(v => !v.archived).map(v => [v.fin, v]));
+/* Standort wie in der App: eingetragener Standort, sonst der erste (Standard: Mondsee) */
+export const siteOf = (v, sites) => (v && v.site && sites.includes(v.site) ? v.site : sites[0]);
+
+/* Liste der Maßnahmen für eine Person (gleiche Regeln wie in der App: aktive Fahrzeuge, nicht erledigt, nicht gelöscht, gewählter Standort) */
+export function listFor(person, vehicles, tasks, today, sites = ['Mondsee']) {
+  const site = person.site || '*';
+  const vm = new Map(vehicles.filter(v => !v.archived && (site === '*' || siteOf(v, sites) === site)).map(v => [v.fin, { ...v, _site: siteOf(v, sites) }]));
   const overdue = person.overdue !== false;
   return tasks
     .filter(t => vm.has(t.fin) && t.status !== 'Erledigt' && !t.removed && (t.due === today || (overdue && t.due < today)))
     .map(t => ({ t, v: vm.get(t.fin) }))
-    .sort((a, b) => NAT.compare(a.v.loc || '~', b.v.loc || '~') || NAT.compare(a.v.spot || '~', b.v.spot || '~') || NAT.compare(a.v.fin, b.v.fin) || (a.t.due < b.t.due ? -1 : 1));
+    .sort((a, b) => NAT.compare(a.v._site, b.v._site) || NAT.compare(a.v.loc || '~', b.v.loc || '~') || NAT.compare(a.v.spot || '~', b.v.spot || '~') || NAT.compare(a.v.fin, b.v.fin) || (a.t.due < b.t.due ? -1 : 1));
 }
 
 export function buildMail(person, list, today) {
   const late = list.filter(x => x.t.due < today).length, n = list.length;
   const subject = n
-    ? `TQS Fahrzeugpflege: ${n} ${n === 1 ? 'Maßnahme' : 'Maßnahmen'} am ${fmt(today)}${late ? ` (davon ${late} überfällig)` : ''}`
-    : `TQS Fahrzeugpflege: heute (${fmt(today)}) nichts zu tun`;
+    ? `Fahrzeugpflege: ${n} ${n === 1 ? 'Maßnahme' : 'Maßnahmen'} am ${fmt(today)}${late ? ` (davon ${late} überfällig)` : ''}`
+    : `Fahrzeugpflege: heute (${fmt(today)}) nichts zu tun`;
   const hello = `Servus ${person.name || ''}`.trim() + ',';
   const off = 'Du bekommst diese E-Mail, weil du in der App unter Einstellungen → Erinnerungs-E-Mails die Erinnerung eingeschaltet hast. Dort kannst du sie auch wieder ausschalten.';
   /* Text-Version */
   let text = `${hello}\n\n${n ? `heute ${n === 1 ? 'ist 1 Maßnahme' : `sind ${n} Maßnahmen`} fällig${late ? `, davon ${late} überfällig` : ''}:` : 'heute steht keine Maßnahme an.'}\n`;
   let lastLoc = null;
   for (const { t, v } of list) {
-    const loc = v.loc || 'Ohne Standort';
+    const loc = (v._site || '') + (v.loc ? ` · ${v.loc}` : '');
     if (loc !== lastLoc) { text += `\n${loc}\n`; lastLoc = loc; }
     text += `- ${v.spot ? `[${v.spot}] ` : ''}${vname(v)} (${v.fin}): ${t.title}${t.due < today ? ` – überfällig seit ${days(t.due, today)} ${days(t.due, today) === 1 ? 'Tag' : 'Tagen'}` : ''}\n`;
   }
@@ -58,7 +62,7 @@ export function buildMail(person, list, today) {
   /* HTML-Version */
   let rows = ''; lastLoc = null;
   for (const { t, v } of list) {
-    const loc = v.loc || 'Ohne Standort';
+    const loc = (v._site || '') + (v.loc ? ` · ${v.loc}` : '');
     if (loc !== lastLoc) { rows += `<tr><td colspan="4" style="padding:14px 10px 6px;font-weight:700;font-size:15px;color:#132029;border-bottom:2px solid #f0a92e">📍 ${esc(loc)}</td></tr>`; lastLoc = loc; }
     const od = t.due < today ? days(t.due, today) : 0;
     rows += `<tr>
@@ -69,10 +73,10 @@ export function buildMail(person, list, today) {
   }
   const html = `<!doctype html><html lang="de"><body style="margin:0;background:#eef2f7;font-family:Segoe UI,Roboto,Arial,sans-serif;color:#14202b">
 <div style="max-width:680px;margin:0 auto;padding:20px 12px">
-<div style="background:#132029;color:#fff;border-radius:12px 12px 0 0;padding:16px 20px;font-size:18px;font-weight:700">TQS Fahrzeugpflege <span style="font-weight:400;opacity:.75;font-size:14px">· ${fmt(today)}</span></div>
+<div style="background:#132029;color:#fff;border-radius:12px 12px 0 0;padding:16px 20px;font-size:18px;font-weight:700">Fahrzeugpflege <span style="font-weight:400;opacity:.75;font-size:14px">· ${fmt(today)}</span></div>
 <div style="background:#fff;border-radius:0 0 12px 12px;padding:20px">
 <p style="margin:0 0 12px">${esc(hello)}</p>
-<p style="margin:0 0 16px">${n ? `heute ${n === 1 ? 'ist <b>1 Maßnahme</b>' : `sind <b>${n} Maßnahmen</b>`} fällig${late ? `, davon <b style="color:#b42318">${late} überfällig</b>` : ''} – sortiert nach Standort und Stellplatz:` : 'heute steht keine Maßnahme an. 🎉'}</p>
+<p style="margin:0 0 16px">${n ? `heute ${n === 1 ? 'ist <b>1 Maßnahme</b>' : `sind <b>${n} Maßnahmen</b>`} fällig${late ? `, davon <b style="color:#b42318">${late} überfällig</b>` : ''} – sortiert nach Standort, Bereich und Stellplatz:` : 'heute steht keine Maßnahme an. 🎉'}</p>
 ${n ? `<table role="presentation" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;font-size:14px">
 <tr><th align="left" style="padding:6px 10px;font-size:11px;color:#5b6877;text-transform:uppercase">Stellplatz</th><th align="left" style="padding:6px 10px;font-size:11px;color:#5b6877;text-transform:uppercase">Fahrzeug</th><th align="left" style="padding:6px 10px;font-size:11px;color:#5b6877;text-transform:uppercase">Maßnahme</th><th align="left" style="padding:6px 10px;font-size:11px;color:#5b6877;text-transform:uppercase">Fällig</th></tr>
 ${rows}</table>` : ''}
@@ -98,15 +102,17 @@ async function main() {
   if (!people.length) { await ref.set({ run: { at: new Date().toISOString(), sent: 0 } }, { merge: true }); return; }
 
   const smtp = { host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 465), user: process.env.SMTP_USER, pass: process.env.SMTP_PASS };
-  const from = process.env.MAIL_FROM || (smtp.user ? `TQS Fahrzeugpflege <${smtp.user}>` : '');
+  const from = process.env.MAIL_FROM || (smtp.user ? `Fahrzeugpflege <${smtp.user}>` : '');
   const canSend = !dry && smtp.host && smtp.user && smtp.pass;
   if (!canSend) console.log(dry ? 'DRY_RUN: es wird nichts verschickt.' : 'SMTP ist nicht eingerichtet – es wird nichts verschickt.');
 
-  const [vs, ts] = await Promise.all([
+  const [cf, vs, ts] = await Promise.all([
+    db.doc('settings/cfg').get(),
     db.collection('vehicles').get(),
     db.collection('tasks').where('status', 'in', ['Offen', 'In Bearbeitung']).get(),
   ]);
-  const vehicles = vs.docs.map(d => d.data()), tasks = ts.docs.map(d => d.data());
+  const sites = ((cf.data() || {}).sites || []).filter(Boolean), vehicles = vs.docs.map(d => d.data()), tasks = ts.docs.map(d => d.data());
+  if (!sites.length) sites.push('Mondsee');
   let transport = null;
   if (canSend) {
     const nodemailer = (await import('nodemailer')).default;
@@ -114,7 +120,7 @@ async function main() {
   }
   let sent = 0;
   for (const p of people) {
-    const list = listFor(p, vehicles, tasks, now.day), upd = {};
+    const list = listFor(p, vehicles, tasks, now.day, sites), upd = {};
     if (!list.length && !p.empty) { upd[`r.${p.uid}.last`] = now.day; upd[`r.${p.uid}.lastN`] = 0; await ref.update(upd); console.log(`${p.email}: nichts fällig, keine E-Mail.`); continue; }
     const m = buildMail(p, list, now.day);
     if (!canSend) { console.log(`--- ${m.to}: ${m.subject}\n${m.text}`); continue; }

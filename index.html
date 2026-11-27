@@ -2097,18 +2097,19 @@ async function setTranspFree(on){if(on&&!confirm('Freie Bearbeitung des Transpor
 /* ---------- Erinnerungs-E-Mails ----------
    Gespeichert in settings/reminders → r.<Benutzer-ID>. Verschickt werden sie von einem GitHub-Actions-Zeitplan
    (tools/reminder), der stündlich prüft, wem heute noch keine E-Mail geschickt wurde. Standard: aus. */
-const myRem=()=>{const u=S.acct&&S.acct.uid,r=(S.rem&&S.rem.r&&u&&S.rem.r[u])||{};return{on:!!r.on,email:r.email||(S.acct&&S.acct.email)||'',hour:r.hour??6,overdue:r.overdue!==false,empty:!!r.empty,last:r.last||'',lastN:r.lastN??null,err:r.err||''}};
-function mailToday(o){const T=TD(),ts=activeTasks().filter(t=>t.status!=='Erledigt'&&(t.due===T||(o.overdue&&t.due<T)));
- return ts.map(t=>({t,v:veh(t.fin)})).sort((a,b)=>NAT.compare(a.v.loc||'~',b.v.loc||'~')||NAT.compare(a.v.spot||'~',b.v.spot||'~')||NAT.compare(a.v.fin,b.v.fin)||(a.t.due<b.t.due?-1:1))}
+const myRem=()=>{const u=S.acct&&S.acct.uid,r=(S.rem&&S.rem.r&&u&&S.rem.r[u])||{};return{on:!!r.on,email:r.email||(S.acct&&S.acct.email)||'',hour:r.hour??6,site:r.site||'*',overdue:r.overdue!==false,empty:!!r.empty,last:r.last||'',lastN:r.lastN??null,err:r.err||''}};
+function mailToday(o){const T=TD(),sit=o.site||'*',vm=new Map(RAW.veh.filter(v=>!v.archived&&(sit==='*'||siteOf(v)===sit)).map(v=>[v.fin,v])),ts=RAW.tasks.filter(t=>vm.has(t.fin)&&!t.removed&&t.status!=='Erledigt'&&(t.due===T||(o.overdue&&t.due<T)));
+ return ts.map(t=>({t,v:vm.get(t.fin)})).sort((a,b)=>NAT.compare(siteOf(a.v),siteOf(b.v))||NAT.compare(a.v.loc||'~',b.v.loc||'~')||NAT.compare(a.v.spot||'~',b.v.spot||'~')||NAT.compare(a.v.fin,b.v.fin)||(a.t.due<b.t.due?-1:1))}
 function mailPanel(){const m=myRem(),run=S.rem&&S.rem.run,ok=run&&run.at&&(Date.now()-new Date(run.at).getTime())<26*3600e3,n=mailToday(m).length;
  const st=!m.on?'':m.err?`<p class="msg err" style="display:block;margin:0">Letzter Versand fehlgeschlagen: ${E(m.err)}</p>`:
   !ok?`<p class="msg err" style="display:block;margin:0">Der automatische Versand ist noch nicht eingerichtet bzw. lief seit über einem Tag nicht. Das muss einmalig der Administrator erledigen (Anleitung im Repository unter <span class="mono">tools/reminder</span>).</p>`:
   `<p class="hint" style="margin:0">Versand aktiv. ${m.last?`Letzte E-Mail an dich: ${fmt(m.last)}${m.lastN!=null?` (${m.lastN} ${m.lastN===1?'Maßnahme':'Maßnahmen'})`:''}.`:'Noch keine E-Mail an dich verschickt.'}</p>`;
  return`<section class="panel" style="max-width:640px"><div class="ph"><h3>Erinnerungs-E-Mails</h3>${m.on?'<span class="pill s-ok">an</span>':'<span class="pill s-gr">aus</span>'}</div><div class="pb" style="display:flex;flex-direction:column;gap:12px">
- <p style="margin:0">Jeden Tag eine E-Mail mit allen Maßnahmen, die an diesem Tag fällig sind – sortiert nach Bereich und Stellplatz wie im Rundgang. An Tagen ohne fällige Maßnahmen kommt keine E-Mail.</p>
+ <p style="margin:0">Jeden Tag eine E-Mail mit allen Maßnahmen, die an diesem Tag fällig sind – sortiert nach Standort, Bereich und Stellplatz wie im Rundgang. An Tagen ohne fällige Maßnahmen kommt keine E-Mail.</p>
  <button class="toggle ${m.on?'on':''}" onclick="saveRem({on:${!m.on}})" aria-pressed="${m.on}"><span class="sw-t"></span><span><b>Erinnerungs-E-Mails ${m.on?'an':'aus'}</b><small>${m.on?`täglich um ca. ${m.hour}:00 Uhr an ${E(m.email)}`:'standardmäßig ausgeschaltet'}</small></span></button>
  ${m.on?`<div class="fg">
   <label class="f full">E-Mail-Adresse<input type="email" id="rem-mail" value="${E(m.email)}" autocomplete="email" inputmode="email"></label>
+  <label class="f">Standort<select id="rem-site"><option value="*">Alle Standorte</option>${SITES().map(x=>`<option ${m.site===x?'selected':''}>${E(x)}</option>`).join('')}</select></label>
   <label class="f">Uhrzeit<select id="rem-hour">${[5,6,7,8,9,10,12,14].map(x=>`<option value="${x}" ${x===m.hour?'selected':''}>ca. ${x}:00 Uhr</option>`).join('')}</select></label>
   <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="rem-od" ${m.overdue?'checked':''}> Überfällige Maßnahmen mitschicken</label>
   <label class="chk" style="grid-column:1/-1"><input type="checkbox" id="rem-empty" ${m.empty?'checked':''}> Auch eine kurze E-Mail schicken, wenn nichts ansteht</label>
@@ -2116,14 +2117,14 @@ function mailPanel(){const m=myRem(),run=S.rem&&S.rem.run,ok=run&&run.at&&(Date.
  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" id="rem-save" onclick="saveRemForm()">Speichern</button><button class="btn" onclick="mailPreview()">Vorschau der heutigen E-Mail (${n})</button></div>
  <span class="hint">Die Uhrzeit ist ungefähr: Der Versand läuft stündlich und kann sich um bis zu eine Stunde verzögern.</span>`:''}
  ${st}</div></section>`}
-async function saveRem(p){const u=S.acct&&S.acct.uid;if(!u)return;const cur=myRem(),d={on:cur.on,email:cur.email,hour:cur.hour,overdue:cur.overdue,empty:cur.empty,name:me(),...p,changed:new Date().toISOString()};
+async function saveRem(p){const u=S.acct&&S.acct.uid;if(!u)return;const cur=myRem(),d={on:cur.on,email:cur.email,hour:cur.hour,site:cur.site,overdue:cur.overdue,empty:cur.empty,name:me(),...p,changed:new Date().toISOString()};
  try{await db.doc('settings/reminders').set({r:{[u]:d}},{merge:true})}catch(e){return toast('Speichern nicht möglich: keine Schreibrechte.')}
  S.rem=S.rem||{};S.rem.r=S.rem.r||{};S.rem.r[u]={...(S.rem.r[u]||{}),...d};render();
  if('on' in p)toast(p.on?'Erinnerungs-E-Mails eingeschaltet.':'Erinnerungs-E-Mails ausgeschaltet.')}
 async function saveRemForm(){const em=$('rem-mail').value.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))return toast('Bitte eine gültige E-Mail-Adresse eingeben.');
- await saveRem({email:em,hour:+$('rem-hour').value,overdue:$('rem-od').checked,empty:$('rem-empty').checked});toast('Gespeichert.')}
-function mailPreview(){const m=myRem(),l=mailToday({overdue:$('rem-od')?$('rem-od').checked:m.overdue}),T=TD(),late=l.filter(x=>x.t.due<T).length;
- let last=null,rows='';l.forEach(({t,v})=>{const loc=v.loc||'Ohne Bereich';if(loc!==last){rows+=`<tr><td colspan="4" class="mp-loc">${IC.pin} ${E(loc)}</td></tr>`;last=loc}
+ await saveRem({email:em,site:$('rem-site').value,hour:+$('rem-hour').value,overdue:$('rem-od').checked,empty:$('rem-empty').checked});toast('Gespeichert.')}
+function mailPreview(){const m=myRem(),l=mailToday({site:$('rem-site')?$('rem-site').value:m.site,overdue:$('rem-od')?$('rem-od').checked:m.overdue}),T=TD(),late=l.filter(x=>x.t.due<T).length;
+ let last=null,rows='';l.forEach(({t,v})=>{const loc=siteOf(v)+(v.loc?' · '+v.loc:'');if(loc!==last){rows+=`<tr><td colspan="4" class="mp-loc">${IC.pin} ${E(loc)}</td></tr>`;last=loc}
   rows+=`<tr><td class="mono">${E(v.spot)||'–'}</td><td><b>${vname(v)}</b><br><span class="mono muted">${E(v.fin)}</span></td><td>${E(t.title)}</td><td>${t.due<T?`<span class="pill s-ba">${rel(t.due)}</span>`:'heute'}</td></tr>`});
  modal(`<header><div style="flex:1"><h3>Vorschau: E-Mail von heute</h3><span class="muted">an ${E($('rem-mail')?$('rem-mail').value:m.email)}</span></div><button class="x" onclick="closeM()" aria-label="Schließen">×</button></header>
  <div class="sb"><p style="margin:0 0 10px"><b>Betreff:</b> TQS Fahrzeugpflege: ${l.length} ${l.length===1?'Maßnahme':'Maßnahmen'} am ${fmt(T)}${late?` (davon ${late} überfällig)`:''}</p>
