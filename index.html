@@ -1689,7 +1689,11 @@ async function pdfProtokoll(fin){const v=veh(fin);if(!v.fin)return;
  if(ph){doc.rect(M,y,pwid,ih,C.z);const s=Math.min(pwid/ph.w,ih/ph.h),dw=ph.w*s,dh=ph.h*s;doc.img(M+(pwid-dw)/2,y+(ih-dh)/2,dw,dh,ph.jpg,ph.w,ph.h);doc.rect(M,y,pwid,ih,null,C.bd,.6)}
  doc.rect(ix,y,W-M-ix,ih,C.z);
  info.forEach((x,i)=>{const cx=ix+10+(i%nc)*cw,cy=y+4+Math.floor(i/nc)*23;doc.text(cx,cy+8,x[0].toUpperCase(),{size:6.5,bold:true,color:C.mu});doc.text(cx,cy+19,x[1],{size:9.5,maxW:cw-16})});y+=ih+12;
- doc.text(M,y+8,`${ts.length} Maßnahmen bis ${fmt(T)}  ·  ${nDone} erledigt  ·  ${ts.length-nDone} nicht erledigt${nLate?` (davon ${nLate} überfällig)`:''}`,{size:9,color:C.mu});y+=16;
+ doc.text(M,y+8,`${ts.length} Maßnahmen bis ${fmt(T)}  ·  ${nDone} erledigt  ·  ${ts.length-nDone} nicht erledigt${nLate?` (davon ${nLate} überfällig)`:''}`,{size:9,color:C.mu});
+ /* Sollwerte rechts über der Tabelle */
+ {const hvP=v.hyb||v.ev||S.tasks.some(t=>t.fin===fin&&catOf(t)==='hv'),sv=`12V-Batterie mind. ${nf(S.cfg.v12,1)} V${hvP?`  ·  HV-Batterie mind. ${nf(S.cfg.hv)} %`:''}  ·  Reifendruck mind. ${nf(MEAS.reifen.thr(),1)} bar`,sw=pw(sv,8.5,false);
+  doc.text(W-M,y+8,sv,{size:8.5,color:C.tx,align:'right'});doc.text(W-M-sw-6,y+8,'Sollwerte:',{size:8.5,bold:true,color:C.tx,align:'right'})}
+ y+=16;
  const cols=[['Geplant',58],['Maßnahme',150],['Intervall / Herkunft',128],['Status',70],['Erledigt am',62],['Mitarbeiter:in',90],['Batterie',56],['Reifendruck',62],['Bemerkung',0]];
  cols[8][1]=W-2*M-cols.slice(0,8).reduce((a,c)=>a+c[1],0);
  const thead=()=>{doc.rect(M,y,W-2*M,18,C.hd);let x=M;cols.forEach(c=>{doc.text(x+5,y+12,c[0],{size:7.5,bold:true,color:'#ffffff'});x+=c[1]});y+=18};
