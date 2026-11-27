@@ -22,10 +22,10 @@ const NAT = new Intl.Collator('de', { numeric: true, sensitivity: 'base' });
 const vname = v => [v.brand, v.model].filter(Boolean).join(' ') || 'Fahrzeug';
 
 /* Wer ist jetzt dran? */
-export function due(reminders, now) {
+export function due(reminders, now, force = false) {
   const r = (reminders && reminders.r) || {};
   return Object.entries(r)
-    .filter(([, p]) => p && p.on && MAILRE.test(p.email || '') && now.hour >= Number(p.hour ?? 6) && p.last !== now.day)
+    .filter(([, p]) => p && p.on && MAILRE.test(p.email || '') && (force || (now.hour >= Number(p.hour ?? 6) && p.last !== now.day)))
     .map(([uid, p]) => ({ uid, ...p }));
 }
 
@@ -139,7 +139,8 @@ async function main() {
   initializeApp({ credential: cert(JSON.parse(sa)) });
   const db = getFirestore(), ref = db.doc('settings/reminders');
   const rem = (await ref.get()).data() || {};
-  const people = due(rem, now);
+  const force = process.env.FORCE === '1', people = due(rem, now, force);
+  if (force) console.log('Testlauf: E-Mail wird an alle Empfänger geschickt, auch wenn sie heute schon eine bekommen haben.');
   console.log(`Wien ${now.day} ${now.hour}:xx – fällige Empfänger: ${people.length}`);
   if (!people.length) { await ref.set({ run: { at: new Date().toISOString(), sent: 0 } }, { merge: true }); return; }
 

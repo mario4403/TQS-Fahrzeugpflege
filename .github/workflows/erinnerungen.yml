@@ -11,6 +11,10 @@ on:
         description: 'Nur testen (nichts verschicken, Inhalt im Protokoll anzeigen)'
         type: boolean
         default: false
+      force:
+        description: 'Heute nochmal schicken (zum Testen – auch an alle, die heute schon eine bekommen haben)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -31,6 +35,7 @@ jobs:
       SMTP_PASS: ${{ secrets.SMTP_PASS }}
       MAIL_FROM: ${{ secrets.MAIL_FROM }}
       DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+      FORCE: ${{ inputs.force && '1' || '' }}
     steps:
       - name: Prüfen, ob eingerichtet
         id: cfg
